@@ -7,417 +7,417 @@
 # ========================================
 #
 #
-  - name: logo_1_haupthaus
-    type: tcp
-    host: 192.168.178.201
-    port: 510
-    timeout: 5
-    #retry_on_empty: true
-    #retries: 3
+- name: logo_1_haupthaus
+  type: tcp
+  host: 192.168.178.201
+  port: 510
+  timeout: 5
+  #retry_on_empty: true
+  #retries: 3
 
 # Analoge Eingänge (AI)
-    sensors:
-      - name: "Logo1 AI 1 Temp WZ"
-        address: 3
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -21.094
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+  sensors:
+    - name: "Logo1 AI 1 Temp WZ"
+      address: 3
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -21.094
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo1 AI 2 Temp DG Flur"
-        address: 4
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -19.394
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo1 AI 2 Temp DG Flur"
+      address: 4
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -19.394
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo1 AI 3 Temp SZ"
-        address: 1
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -20.194
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo1 AI 3 Temp SZ"
+      address: 1
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -20.194
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo1 AI 4 Temp Büro"
-        address: 2
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -19.194
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo1 AI 4 Temp Büro"
+      address: 2
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -19.194
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
 # Digitale Eingänge (I)
-    binary_sensors:
-      - name: "Logo1 I3 Kind 1 Licht 1"
-        address: 3
-        input_type: discrete_input
-        scan_interval: 1
+  binary_sensors:
+    - name: "Logo1 I3 Kind 1 Licht 1"
+      address: 3
+      input_type: discrete_input
+      scan_interval: 1
 
-      - name: "Logo1 I4 Kind 2 Licht 1"
-        address: 4
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I5 Kind 3 Licht 1"
-        address: 5
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I6 Flur OG Licht"
-        address: 6
-        input_type: discrete_input
-        scan_interval: 1
-    
-      - name: "Logo1 I9 SZ 1 Licht"
-        address: 9
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I10 SZ 2 Licht"
-        address: 10
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I11 WZ 2 Licht"
-        address: 11
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I12 WZ 3 Licht"
-        address: 12
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I13 WZ 1 Licht"
-        address: 13
-        input_type: discrete_input
-        scan_interval: 1
-    #
-      - name: "Logo1 I14 SZ 3 Licht"
-        address: 14
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I15 Bü 1 Licht"
-        address: 15
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I16 Bü 2 Licht"
-        address: 16
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I17 Bü 3 Licht"
-        address: 17
-        input_type: discrete_input
-        scan_interval: 1
-    #
-      - name: "Logo1 I18 Kind 1 Licht 2"
-        address: 18
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I19 Kind 2 Licht 2"
-        address: 19
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I20 Kind 3 Licht 2"
-        address: 20
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I21 Flur Kammer Licht hinten"
-        address: 21
-        input_type: discrete_input
-        scan_interval: 1
-    #
-      - name: "Logo1 I22 Flur Kammer Licht vorne"
-        address: 22
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I23 Kind 2 Licht Spitz RT"
-        address: 23
-        input_type: discrete_input
-        scan_interval: 1
-        
-      - name: "Logo1 I24 Kind 2 Licht Spitz LT"
-        address: 24
-        input_type: discrete_input
-        scan_interval: 1
+    - name: "Logo1 I4 Kind 2 Licht 1"
+      address: 4
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I5 Kind 3 Licht 1"
+      address: 5
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I6 Flur OG Licht"
+      address: 6
+      input_type: discrete_input
+      scan_interval: 1
+  
+    - name: "Logo1 I9 SZ 1 Licht"
+      address: 9
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I10 SZ 2 Licht"
+      address: 10
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I11 WZ 2 Licht"
+      address: 11
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I12 WZ 3 Licht"
+      address: 12
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I13 WZ 1 Licht"
+      address: 13
+      input_type: discrete_input
+      scan_interval: 1
+  #
+    - name: "Logo1 I14 SZ 3 Licht"
+      address: 14
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I15 Bü 1 Licht"
+      address: 15
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I16 Bü 2 Licht"
+      address: 16
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I17 Bü 3 Licht"
+      address: 17
+      input_type: discrete_input
+      scan_interval: 1
+  #
+    - name: "Logo1 I18 Kind 1 Licht 2"
+      address: 18
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I19 Kind 2 Licht 2"
+      address: 19
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I20 Kind 3 Licht 2"
+      address: 20
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I21 Flur Kammer Licht hinten"
+      address: 21
+      input_type: discrete_input
+      scan_interval: 1
+  #
+    - name: "Logo1 I22 Flur Kammer Licht vorne"
+      address: 22
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I23 Kind 2 Licht Spitz RT"
+      address: 23
+      input_type: discrete_input
+      scan_interval: 1
+      
+    - name: "Logo1 I24 Kind 2 Licht Spitz LT"
+      address: 24
+      input_type: discrete_input
+      scan_interval: 1
 
 # Digitale Ausgänge (Q)
-    switches:
-      - name: "Logo1 Q1 Kind 1 Licht klein"
-        address: 8193
-        write_type: coil
-        scan_interval: 1
+  switches:
+    - name: "Logo1 Q1 Kind 1 Licht klein"
+      address: 8193
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo1 Q2 Kind 2 Licht klein"
-        address: 8194
-        write_type: coil
-        scan_interval: 1
-        
-      - name: "Logo1 Q3 Kind 3 Licht klein"
-        address: 8195
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q4 SZ 1 Licht"
-        address: 8196
-        write_type: coil
-        scan_interval: 1
-    
-      - name: "Logo1 Q5 SZ 2 Licht"
-        address: 8197
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q6 SZ 3 Licht"
-        address: 8198
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q7 WZ 2"
-        address: 8199
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q8 WZ 3"
-        address: 8200
-        write_type: coil
-        scan_interval: 1
-    
-      - name: "Logo1 Q9 WZ 1"
-        address: 8201
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q10 Bü 1 Licht"
-        address: 8202
-        write_type: coil
-        scan_interval: 1
-    
-      - name: "Logo1 Q11 Bü 2 Licht"
-        address: 8203
-        write_type: coil
-        scan_interval: 1
-
-      - name: "Logo1 Q12 Bü 3 Licht"
-        address: 8204
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q2 Kind 2 Licht klein"
+      address: 8194
+      write_type: coil
+      scan_interval: 1
       
-      - name: "Logo1 Q13 Flur DG Licht"
-        address: 8205
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q3 Kind 3 Licht klein"
+      address: 8195
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo1 Q14 Kind 1 Licht 2"
-        address: 8206
-        write_type: coil
-        scan_interval: 1
-    #
-      - name: "Logo1 Q15 Kind 2 Licht 2"
-        address: 8207
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q4 SZ 1 Licht"
+      address: 8196
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo1 Q5 SZ 2 Licht"
+      address: 8197
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo1 Q16 Kind 3 Licht 2"
-        address: 8208
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q6 SZ 3 Licht"
+      address: 8198
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q7 WZ 2"
+      address: 8199
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q8 WZ 3"
+      address: 8200
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo1 Q9 WZ 1"
+      address: 8201
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q10 Bü 1 Licht"
+      address: 8202
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo1 Q11 Bü 2 Licht"
+      address: 8203
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q12 Bü 3 Licht"
+      address: 8204
+      write_type: coil
+      scan_interval: 1
     
-      - name: "Logo1 Q17 Flur Kammer Licht vorne"
-        address: 8209
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q13 Flur DG Licht"
+      address: 8205
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo1 Q18 Flur Kammer Licht hinten 2x"
-        address: 8210
-        write_type: coil
-        scan_interval: 1
-      
-      - name: "Logo1 Q19 Flur Kammer Licht mitte"
-        address: 8211
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q14 Kind 1 Licht 2"
+      address: 8206
+      write_type: coil
+      scan_interval: 1
+  #
+    - name: "Logo1 Q15 Kind 2 Licht 2"
+      address: 8207
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo1 Q20 Kind 2 Licht Spitz"
-        address: 8212
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo1 Q16 Kind 3 Licht 2"
+      address: 8208
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo1 Q17 Flur Kammer Licht vorne"
+      address: 8209
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q18 Flur Kammer Licht hinten 2x"
+      address: 8210
+      write_type: coil
+      scan_interval: 1
+    
+    - name: "Logo1 Q19 Flur Kammer Licht mitte"
+      address: 8211
+      write_type: coil
+      scan_interval: 1
+
+    - name: "Logo1 Q20 Kind 2 Licht Spitz"
+      address: 8212
+      write_type: coil
+      scan_interval: 1
 
 # ========================================
 # LOGO 2 - HAUPTHAUS (192.168.178.202)
 # ========================================
 #
 #
-  - name: logo_2_haupthaus
-    type: tcp
-    host: 192.168.178.202
-    port: 510
-    timeout: 5
-    #retry_on_empty: true
-    #retries: 3
+- name: logo_2_haupthaus
+  type: tcp
+  host: 192.168.178.202
+  port: 510
+  timeout: 5
+  #retry_on_empty: true
+  #retries: 3
 
 # Analoge Eingänge (AI)
-    sensors:
-      - name: "Logo2 AI 3 Temp Kind 1"
-        address: 3
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -21.094
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+  sensors:
+    - name: "Logo2 AI 3 Temp Kind 1"
+      address: 3
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -21.094
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo2 AI 4 Temp Kind 2"
-        address: 4
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -19.394
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo2 AI 4 Temp Kind 2"
+      address: 4
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -19.394
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo2 AI 1 Temp Kind 3"
-        address: 1
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -20.194
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo2 AI 1 Temp Kind 3"
+      address: 1
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -20.194
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo2 AI 2 Temp Kind 2 Spitz"
-        address: 2
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "°C"
-        scale: 0.081
-        #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
-        offset: -19.194
-        device_class: temperature
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo2 AI 2 Temp Kind 2 Spitz"
+      address: 2
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "°C"
+      scale: 0.081
+      #offset: -19.944  <Rechenwert / erneute anpassung zur Logo werte ( nicht geprüft)
+      offset: -19.194
+      device_class: temperature
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
 # Digitale Eingänge (I)
-    binary_sensors:
-      - name: "Logo2 I3 Bad Lichtschalter links"
-        address: 3
-        input_type: discrete_input
-        scan_interval: 1
+  binary_sensors:
+    - name: "Logo2 I3 Bad Lichtschalter links"
+      address: 3
+      input_type: discrete_input
+      scan_interval: 1
 
-      - name: "Logo2 I4 Bad Lichtschalter Rechts"
-        address: 4
-        input_type: discrete_input
-        scan_interval: 1
-    
+    - name: "Logo2 I4 Bad Lichtschalter Rechts"
+      address: 4
+      input_type: discrete_input
+      scan_interval: 1
+  
 # Digitale Ausgänge (Q)
-    switches:
-      - name: "Logo2 Q1 Bad Lüfter"
-        address: 8193
-        write_type: coil
-        scan_interval: 1
+  switches:
+    - name: "Logo2 Q1 Bad Lüfter"
+      address: 8193
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo2 Q2 Bad Licht 1 Decke"
-        address: 8194
-        write_type: coil
-        scan_interval: 1
-    
-      - name: "Logo2 Q3 Bad Licht 2 Spiegel"
-        address: 8195
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo2 Q2 Bad Licht 1 Decke"
+      address: 8194
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo2 Q3 Bad Licht 2 Spiegel"
+      address: 8195
+      write_type: coil
+      scan_interval: 1
 
 #
 # ========================================
 # LOGO 3 - HAUPTHAUS (192.168.178.203)
 # ========================================
 #
-  - name: Logo8_3_Garage
-    type: tcp
-    host: 192.168.178.203
-    port: 510
-    timeout: 5
-    #retry_on_empty: true
-    #retries: 3
+- name: Logo8_3_Garage
+  type: tcp
+  host: 192.168.178.203
+  port: 510
+  timeout: 5
+  #retry_on_empty: true
+  #retries: 3
 
 # Analogeingang (AI)
 ### Grube
-    sensors:
-      - name: "Sammelgrube"
-        address: 5
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "%"
-        scale: 0.125
-        device_class: battery
-        precision: 1
-        scan_interval: 10
-        offset: -25
-        state_class: measurement
-    
+  sensors:
+    - name: "Sammelgrube"
+      address: 5
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "%"
+      scale: 0.125
+      device_class: battery
+      precision: 1
+      scan_interval: 10
+      offset: -25
+      state_class: measurement
+  
 # Digitale Ausgänge (Q)
-    switches:
-      - name: "Logo3 Q1 Warmwasserpumpe Bypass"
-        address: 8193
-        write_type: coil
-        scan_interval: 1
+  switches:
+    - name: "Logo3 Q1 Warmwasserpumpe Bypass"
+      address: 8193
+      write_type: coil
+      scan_interval: 1
 
-      - name: "Logo3 Q2 Pool Pumpe linke Steckdose"
-        address: 8194
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo3 Q2 Pool Pumpe linke Steckdose"
+      address: 8194
+      write_type: coil
+      scan_interval: 1
+  
+    - name: "Logo3 Q3 Wasserpumpe Sammelgrube"
+      address: 8195
+      write_type: coil
+      scan_interval: 1
     
-      - name: "Logo3 Q3 Wasserpumpe Sammelgrube"
-        address: 8195
-        write_type: coil
-        scan_interval: 1
-      
-      - name: "Logo3 Q4 Signallampe Rot"
-        address: 8196
-        write_type: coil
-        scan_interval: 1
+    - name: "Logo3 Q4 Signallampe Rot"
+      address: 8196
+      write_type: coil
+      scan_interval: 1
 
 #
 #
@@ -427,60 +427,60 @@
 # ========================================
 #
 #
-  - name: logo_4_Keller
-    type: tcp
-    host: 192.168.178.204
-    port: 510
-    timeout: 5
-    #retry_on_empty: true
-    #retries: 3
-    
+- name: logo_4_Keller
+  type: tcp
+  host: 192.168.178.204
+  port: 510
+  timeout: 5
+  #retry_on_empty: true
+  #retries: 3
+  
 # Analoge Eingänge (AI)
-    sensors:
-      - name: "Logo4 AI 3 Haus Strom L1"
-        address: 3
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "kW"
-        scale: 1
-        device_class: power
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+  sensors:
+    - name: "Logo4 AI 3 Haus Strom L1"
+      address: 3
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "kW"
+      scale: 1
+      device_class: power
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo4 AI 4 Haus Strom L2"
-        address: 4
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "kW"
-        scale: 1
-        device_class: power
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo4 AI 4 Haus Strom L2"
+      address: 4
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "kW"
+      scale: 1
+      device_class: power
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
-      - name: "Logo4 AI 1 Haus Strom L3"
-        address: 1
-        input_type: input
-        data_type: uint16
-        unit_of_measurement: "kW"
-        scale: 1
-        device_class: power
-        precision: 1
-        scan_interval: 5
-        state_class: measurement
+    - name: "Logo4 AI 1 Haus Strom L3"
+      address: 1
+      input_type: input
+      data_type: uint16
+      unit_of_measurement: "kW"
+      scale: 1
+      device_class: power
+      precision: 1
+      scan_interval: 5
+      state_class: measurement
 
 # Digitale Eingänge (I)
-    binary_sensors:
-      - name: "Logo4 I3 example"
-        address: 3
-        input_type: discrete_input
-        scan_interval: 1
+  binary_sensors:
+    - name: "Logo4 I3 example"
+      address: 3
+      input_type: discrete_input
+      scan_interval: 1
 
-    
+  
 # Digitale Ausgänge (Q)
-    switches:
-      - name: "Logo4 Q1 Licht Keller"
-        address: 8193
-        write_type: coil
-        scan_interval: 1
+  switches:
+    - name: "Logo4 Q1 Licht Keller"
+      address: 8193
+      write_type: coil
+      scan_interval: 1
