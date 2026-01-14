@@ -1,0 +1,7 @@
+configuration:
+  devices:
+    name: Devices
+    description: List of configured Modbus devices
+  modbus_config_path:
+    name: Modbus Config Path
+    description: Path where the generated modbus configuration will be saved
