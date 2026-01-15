@@ -1,16 +1,23 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
+set -e
 
-bashio::log.info "Starting Universal Modbus Configurator..."
+echo "Starting Universal Modbus Configurator..."
 
-# Get config path from options
-CONFIG_PATH=$(bashio::config 'modbus_config_path')
-bashio::log.info "Modbus config will be written to: ${CONFIG_PATH}"
-
-# Export config path for Python app
-export MODBUS_CONFIG_PATH="${CONFIG_PATH}"
+# Set default config path
+export MODBUS_CONFIG_PATH="/config/modbus_generated.yaml"
 export CONFIG_PATH="/data/options.json"
 
+# Read config path from options if available
+if [ -f "/data/options.json" ]; then
+    CUSTOM_PATH=$(jq -r '.modbus_config_path // empty' /data/options.json)
+    if [ -n "$CUSTOM_PATH" ]; then
+        export MODBUS_CONFIG_PATH="$CUSTOM_PATH"
+    fi
+fi
+
+echo "Modbus config will be written to: ${MODBUS_CONFIG_PATH}"
+
 # Start the web application
-bashio::log.info "Starting web interface on port 8099..."
+echo "Starting web interface on port 8099..."
 cd /app
-python3 app.py
+exec python3 app.py

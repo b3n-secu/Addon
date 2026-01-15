@@ -5,7 +5,8 @@ FROM $BUILD_FROM
 RUN apk add --no-cache \
     python3 \
     py3-pip \
-    py3-flask \
+    jq \
+    bash \
     && pip3 install --no-cache-dir \
     pymodbus==3.5.4 \
     pyyaml \
