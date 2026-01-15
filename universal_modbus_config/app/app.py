@@ -252,6 +252,37 @@ def api_scan_logo8():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/scan-logo0ba7', methods=['POST'])
+def api_scan_logo0ba7():
+    """Detailed scan for Siemens LOGO! 0BA7 devices"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Starting LOGO! 0BA7 detailed scan on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_logo0ba7_addresses(slave_id)
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+
+        logger.info(f"LOGO! 0BA7 scan complete: {host}:{port} - found {total} addresses")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': total
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning LOGO! 0BA7 device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/scan-addresses', methods=['POST'])
 def api_scan_addresses():
     """Scan specific addresses"""

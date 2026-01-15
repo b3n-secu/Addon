@@ -337,6 +337,149 @@ class ModbusScanner:
 
         return results
 
+    def scan_logo0ba7_addresses(self, slave=1):
+        """
+        Detailed scan for Siemens LOGO! 0BA7 specific addresses
+        Based on LOGO! 0BA7 Modbus TCP addressing
+        """
+        results = {
+            'digital_inputs': [],
+            'digital_outputs': [],
+            'analog_inputs': [],
+            'analog_outputs': [],
+            'vm_memory': [],
+            'marker_bits': []
+        }
+
+        if not self.connect():
+            return results
+
+        try:
+            # Digital Inputs (I1-I24): Address 1-24
+            logger.info("Scanning LOGO! 0BA7 Digital Inputs (I1-I24)...")
+            for addr in range(1, 25):
+                try:
+                    result = self.client.read_discrete_inputs(self.lg8add(addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'bits'):
+                        results['digital_inputs'].append({
+                            'address': addr,
+                            'modbus_address': self.lg8add(addr),
+                            'name': f'I{addr}',
+                            'value': result.bits[0],
+                            'type': 'discrete_input'
+                        })
+                except:
+                    pass
+
+            # Digital Outputs (Q1-Q16): Address 8193-8208 (0x2001-0x2010)
+            logger.info("Scanning LOGO! 0BA7 Digital Outputs (Q1-Q16)...")
+            for i in range(16):
+                addr = 8193 + i
+                try:
+                    result = self.client.read_coils(self.lg8add(addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'bits'):
+                        results['digital_outputs'].append({
+                            'address': addr,
+                            'modbus_address': self.lg8add(addr),
+                            'name': f'Q{i+1}',
+                            'value': result.bits[0],
+                            'type': 'coil'
+                        })
+                except:
+                    pass
+
+            # Marker Bits (M1-M24): Address 8255-8278 (0x203F-0x2056)
+            logger.info("Scanning LOGO! 0BA7 Marker Bits (M1-M24)...")
+            for i in range(24):
+                addr = 8255 + i
+                try:
+                    result = self.client.read_coils(self.lg8add(addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'bits'):
+                        results['marker_bits'].append({
+                            'address': addr,
+                            'modbus_address': self.lg8add(addr),
+                            'name': f'M{i+1}',
+                            'value': result.bits[0],
+                            'type': 'coil'
+                        })
+                except:
+                    pass
+
+            # Analog Inputs (AI1-AI8): Multiple access methods
+            logger.info("Scanning LOGO! 0BA7 Analog Inputs (AI1-AI8)...")
+            for i in range(1, 9):
+                try:
+                    # Direct read via input registers
+                    result = self.client.read_input_registers(self.lg8add(i), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['analog_inputs'].append({
+                            'address': i,
+                            'modbus_address': self.lg8add(i),
+                            'name': f'AI{i}',
+                            'value': result.registers[0],
+                            'type': 'input_register',
+                            'method': 'direct'
+                        })
+
+                    # VM mapping read via holding registers (VW0-VW14 for AI1-AI8)
+                    vm_addr = (i - 1) * 2 + 1  # VW0, VW2, VW4, etc.
+                    result_vm = self.client.read_holding_registers(self.lg8add(vm_addr), 1, unit=slave)
+                    if not result_vm.isError() and hasattr(result_vm, 'registers'):
+                        results['analog_inputs'].append({
+                            'address': vm_addr,
+                            'modbus_address': self.lg8add(vm_addr),
+                            'name': f'AI{i}_VM',
+                            'value': result_vm.registers[0],
+                            'type': 'holding_register',
+                            'method': 'vm_mapping'
+                        })
+                except:
+                    pass
+
+            # Analog Outputs (AQ1-AQ2): 0BA7 typically has fewer analog outputs
+            logger.info("Scanning LOGO! 0BA7 Analog Outputs (AQ1-AQ2)...")
+            for i in range(1, 3):
+                try:
+                    # Try common analog output addresses
+                    aq_addr = 1024 + i
+                    result = self.client.read_holding_registers(self.lg8add(aq_addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['analog_outputs'].append({
+                            'address': aq_addr,
+                            'modbus_address': self.lg8add(aq_addr),
+                            'name': f'AQ{i}',
+                            'value': result.registers[0],
+                            'type': 'holding_register'
+                        })
+                except:
+                    pass
+
+            # VM Memory (VW0-VW850): Sample key addresses
+            logger.info("Scanning LOGO! 0BA7 VM Memory (sample addresses)...")
+            vm_addresses = [0, 2, 4, 6, 8, 10, 20, 40, 60, 80, 100, 200, 300, 400, 500, 600, 700, 800, 850]
+            for vm_addr in vm_addresses:
+                try:
+                    result = self.client.read_holding_registers(self.lg8add(vm_addr + 1), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['vm_memory'].append({
+                            'address': vm_addr + 1,
+                            'modbus_address': self.lg8add(vm_addr + 1),
+                            'name': f'VW{vm_addr}',
+                            'value': result.registers[0],
+                            'type': 'holding_register'
+                        })
+                except:
+                    pass
+
+        finally:
+            self.disconnect()
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+        logger.info(f"LOGO! 0BA7 scan complete: {total} addresses found")
+
+        return results
+
     def scan_detailed_addresses(self, address_list, slave=1):
         """
         Scan specific addresses provided by user

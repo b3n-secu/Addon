@@ -343,7 +343,10 @@
                             Gerät scannen
                         </button>
                         <button type="button" class="button button-success" onclick="scanLogo8()">
-                            🔍 LOGO! 8 Detaillierter Scan
+                            🔍 LOGO! 8 Scan
+                        </button>
+                        <button type="button" class="button button-success" onclick="scanLogo0BA7()">
+                            🔍 LOGO! 0BA7 Scan
                         </button>
                         <button type="submit" class="button button-primary">
                             Gerät hinzufügen
@@ -663,6 +666,184 @@
                 html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
                 html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
                 result.results.digital_outputs.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value ? '✓ ON' : '✗ OFF'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            // Analog Inputs
+            if (result.results.analog_inputs.length > 0) {
+                html += '<h5 style="color: #667eea;">Analog Inputs (AI):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th><th>Methode</th></tr>';
+                result.results.analog_inputs.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value}</td>
+                        <td style="text-align: center;">${item.method || '-'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            // Analog Outputs
+            if (result.results.analog_outputs.length > 0) {
+                html += '<h5 style="color: #667eea;">Analog Outputs (AQ):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
+                result.results.analog_outputs.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            // VM Memory
+            if (result.results.vm_memory.length > 0) {
+                html += '<h5 style="color: #667eea;">VM Memory (VW):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
+                result.results.vm_memory.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        async function scanLogo0BA7() {
+            const host = document.getElementById('host').value;
+            const port = document.getElementById('port').value;
+            const slaveId = document.getElementById('slaveId').value;
+
+            if (!host) {
+                showAlert('Bitte IP-Adresse eingeben', 'error');
+                return;
+            }
+
+            showAlert('Starte detaillierten LOGO! 0BA7 Scan...', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/scan-logo0ba7`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        host,
+                        port: parseInt(port),
+                        slave_id: slaveId ? parseInt(slaveId) : 1
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    displayLogo0BA7ScanResults(result);
+                    showAlert(`✓ LOGO! 0BA7 Scan erfolgreich! ${result.total} Adressen gefunden.`, 'success');
+                } else {
+                    showAlert('✗ Scan fehlgeschlagen: ' + (result.error || result.message), 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim LOGO! 0BA7 Scan: ' + error.message, 'error');
+            }
+        }
+
+        function displayLogo0BA7ScanResults(result) {
+            const resultsDiv = document.getElementById('scanResults');
+            resultsDiv.classList.remove('hidden');
+
+            let html = '<h4>LOGO! 0BA7 Detaillierte Scan Ergebnisse:</h4>';
+
+            // Statistics
+            html += '<div style="margin-bottom: 20px;">';
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Digital Inputs</div>
+                <div class="scan-stat-value">${result.results.digital_inputs.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Digital Outputs</div>
+                <div class="scan-stat-value">${result.results.digital_outputs.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Marker Bits</div>
+                <div class="scan-stat-value">${result.results.marker_bits.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Analog Inputs</div>
+                <div class="scan-stat-value">${result.results.analog_inputs.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Analog Outputs</div>
+                <div class="scan-stat-value">${result.results.analog_outputs.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">VM Memory</div>
+                <div class="scan-stat-value">${result.results.vm_memory.length}</div>
+            </div>`;
+            html += `<div class="scan-stat">
+                <div class="scan-stat-label">Gesamt</div>
+                <div class="scan-stat-value">${result.total}</div>
+            </div>`;
+            html += '</div>';
+
+            // Detailed address list
+            html += '<div style="max-height: 400px; overflow-y: auto; background: white; padding: 15px; border-radius: 6px;">';
+
+            // Digital Inputs
+            if (result.results.digital_inputs.length > 0) {
+                html += '<h5 style="color: #667eea; margin-top: 0;">Digital Inputs (I):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
+                result.results.digital_inputs.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value ? '✓ ON' : '✗ OFF'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            // Digital Outputs
+            if (result.results.digital_outputs.length > 0) {
+                html += '<h5 style="color: #667eea;">Digital Outputs (Q):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
+                result.results.digital_outputs.forEach(item => {
+                    html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                        <td style="padding: 8px;">${item.name}</td>
+                        <td style="text-align: center;">${item.address}</td>
+                        <td style="text-align: center;">${item.modbus_address}</td>
+                        <td style="text-align: center;">${item.value ? '✓ ON' : '✗ OFF'}</td>
+                    </tr>`;
+                });
+                html += '</table>';
+            }
+
+            // Marker Bits
+            if (result.results.marker_bits.length > 0) {
+                html += '<h5 style="color: #667eea;">Marker Bits (M):</h5>';
+                html += '<table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 0.9em;">';
+                html += '<tr style="background: #f8f9fa;"><th style="padding: 8px; text-align: left;">Name</th><th>Adresse</th><th>Modbus Addr</th><th>Wert</th></tr>';
+                result.results.marker_bits.forEach(item => {
                     html += `<tr style="border-bottom: 1px solid #e0e0e0;">
                         <td style="padding: 8px;">${item.name}</td>
                         <td style="text-align: center;">${item.address}</td>
