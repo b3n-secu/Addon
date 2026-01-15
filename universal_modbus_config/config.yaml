@@ -1,0 +1,31 @@
+name: Universal Modbus Configurator
+version: "1.0.0"
+slug: universal_modbus_config
+description: Universeller Modbus Konfigurator für Home Assistant - Unterstützt Siemens Logo und weitere Hersteller
+arch:
+  - armhf
+  - armv7
+  - aarch64
+  - amd64
+  - i386
+init: false
+ports:
+  8099/tcp: 8099
+ports_description:
+  8099/tcp: Web Interface
+webui: http://[HOST]:[PORT:8099]
+startup: services
+boot: auto
+options:
+  devices: []
+  modbus_config_path: "/config/modbus_generated.yaml"
+schema:
+  devices:
+    - manufacturer: str
+      model: str
+      name: str
+      host: str
+      port: int
+      slave_id: int?
+  modbus_config_path: str
+image: ghcr.io/homeassistant/{arch}-addon-universal-modbus-config
