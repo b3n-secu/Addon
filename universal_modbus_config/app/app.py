@@ -345,14 +345,23 @@ def api_test_connection():
 def api_generate_config():
     """Generate Modbus configuration"""
     try:
-        data = request.json
+        data = request.json or {}
         output_path = data.get('output_path', MODBUS_CONFIG_PATH)
         include_scan = data.get('include_scan', False)
+
+        # Check if there are any devices
+        if not devices:
+            logger.warning("No devices configured")
+            return jsonify({
+                'success': False,
+                'error': 'Keine Geräte konfiguriert. Bitte fügen Sie zuerst ein Gerät hinzu.'
+            }), 400
 
         # Clear previous configuration
         config_generator.clear()
 
         # Add all devices
+        added_count = 0
         for device in devices:
             scan_results = None
 
@@ -374,21 +383,32 @@ def api_generate_config():
                 except Exception as e:
                     logger.warning(f"Scan failed for {device['name']}: {e}")
 
-            config_generator.add_device(device, scan_results)
+            if config_generator.add_device(device, scan_results):
+                added_count += 1
+
+        if added_count == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Keine Geräte konnten zur Konfiguration hinzugefügt werden.'
+            }), 400
 
         # Generate YAML
         yaml_config = config_generator.generate_yaml(output_path)
 
-        logger.info(f"Generated configuration with {len(devices)} devices")
+        logger.info(f"Generated configuration with {added_count} devices at {output_path}")
         return jsonify({
             'success': True,
             'config': yaml_config,
-            'path': output_path
+            'path': output_path,
+            'devices_count': added_count
         })
 
     except Exception as e:
-        logger.error(f"Error generating config: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error generating config: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Fehler beim Generieren der Konfiguration: {str(e)}'
+        }), 500
 
 
 @app.route('/api/config', methods=['GET'])

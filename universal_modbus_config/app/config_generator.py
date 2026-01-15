@@ -1,6 +1,7 @@
 """
 Configuration generator for Home Assistant Modbus integration
 """
+import os
 import yaml
 import logging
 from device_profiles import get_device_profile
@@ -291,11 +292,18 @@ class ModbusConfigGenerator:
         # Write to file if path provided
         if output_path:
             try:
+                # Ensure directory exists
+                output_dir = os.path.dirname(output_path)
+                if output_dir and not os.path.exists(output_dir):
+                    os.makedirs(output_dir, exist_ok=True)
+                    logger.info(f"Created directory: {output_dir}")
+
                 with open(output_path, 'w') as f:
                     f.write(yaml_str)
                 logger.info(f"Configuration written to {output_path}")
             except Exception as e:
                 logger.error(f"Error writing configuration: {e}")
+                raise
 
         return yaml_str
 
