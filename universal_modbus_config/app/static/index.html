@@ -279,6 +279,21 @@
             <!-- Alert Area -->
             <div id="alertArea"></div>
 
+            <!-- Network Scanner Section -->
+            <div class="section">
+                <h2 class="section-title">🔍 Netzwerk-Scanner</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Scannt das lokale Netzwerk automatisch nach Modbus-Geräten (Ports 502 und 510).
+                </p>
+                <button class="button button-primary" onclick="scanNetwork()">
+                    🌐 Netzwerk scannen
+                </button>
+                <div id="networkScanResults" class="hidden" style="margin-top: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Gefundene Geräte:</h3>
+                    <div id="networkDeviceList"></div>
+                </div>
+            </div>
+
             <!-- Add Device Section -->
             <div class="section">
                 <h2 class="section-title">Neues Gerät hinzufügen</h2>
@@ -694,6 +709,75 @@
             } catch (error) {
                 showAlert('Fehler beim Laden der Konfiguration: ' + error.message, 'error');
             }
+        }
+
+        async function scanNetwork() {
+            const resultsDiv = document.getElementById('networkScanResults');
+            const deviceListDiv = document.getElementById('networkDeviceList');
+
+            resultsDiv.classList.remove('hidden');
+            deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk nach Modbus-Geräten...</p></div>';
+
+            showAlert('Netzwerk-Scan gestartet... Dies kann einige Minuten dauern.', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/scan-network`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({})
+                });
+
+                const result = await response.json();
+
+                if (result.success && result.devices.length > 0) {
+                    showAlert(`✓ Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`, 'success');
+                    displayNetworkDevices(result.devices);
+                } else if (result.success && result.devices.length === 0) {
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Keine Modbus-Geräte gefunden.</div>';
+                    showAlert('Scan abgeschlossen. Keine Geräte gefunden.', 'info');
+                } else {
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                    showAlert('✗ Fehler beim Scannen: ' + result.error, 'error');
+                }
+            } catch (error) {
+                deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                showAlert('Fehler beim Netzwerk-Scan: ' + error.message, 'error');
+            }
+        }
+
+        function displayNetworkDevices(devices) {
+            const deviceListDiv = document.getElementById('networkDeviceList');
+            deviceListDiv.innerHTML = '';
+
+            devices.forEach(device => {
+                const deviceCard = document.createElement('div');
+                deviceCard.className = 'device-item';
+                deviceCard.style.cursor = 'pointer';
+                deviceCard.innerHTML = `
+                    <div class="device-info">
+                        <div class="device-name">🌐 ${device.ip}:${device.port}</div>
+                        <div class="device-details">
+                            Status: ${device.status === 'online' ? '✓ Online' : '✗ Offline'}
+                        </div>
+                    </div>
+                    <div class="device-actions">
+                        <button class="button button-primary" onclick="useDiscoveredDevice('${device.ip}', ${device.port})">
+                            Verwenden
+                        </button>
+                    </div>
+                `;
+                deviceListDiv.appendChild(deviceCard);
+            });
+        }
+
+        function useDiscoveredDevice(ip, port) {
+            document.getElementById('host').value = ip;
+            document.getElementById('port').value = port;
+
+            // Scroll to the add device form
+            document.getElementById('addDeviceForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            showAlert(`IP-Adresse ${ip}:${port} wurde in das Formular übernommen.`, 'success');
         }
     </script>
 </body>
