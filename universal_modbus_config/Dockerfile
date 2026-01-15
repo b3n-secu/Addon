@@ -7,7 +7,7 @@ RUN apk add --no-cache \
     py3-pip \
     jq \
     bash \
-    && pip3 install --no-cache-dir \
+    && pip3 install --no-cache-dir --break-system-packages \
     pymodbus==3.5.4 \
     pyyaml \
     flask \
