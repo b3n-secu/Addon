@@ -221,6 +221,69 @@ def api_scan_network():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/scan-logo8', methods=['POST'])
+def api_scan_logo8():
+    """Detailed scan for Siemens LOGO! 8 devices"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Starting LOGO! 8 detailed scan on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_logo8_addresses(slave_id)
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+
+        logger.info(f"LOGO! 8 scan complete: {host}:{port} - found {total} addresses")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': total
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning LOGO! 8 device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-addresses', methods=['POST'])
+def api_scan_addresses():
+    """Scan specific addresses"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+        address_list = data.get('addresses', [])
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        if not address_list:
+            return jsonify({'error': 'Address list is required'}), 400
+
+        logger.info(f"Scanning specific addresses on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_detailed_addresses(address_list, slave_id)
+
+        logger.info(f"Address scan complete: {host}:{port} - found {len(results)} values")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': len(results)
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning addresses: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/test-connection', methods=['POST'])
 def api_test_connection():
     """Test connection to a device"""

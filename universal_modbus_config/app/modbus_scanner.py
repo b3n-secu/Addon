@@ -19,6 +19,14 @@ class ModbusScanner:
         self.timeout = timeout
         self.client = None
 
+    @staticmethod
+    def lg8add(logo_modbustcp_address: int) -> int:
+        """
+        Logo8 uses modbusTCP +1 address offset
+        to stay conform with their documentation, subtract 1 from each given address
+        """
+        return logo_modbustcp_address - 1
+
     def connect(self):
         """Connect to Modbus device"""
         try:
@@ -190,6 +198,205 @@ class ModbusScanner:
             self.disconnect()
             return True
         return False
+
+    def scan_logo8_addresses(self, slave=1):
+        """
+        Detailed scan for Siemens LOGO! 8 specific addresses
+        Based on LOGO! 8 Modbus TCP addressing
+        """
+        results = {
+            'digital_inputs': [],
+            'digital_outputs': [],
+            'analog_inputs': [],
+            'analog_outputs': [],
+            'vm_memory': []
+        }
+
+        if not self.connect():
+            return results
+
+        try:
+            # Digital Inputs (DI1-DI24): Address 1-24
+            logger.info("Scanning LOGO! 8 Digital Inputs (DI1-DI24)...")
+            for addr in range(1, 25):
+                try:
+                    result = self.client.read_discrete_inputs(self.lg8add(addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'bits'):
+                        results['digital_inputs'].append({
+                            'address': addr,
+                            'modbus_address': self.lg8add(addr),
+                            'name': f'DI{addr}',
+                            'value': result.bits[0],
+                            'type': 'discrete_input'
+                        })
+                except:
+                    pass
+
+            # Digital Outputs (Q1-Q20): Address 8193-8212 (0x2001-0x2014)
+            logger.info("Scanning LOGO! 8 Digital Outputs (Q1-Q20)...")
+            for i in range(20):
+                addr = 8193 + i
+                try:
+                    result = self.client.read_coils(self.lg8add(addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'bits'):
+                        results['digital_outputs'].append({
+                            'address': addr,
+                            'modbus_address': self.lg8add(addr),
+                            'name': f'Q{i+1}',
+                            'value': result.bits[0],
+                            'type': 'coil'
+                        })
+                except:
+                    pass
+
+            # Analog Inputs (AI1-AI8): Multiple access methods
+            logger.info("Scanning LOGO! 8 Analog Inputs (AI1-AI8)...")
+            for i in range(1, 9):
+                try:
+                    # Direct read via input registers
+                    result = self.client.read_input_registers(self.lg8add(i), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['analog_inputs'].append({
+                            'address': i,
+                            'modbus_address': self.lg8add(i),
+                            'name': f'AI{i}',
+                            'value': result.registers[0],
+                            'type': 'input_register',
+                            'method': 'direct'
+                        })
+
+                    # VM mapping read via holding registers
+                    vm_addr = (i - 1) * 2 + 1  # VW0, VW2, VW4, etc.
+                    result_vm = self.client.read_holding_registers(self.lg8add(vm_addr), 1, unit=slave)
+                    if not result_vm.isError() and hasattr(result_vm, 'registers'):
+                        results['analog_inputs'].append({
+                            'address': vm_addr,
+                            'modbus_address': self.lg8add(vm_addr),
+                            'name': f'AI{i}_VM',
+                            'value': result_vm.registers[0],
+                            'type': 'holding_register',
+                            'method': 'vm_mapping'
+                        })
+
+                    # AM mapping (AM1-AM8): Address 529-536
+                    am_addr = 528 + i
+                    result_am = self.client.read_holding_registers(self.lg8add(am_addr), 1, unit=slave)
+                    if not result_am.isError() and hasattr(result_am, 'registers'):
+                        results['analog_inputs'].append({
+                            'address': am_addr,
+                            'modbus_address': self.lg8add(am_addr),
+                            'name': f'AM{i}',
+                            'value': result_am.registers[0],
+                            'type': 'holding_register',
+                            'method': 'am_mapping'
+                        })
+                except:
+                    pass
+
+            # Analog Outputs (AQ1-AQ8): Address 528.1 onwards or via VM
+            logger.info("Scanning LOGO! 8 Analog Outputs (AQ1-AQ8)...")
+            for i in range(1, 9):
+                try:
+                    # Try common analog output addresses
+                    aq_addr = 1024 + i  # Common AQ range
+                    result = self.client.read_holding_registers(self.lg8add(aq_addr), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['analog_outputs'].append({
+                            'address': aq_addr,
+                            'modbus_address': self.lg8add(aq_addr),
+                            'name': f'AQ{i}',
+                            'value': result.registers[0],
+                            'type': 'holding_register'
+                        })
+                except:
+                    pass
+
+            # VM Memory (VW0-VW850): Sample key addresses
+            logger.info("Scanning LOGO! 8 VM Memory (sample addresses)...")
+            vm_addresses = [0, 2, 4, 6, 8, 10, 100, 200, 300, 400, 500, 600, 700, 800, 850]
+            for vm_addr in vm_addresses:
+                try:
+                    result = self.client.read_holding_registers(self.lg8add(vm_addr + 1), 1, unit=slave)
+                    if not result.isError() and hasattr(result, 'registers'):
+                        results['vm_memory'].append({
+                            'address': vm_addr + 1,
+                            'modbus_address': self.lg8add(vm_addr + 1),
+                            'name': f'VW{vm_addr}',
+                            'value': result.registers[0],
+                            'type': 'holding_register'
+                        })
+                except:
+                    pass
+
+        finally:
+            self.disconnect()
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+        logger.info(f"LOGO! 8 scan complete: {total} addresses found")
+
+        return results
+
+    def scan_detailed_addresses(self, address_list, slave=1):
+        """
+        Scan specific addresses provided by user
+        address_list format: [{'type': 'coil', 'address': 8193}, ...]
+        """
+        results = []
+
+        if not self.connect():
+            return results
+
+        try:
+            for item in address_list:
+                addr_type = item.get('type', 'holding_register')
+                address = item.get('address', 0)
+                count = item.get('count', 1)
+
+                try:
+                    if addr_type == 'coil':
+                        result = self.client.read_coils(address, count, unit=slave)
+                        if not result.isError() and hasattr(result, 'bits'):
+                            for i, bit in enumerate(result.bits[:count]):
+                                results.append({
+                                    'address': address + i,
+                                    'value': bit,
+                                    'type': 'coil'
+                                })
+                    elif addr_type == 'discrete_input':
+                        result = self.client.read_discrete_inputs(address, count, unit=slave)
+                        if not result.isError() and hasattr(result, 'bits'):
+                            for i, bit in enumerate(result.bits[:count]):
+                                results.append({
+                                    'address': address + i,
+                                    'value': bit,
+                                    'type': 'discrete_input'
+                                })
+                    elif addr_type == 'input_register':
+                        result = self.client.read_input_registers(address, count, unit=slave)
+                        if not result.isError() and hasattr(result, 'registers'):
+                            for i, value in enumerate(result.registers):
+                                results.append({
+                                    'address': address + i,
+                                    'value': value,
+                                    'type': 'input_register'
+                                })
+                    elif addr_type == 'holding_register':
+                        result = self.client.read_holding_registers(address, count, unit=slave)
+                        if not result.isError() and hasattr(result, 'registers'):
+                            for i, value in enumerate(result.registers):
+                                results.append({
+                                    'address': address + i,
+                                    'value': value,
+                                    'type': 'holding_register'
+                                })
+                except Exception as e:
+                    logger.debug(f"Error reading {addr_type} at {address}: {e}")
+
+        finally:
+            self.disconnect()
+
+        return results
 
 
 class NetworkScanner:
