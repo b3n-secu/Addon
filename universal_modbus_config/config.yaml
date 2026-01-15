@@ -28,4 +28,3 @@ schema:
       port: int
       slave_id: int?
   modbus_config_path: str
-image: ghcr.io/homeassistant/{arch}-addon-universal-modbus-config
