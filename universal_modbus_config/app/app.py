@@ -7,7 +7,7 @@ import logging
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
-from modbus_scanner import ModbusScanner
+from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
 
 # Configure logging
@@ -195,6 +195,29 @@ def api_scan_device():
 
     except Exception as e:
         logger.error(f"Error scanning device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-network', methods=['POST'])
+def api_scan_network():
+    """Scan network for Modbus devices"""
+    try:
+        data = request.json or {}
+        network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
+        ports = data.get('ports', [502, 510])
+
+        logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
+        devices = NetworkScanner.scan_network(network, ports, timeout=1)
+
+        logger.info(f"Network scan complete: found {len(devices)} devices")
+        return jsonify({
+            'success': True,
+            'devices': devices,
+            'total': len(devices)
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning network: {e}")
         return jsonify({'error': str(e)}), 500
 
 
