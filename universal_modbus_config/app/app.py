@@ -22,7 +22,16 @@ CORS(app)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
-MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', '/config/modbus_generated.yaml')
+# Use different default paths depending on environment
+if os.path.exists('/config'):
+    # Running in Home Assistant addon
+    DEFAULT_MODBUS_PATH = '/config/modbus_generated.yaml'
+else:
+    # Running locally or in development - use absolute path in app directory
+    DEFAULT_MODBUS_PATH = os.path.abspath('./modbus_generated.yaml')
+
+MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
+logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
 
 # Global state
 devices = []
@@ -395,11 +404,15 @@ def api_generate_config():
         # Generate YAML
         yaml_config = config_generator.generate_yaml(output_path)
 
-        logger.info(f"Generated configuration with {added_count} devices at {output_path}")
+        # Get absolute path for display
+        abs_path = os.path.abspath(output_path)
+
+        logger.info(f"Generated configuration with {added_count} devices at {abs_path}")
         return jsonify({
             'success': True,
             'config': yaml_config,
-            'path': output_path,
+            'path': abs_path,
+            'absolute_path': abs_path,
             'devices_count': added_count
         })
 
