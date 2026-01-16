@@ -168,6 +168,31 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.in-config {
+            background-color: #28a745;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+        }
+
+        .status-indicator.not-in-config {
+            background-color: #dc3545;
+            box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+        }
+
+        .status-indicator.unknown {
+            background-color: #6c757d;
         }
 
         .device-details {
@@ -387,6 +412,7 @@
     <script>
         const API_BASE = window.location.origin;
         let currentScanResults = null;
+        let devicesConfigStatus = {};
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -941,13 +967,33 @@
             }
         }
 
+        async function checkDevicesInConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/check-devices-in-config`);
+                const result = await response.json();
+
+                if (result.success) {
+                    devicesConfigStatus = result.devices_in_config || {};
+                    return result;
+                }
+            } catch (error) {
+                console.error('Error checking devices in config:', error);
+            }
+            return null;
+        }
+
         async function loadDevices() {
             const deviceList = document.getElementById('deviceList');
             deviceList.innerHTML = '<li class="loading"><div class="spinner"></div><p>Lade Geräte...</p></li>';
 
             try {
-                const response = await fetch(`${API_BASE}/api/devices`);
-                const devices = await response.json();
+                // Load devices and config status in parallel
+                const [devicesResponse, configStatus] = await Promise.all([
+                    fetch(`${API_BASE}/api/devices`),
+                    checkDevicesInConfig()
+                ]);
+
+                const devices = await devicesResponse.json();
 
                 if (devices.length === 0) {
                     deviceList.innerHTML = '<li style="text-align: center; padding: 20px; color: #666;">Keine Geräte konfiguriert</li>';
@@ -958,9 +1004,27 @@
                 devices.forEach((device, index) => {
                     const li = document.createElement('li');
                     li.className = 'device-item';
+
+                    // Determine status indicator
+                    let statusIndicator = '';
+                    const deviceStatus = devicesConfigStatus[index];
+
+                    if (deviceStatus) {
+                        if (deviceStatus.in_config) {
+                            statusIndicator = '<span class="status-indicator in-config" title="In Konfiguration vorhanden"></span>';
+                        } else {
+                            statusIndicator = '<span class="status-indicator not-in-config" title="Nicht in Konfiguration"></span>';
+                        }
+                    } else {
+                        statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
+                    }
+
                     li.innerHTML = `
                         <div class="device-info">
-                            <div class="device-name">${device.name}</div>
+                            <div class="device-name">
+                                ${statusIndicator}
+                                <span>${device.name}</span>
+                            </div>
                             <div class="device-details">
                                 ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
                                 ${device.slave_id ? ` | Slave: ${device.slave_id}` : ''}
@@ -1014,7 +1078,10 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(`✓ Konfiguration erfolgreich generiert!\nPfad: ${result.path}`, 'success');
+                    showAlert(`✓ Konfiguration erfolgreich generiert!\nPfad: ${result.path}\nGeräte in Konfiguration: ${result.devices_count}`, 'success');
+
+                    // Automatically update device list to show config status
+                    loadDevices();
                 } else {
                     showAlert('✗ Fehler: ' + result.error, 'error');
                 }

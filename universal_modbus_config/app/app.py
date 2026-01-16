@@ -439,6 +439,63 @@ def api_get_config():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/check-devices-in-config', methods=['GET'])
+def api_check_devices_in_config():
+    """Check which devices are present in the generated configuration"""
+    try:
+        if not os.path.exists(MODBUS_CONFIG_PATH):
+            return jsonify({
+                'success': True,
+                'devices_in_config': {},
+                'config_exists': False
+            })
+
+        # Read the generated YAML config
+        with open(MODBUS_CONFIG_PATH, 'r') as f:
+            config_content = f.read()
+
+        # Parse YAML to get device names
+        import yaml
+        config_data = yaml.safe_load(config_content)
+
+        if not config_data:
+            return jsonify({
+                'success': True,
+                'devices_in_config': {},
+                'config_exists': True
+            })
+
+        # Extract device names from config
+        config_device_names = set()
+        if isinstance(config_data, list):
+            for device in config_data:
+                if isinstance(device, dict) and 'name' in device:
+                    config_device_names.add(device['name'])
+
+        # Check each device
+        devices_status = {}
+        for i, device in enumerate(devices):
+            device_name = device.get('name', f"{device.get('manufacturer', '')}_{device.get('model', '')}")
+            devices_status[i] = {
+                'name': device_name,
+                'in_config': device_name in config_device_names
+            }
+
+        return jsonify({
+            'success': True,
+            'devices_in_config': devices_status,
+            'config_exists': True,
+            'total_in_config': sum(1 for d in devices_status.values() if d['in_config'])
+        })
+
+    except Exception as e:
+        logger.error(f"Error checking devices in config: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting Universal Modbus Configurator")
     logger.info(f"Config path: {CONFIG_PATH}")
