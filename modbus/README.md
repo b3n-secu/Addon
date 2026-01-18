@@ -17,15 +17,63 @@ Der Universal Modbus Configurator (HAMCA) vereinfacht die Konfiguration von Modb
 - 🌐 **Netzwerk-Scan** mit /24 CIDR-Unterstützung
 - 📝 **Automatische YAML-Generierung** für Home Assistant
 - 🖥️ **Modernes Web-Interface** mit Echtzeit-Feedback
+- 📊 **Intelligente Gerätedatenbank** mit industrieweiten Standards
+
+## Device Database
+
+Dieses Add-on nutzt eine umfassende Geräte-Datenbank für präzise Identifikation:
+
+- **Port-Mapping**: Automatische Erkennung basierend auf Port-Nummern
+  - Port 102: Siemens S7 (ISO-TSAP)
+  - Port 502: Standard Modbus TCP
+  - Port 510: Alternativer Modbus Port
+  - Ports 20000-20100: Modbus Gateways
+
+- **Multi-Kriterien-Erkennung**:
+  - Modbus Vendor IDs
+  - Banner-Pattern-Matching
+  - Modbus-discover NSE Script Ausgabe
+  - Verhaltensbasierte Detektion
+
+- **Gerätespezifische Profile**:
+  - Register-Bereiche und Adress-Offsets
+  - Unterstützte Modbus-Funktionen
+  - Typische Features und Einschränkungen
+
+Siehe [DEVICE_DATABASE.md](DEVICE_DATABASE.md) für Details und Erweiterungsmöglichkeiten.
 
 ## Unterstützte Geräte
 
-- 🟦 **Siemens**: LOGO! 8, LOGO! 0BA7
-- 🟢 **Schneider Electric**: Modicon PLCs
-- 🔵 **ABB**: Industrial Controllers
-- 🟡 **Wago**: 750 Series
-- 🔴 **Allen Bradley**: Rockwell PLCs
-- 🌐 **Generic**: Standard Modbus TCP
+- 🟦 **Siemens** (Deutschland):
+  - LOGO! 8.x (8.3, 8.4) - Port 502
+  - LOGO! 0BA7 (7.x Serie) - Port 502
+  - S7-300 - Port 102, 502
+  - S7-400 - Port 102, 502
+  - S7-1200 - Port 502
+  - S7-1500 - Port 502
+
+- 🟢 **Schneider Electric** (Frankreich):
+  - Modicon M340 - Port 502
+  - Modicon M580 - Port 502
+  - Modicon Quantum - Port 502
+  - Modicon Premium - Port 502
+
+- 🔵 **ABB** (Schweiz):
+  - AC500 PLC - Port 502
+  - AC500-eCo - Port 502
+  - AC500-S - Port 502
+
+- 🟡 **Wago** (Deutschland):
+  - PFC100/200 (750-8xx) - Port 502
+
+- 🔴 **Allen-Bradley** (USA):
+  - ControlLogix - Port 44818
+  - CompactLogix 5380 - Port 44818
+
+- 🟠 **Moxa** (Taiwan):
+  - MGate MB3170/MB3270/MB3480 - Ports 502, 20000-20100
+
+- 🌐 **Generic Modbus TCP**: Alle Standard-konformen Geräte
 
 ## Installation
 
