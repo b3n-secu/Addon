@@ -129,10 +129,25 @@ class NmapModbusScanner:
                                     device['model'] = self._parse_model(modbus_info)
                                 else:
                                     # Fallback: try to detect via port number
-                                    if port in [502, 510]:
+                                    if port == 102:
+                                        # Port 102 is typically used by Siemens S7 PLCs
+                                        device['device_type'] = 'SIEMENS_S7'
+                                        device['manufacturer'] = 'Siemens'
+                                        device['model'] = 'S7 PLC'
+                                    elif port in [502, 510]:
                                         device['device_type'] = 'MODBUS_TCP'
                                         device['manufacturer'] = 'Generic'
                                         device['model'] = 'Modbus TCP'
+                                    elif port >= 20000 and port <= 20100:
+                                        # Common range for Modbus TCP gateways
+                                        device['device_type'] = 'MODBUS_TCP'
+                                        device['manufacturer'] = 'Generic'
+                                        device['model'] = 'Modbus Gateway'
+                                    else:
+                                        # Unknown port, but likely Modbus if nmap found it
+                                        device['device_type'] = 'MODBUS_DEVICE'
+                                        device['manufacturer'] = 'Unknown'
+                                        device['model'] = 'Modbus Device'
 
                                 # Auto-generate device name
                                 device['name'] = self._generate_device_name(device)
