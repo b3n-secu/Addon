@@ -56,7 +56,7 @@ class NmapModbusScanner:
     def scan_network_nmap(
         self,
         network: Optional[str] = None,
-        port_range: str = "502,510,20000-20100",
+        port_range: str = "102,502,510,20000-20100",
         timeout: int = 300,
         use_modbus_discover: bool = True
     ) -> List[Dict]:
@@ -65,7 +65,7 @@ class NmapModbusScanner:
 
         Args:
             network: Network in CIDR notation (e.g., '192.168.1.0/24')
-            port_range: Port range to scan (e.g., '502,510,20000-20100')
+            port_range: Port range to scan (e.g., '102,502,510,20000-20100')
             timeout: Scan timeout in seconds
             use_modbus_discover: Use nmap's modbus-discover NSE script
 

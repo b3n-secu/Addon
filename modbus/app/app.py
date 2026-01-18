@@ -284,7 +284,7 @@ def api_scan_network_nmap():
     try:
         data = request.json or {}
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
-        port_range = data.get('port_range', '502,510,20000-20100')  # Configurable port range
+        port_range = data.get('port_range', '102,502,510,20000-20100')  # Configurable port range
         auto_add = data.get('auto_add', False)  # Automatically add to device list
         use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
         timeout = data.get('timeout', 300)  # Scan timeout in seconds

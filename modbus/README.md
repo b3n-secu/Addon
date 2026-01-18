@@ -79,7 +79,7 @@ Der Universal Modbus Configurator (HAMCA) vereinfacht die Konfiguration von Modb
 devices: []  # Wird automatisch gefüllt
 modbus_config_path: "/config/modbus_generated.yaml"
 scan_timeout: 300  # Nmap Timeout in Sekunden
-default_port_range: "502,510,20000-20100"
+default_port_range: "102,502,510,20000-20100"
 ```
 
 ### Netzwerk-Einstellungen
