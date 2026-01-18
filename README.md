@@ -1,121 +1,110 @@
-# 🔧 Universal Modbus Configurator (HAMCA)
+# 🏠 Home Assistant Add-ons Repository
 
-Ein professionelles Home Assistant Addon zur einfachen Konfiguration von Modbus-Geräten mit automatischer Geräteerkennung.
+Professionelle Home Assistant Add-ons für industrielle Automatisierung und Smart Home Integration.
 
-## ✨ Features
+## 📦 Verfügbare Add-ons
 
-### Automatische Geräteerkennung
-- 🚀 **Professioneller Nmap-Scanner** mit modbus-discover NSE Script
-- ⚡ **Quick Scan** für schnelle Ergebnisse
-- 🎯 **Anpassbare Port-Ranges** (502, 510, 20000-20100, etc.)
-- 🔍 **Automatische Gerätetyp-Erkennung**
+### 🔧 [Modbus Configurator](modbus/)
 
-### Unterstützte Hersteller
-- 🟦 **Siemens**: LOGO! 8, LOGO! 0BA7
-- 🟢 **Schneider Electric**: Modicon PLCs
-- 🔵 **ABB**: Industrial Controllers
-- 🟡 **Wago**: 750 Series
-- 🔴 **Allen Bradley / Rockwell**: PLCs
-- 🌐 **Generic**: Standard Modbus TCP
+Professioneller Modbus Konfigurator mit automatischer Geräteerkennung via Nmap.
 
-### Weitere Features
-- 🖥️ Modernes, benutzerfreundliches Web-Interface
+**Features:**
+- 🚀 Nmap-basierte Geräteerkennung mit modbus-discover NSE Script
+- ⚡ Quick Scan für schnelle Ergebnisse
+- 🎯 Anpassbare Port-Ranges
+- 🌐 Unterstützt Siemens LOGO!, Schneider, ABB, Wago, Allen Bradley und mehr
 - 📝 Automatische YAML-Konfigurationsgenerierung
-- ✅ Verbindungstest und Geräte-Validierung
-- 📊 Mehrere Geräte gleichzeitig verwalten
-- 🎨 Visuelle Gerätetyp-Kennzeichnung
 
-## 🚀 Quick Start
+**Version:** 1.1.0
+**[Zur Dokumentation →](modbus/README.md)**
 
-1. **Installieren** Sie das Addon über den Add-on Store
-2. **Starten** Sie das Addon
-3. **Öffnen** Sie das Web-UI (wird automatisch geöffnet)
-4. **Scannen** Sie Ihr Netzwerk mit einem Klick
-5. **Wählen** Sie die gefundenen Geräte aus (oder Auto-Add aktivieren)
-6. **Generieren** Sie die Konfiguration
-7. **Integrieren** Sie in Home Assistant
+---
 
-## 📡 Scan-Modi
+## 🚀 Installation
 
-### 🚀 Nmap Scan (Empfohlen)
-- Verwendet professionelles Nmap mit modbus-discover NSE Script
-- Erkennt erweiterte Geräteinformationen
-- Anpassbare Port-Ranges
-- Basiert auf DefCon 16 Modbus Security Research
+### 1. Repository hinzufügen
 
-**Beispiel Port-Ranges:**
-- Standard: `502,510` (schnell)
-- Erweitert: `502,510,20000-20100` (empfohlen)
-- Custom: `502,510,2222,44818,47808`
+1. Öffnen Sie **Home Assistant**
+2. Navigieren Sie zu: **Supervisor → Add-on Store**
+3. Klicken Sie auf **⋮ (Menü)** oben rechts
+4. Wählen Sie **Repositories**
+5. Fügen Sie diese URL hinzu:
+   ```
+   https://github.com/b3n-secu/Addon
+   ```
+6. Klicken Sie auf **Hinzufügen**
 
-### ⚡ Quick Scan
-- Schneller Python-basierter Scan
-- Scannt Standard-Ports 502 und 510
-- Ideal für bekannte Netzwerke
+### 2. Add-on installieren
 
-## 🔧 Konfiguration
+Nach dem Hinzufügen des Repositories finden Sie die Add-ons im Add-on Store:
 
-### Addon-Optionen
-
-```yaml
-devices: []  # Wird automatisch gefüllt
-modbus_config_path: "/config/modbus_generated.yaml"
-scan_timeout: 300  # Nmap Scan Timeout in Sekunden
-default_port_range: "502,510,20000-20100"  # Standard Port-Range
-```
-
-### Home Assistant Integration
-
-```yaml
-# In configuration.yaml
-modbus: !include modbus_generated.yaml
-```
-
-Nach der Konfigurationsgenerierung einfach Home Assistant neu laden.
+1. Suchen Sie nach dem gewünschten Add-on
+2. Klicken Sie auf **Installieren**
+3. Konfigurieren Sie das Add-on
+4. Starten Sie das Add-on
 
 ## 📖 Dokumentation
 
-- [Vollständige Addon-Dokumentation](README_ADDON.md)
-- [Build-Anleitung](BUILD.md)
-- [Quick Start Guide](QUICKSTART.md)
-- [Beispiele & Use Cases](EXAMPLES.md)
-- [FAQ](FAQ.md)
+- **[Repository-Struktur](README_REPO.md)** - Technische Details zum Repository
+- **[Modbus Configurator](modbus/README.md)** - Vollständige Add-on Dokumentation
+- **[Build-Anleitung](BUILD.md)** - Für Entwickler
+- **[FAQ](FAQ.md)** - Häufig gestellte Fragen
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Problemlösungen
 
-## 🛠️ Entwicklung
+## 🛠️ Für Entwickler
 
-### Container lokal bauen und testen
+### Lokales Testen
 
 ```bash
-# Einfaches Build & Test
+# Modbus Add-on lokal bauen und testen
 ./build-and-test.sh
 
 # Oder manuell
-docker build -t universal-modbus-configurator:latest .
-docker run -d -p 8099:8099 -v $(pwd)/test-config:/config universal-modbus-configurator:latest
+docker build -t modbus-configurator:latest ./modbus
+docker run -d -p 8099:8099 -v $(pwd)/test-config:/config modbus-configurator:latest
 ```
 
-Siehe [BUILD.md](BUILD.md) für Details.
+### Neues Add-on hinzufügen
+
+Um ein neues Add-on zu diesem Repository hinzuzufügen:
+
+1. Erstellen Sie einen neuen Ordner (z.B. `my-addon/`)
+2. Fügen Sie die erforderlichen Dateien hinzu:
+   - `config.yaml` ✅ Erforderlich
+   - `Dockerfile` ✅ Erforderlich
+   - `README.md` 📝 Empfohlen
+   - `icon.png` 🖼️ Empfohlen
+   - `build.yaml` 🏗️ Für Multi-Arch
+3. Committen und pushen Sie die Änderungen
+
+```bash
+git add my-addon/
+git commit -m "Add: New add-on 'My Addon'"
+git push
+```
+
+## 🤝 Beiträge
+
+Beiträge sind herzlich willkommen!
+
+- **Bug-Report:** [Issue erstellen](https://github.com/b3n-secu/Addon/issues/new)
+- **Feature-Request:** [Discussion starten](https://github.com/b3n-secu/Addon/discussions)
+- **Pull Request:** [PR erstellen](https://github.com/b3n-secu/Addon/pulls)
 
 ## 📝 Changelog
 
-### Version 1.1.0 (Aktuell)
-- ✨ **NEU:** Professioneller Nmap-Scanner mit modbus-discover NSE Script
-- ✨ **NEU:** Anpassbare Port-Ranges
-- ✨ **NEU:** Erweiterte Geräteerkennung (Siemens, Schneider, ABB, Wago, Allen Bradley)
-- ✨ **NEU:** Automatische Gerätetyp-Erkennung
-- ✨ **NEU:** Zwei Scan-Modi (Nmap & Quick Scan)
-- 🔧 Verbesserte UI mit visuellen Gerätetyp-Indikatoren
-- 🔧 Graceful Fallback wenn nmap nicht verfügbar
-- 🐛 Bugfixes und Performance-Verbesserungen
+### Repository
+- **2024-01:** Multi-Add-on Repository-Struktur implementiert
+- **2024-01:** Modbus Configurator v1.1.0 hinzugefügt
 
-### Version 1.0.0
-- 🎉 Initial Release
-- ✅ Grundlegende Geräteerkennung
-- ✅ YAML-Konfigurationsgenerierung
+### Modbus Configurator v1.1.0
+- ✨ Professioneller Nmap-Scanner
+- ✨ Automatische Gerätetyp-Erkennung
+- ✨ Anpassbare Port-Ranges
+- 🔧 Verbesserte UI
+- 🐛 Diverse Bugfixes
 
-## 🤝 Contributing
-
-Beiträge sind willkommen! Bitte erstellen Sie einen Pull Request.
+[Vollständiges Changelog](modbus/README.md#changelog)
 
 ## 📄 Lizenz
 
@@ -123,6 +112,12 @@ MIT License - Siehe [LICENSE](LICENSE) für Details.
 
 ## 🙏 Credits
 
-- Basiert auf DefCon 16 Modbus Security Research
-- Nmap modbus-discover NSE Script: https://nmap.org/nsedoc/scripts/modbus-discover.html
-- Home Assistant Community
+- **Home Assistant** Community
+- **DefCon 16** Modbus Security Research
+- **Nmap** Project und modbus-discover NSE Script
+- Alle Mitwirkenden
+
+---
+
+**Maintained by:** [@b3n-secu](https://github.com/b3n-secu)
+**Repository:** [github.com/b3n-secu/Addon](https://github.com/b3n-secu/Addon)
