@@ -474,9 +474,23 @@
                     body: JSON.stringify(requestBody)
                 });
 
+                // Check if response is OK
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+                }
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 500));
+                    throw new Error(`Server gab kein JSON zurück. Container neu starten und Logs prüfen.`);
+                }
+
                 const result = await response.json();
 
-                if (result.success && result.devices.length > 0) {
+                if (result.success && result.devices && result.devices.length > 0) {
                     let message = `✓ Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`;
                     if (autoAdd && result.added_count > 0) {
                         message += ` ${result.added_count} automatisch zur Konfiguration hinzugefügt.`;
@@ -484,16 +498,21 @@
                     }
                     showAlert(message, 'success');
                     displayNetworkDevicesAuto(result.devices);
-                } else if (result.success && result.devices.length === 0) {
+                } else if (result.success && result.devices && result.devices.length === 0) {
                     deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Keine Modbus-Geräte gefunden.</div>';
                     showAlert('Scan abgeschlossen. Keine Geräte gefunden.', 'info');
-                } else {
+                } else if (result.error) {
                     deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
                     showAlert('✗ Fehler beim Scannen: ' + result.error, 'error');
+                } else {
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Unerwartete API-Antwort</div>';
+                    showAlert('✗ Unerwartete Antwort vom Server', 'error');
+                    console.error('Unexpected result:', result);
                 }
             } catch (error) {
                 deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
-                showAlert('Fehler beim automatischen Netzwerk-Scan: ' + error.message, 'error');
+                console.error('Network scan error:', error);
+                showAlert('Fehler beim Netzwerk-Scan: ' + error.message, 'error');
             }
         }
 
