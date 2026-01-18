@@ -16,7 +16,7 @@ Die **neue Version** sollte zeigen:
 ### Schnellste Methode:
 
 ```bash
-cd /pfad/zum/only_claude
+cd /pfad/zum/Addon
 
 # Container stoppen und entfernen
 docker stop modbus-config-test 2>/dev/null || true

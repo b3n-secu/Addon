@@ -31,7 +31,7 @@ Der Universal Modbus Configurator (HAMCA) vereinfacht die Konfiguration von Modb
 
 1. Fügen Sie dieses Repository zu Ihren Add-on Repositories hinzu:
    ```
-   https://github.com/b3n-secu/only_claude
+   https://github.com/b3n-secu/Addon
    ```
 
 2. Installieren Sie "Universal Modbus Configurator"
@@ -142,11 +142,11 @@ Supervisor → Universal Modbus Configurator → Logs
 
 ## Support & Dokumentation
 
-- [GitHub Repository](https://github.com/b3n-secu/only_claude)
-- [Vollständige Dokumentation](https://github.com/b3n-secu/only_claude/blob/main/README.md)
-- [Build-Anleitung](https://github.com/b3n-secu/only_claude/blob/main/BUILD.md)
-- [FAQ](https://github.com/b3n-secu/only_claude/blob/main/FAQ.md)
-- [Issues](https://github.com/b3n-secu/only_claude/issues)
+- [GitHub Repository](https://github.com/b3n-secu/Addon)
+- [Vollständige Dokumentation](https://github.com/b3n-secu/Addon/blob/main/README.md)
+- [Build-Anleitung](https://github.com/b3n-secu/Addon/blob/main/BUILD.md)
+- [FAQ](https://github.com/b3n-secu/Addon/blob/main/FAQ.md)
+- [Issues](https://github.com/b3n-secu/Addon/issues)
 
 ## Changelog
 

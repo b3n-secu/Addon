@@ -27,7 +27,7 @@ echo -e "${GREEN}✓ Cleanup complete${NC}\n"
 
 # Step 2: Build Docker image
 echo -e "${YELLOW}[2/6] Building Docker image...${NC}"
-docker build -t $IMAGE_NAME:latest .
+docker build -t $IMAGE_NAME:latest ./modbus
 echo -e "${GREEN}✓ Build complete${NC}\n"
 
 # Step 3: Create test config directory

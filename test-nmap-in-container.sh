@@ -10,7 +10,7 @@ echo ""
 
 # Build image
 echo "📦 Building Docker image..."
-docker build -t $IMAGE_NAME . > /dev/null 2>&1
+docker build -t $IMAGE_NAME ./modbus > /dev/null 2>&1
 
 if [ $? -eq 0 ]; then
     echo "✓ Build successful"

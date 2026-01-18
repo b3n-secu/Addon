@@ -44,7 +44,7 @@ Falls Sie das Addon ohne Home Assistant nutzen möchten:
 ```bash
 # Repository klonen
 git clone https://github.com/IHR_USERNAME/only_claude.git
-cd only_claude
+cd Addon
 
 # Docker Image bauen
 docker build -t universal-modbus-config .

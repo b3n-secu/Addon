@@ -93,7 +93,7 @@ Dokumentation kann immer besser werden:
 ```bash
 # Repository klonen
 git clone https://github.com/IHR_USERNAME/only_claude.git
-cd only_claude
+cd Addon
 
 # Python Virtual Environment erstellen
 python3 -m venv venv

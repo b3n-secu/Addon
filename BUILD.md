@@ -11,7 +11,7 @@
 1. **Repository klonen:**
 ```bash
 git clone <repository-url>
-cd only_claude
+cd Addon
 ```
 
 2. **Docker Image bauen:**
