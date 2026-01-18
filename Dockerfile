@@ -6,11 +6,14 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     py3-flask \
+    nmap \
+    nmap-scripts \
     && pip3 install --no-cache-dir \
     pymodbus==3.5.4 \
     pyyaml \
     flask \
-    flask-cors
+    flask-cors \
+    python-nmap
 
 # Copy data for add-on
 COPY run.sh /

@@ -306,30 +306,62 @@
 
             <!-- Network Scanner Section -->
             <div class="section">
-                <h2 class="section-title">🔍 Automatische Geräteerkennung</h2>
+                <h2 class="section-title">🔍 Automatische Geräteerkennung (Nmap-basiert)</h2>
                 <p style="margin-bottom: 15px; color: #666;">
-                    Scannt das lokale Netzwerk (/24) automatisch nach Modbus-Geräten und erkennt den Gerätetyp automatisch.
-                    Unterstützt: Siemens LOGO! 8, LOGO! 0BA7 und generische Modbus TCP Geräte.
+                    Professioneller Netzwerk-Scan mit nmap und modbus-discover NSE Script.
+                    Unterstützt: Siemens LOGO! 8, LOGO! 0BA7, Schneider, ABB, Wago und weitere Modbus-Geräte.
                 </p>
 
-                <div class="form-group" style="max-width: 500px;">
-                    <label for="networkRange">Netzwerk (optional, /24 wird automatisch erkannt)</label>
-                    <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
-                    <small style="color: #666; display: block; margin-top: 5px;">
-                        Leer lassen für automatische Netzwerk-Erkennung
-                    </small>
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="networkRange">Netzwerk (optional, /24 wird automatisch erkannt)</label>
+                        <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Leer lassen für automatische Netzwerk-Erkennung
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="portRange">Port-Range (anpassbar)</label>
+                        <input type="text" id="portRange" placeholder="502,510,20000-20100" value="502,510,20000-20100">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Format: Einzelne Ports (502,510) oder Bereiche (20000-20100)
+                        </small>
+                    </div>
                 </div>
 
                 <div style="margin-top: 15px;">
-                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 15px;">
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
                         <input type="checkbox" id="autoAddDevices" checked style="width: auto; margin-right: 8px;">
                         <span>Gefundene Geräte automatisch zur Konfiguration hinzufügen</span>
                     </label>
+                    <br>
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
+                        <input type="checkbox" id="useModbusDiscover" checked style="width: auto; margin-right: 8px;">
+                        <span>Nmap modbus-discover NSE Script verwenden (empfohlen)</span>
+                    </label>
                 </div>
 
-                <button class="button button-primary" onclick="scanNetworkAuto()" style="font-size: 1.1em; padding: 15px 30px;">
-                    🌐 Netzwerk scannen & Geräte erkennen
-                </button>
+                <div style="margin-top: 15px;">
+                    <button class="button button-primary" onclick="scanNetworkNmap()" style="font-size: 1.1em; padding: 15px 30px;">
+                        🚀 Nmap Scan starten
+                    </button>
+                    <button class="button button-secondary" onclick="scanNetworkAuto()" style="padding: 15px 30px;">
+                        ⚡ Quick Scan (Python)
+                    </button>
+                </div>
+
+                <div id="scanProgress" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="spinner"></div>
+                        <div>
+                            <strong>Scan läuft...</strong>
+                            <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;" id="scanProgressText">
+                                Nmap scannt das Netzwerk. Dies kann mehrere Minuten dauern.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="networkScanResults" class="hidden" style="margin-top: 20px;">
                     <h3 style="color: #667eea; margin-bottom: 15px;">Gefundene Geräte:</h3>
@@ -589,7 +621,72 @@
             }
         }
 
-        function displayNetworkDevicesAuto(devices) {
+        async function scanNetworkNmap() {
+            const resultsDiv = document.getElementById('networkScanResults');
+            const deviceListDiv = document.getElementById('networkDeviceList');
+            const progressDiv = document.getElementById('scanProgress');
+            const networkRange = document.getElementById('networkRange').value;
+            const portRange = document.getElementById('portRange').value;
+            const autoAdd = document.getElementById('autoAddDevices').checked;
+            const useModbusDiscover = document.getElementById('useModbusDiscover').checked;
+
+            // Show progress indicator
+            progressDiv.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
+
+            showAlert('Nmap-Scan gestartet... Dies kann mehrere Minuten dauern je nach Netzwerkgröße.', 'info');
+
+            try {
+                const requestBody = {
+                    auto_add: autoAdd,
+                    port_range: portRange || '502,510,20000-20100',
+                    use_modbus_discover: useModbusDiscover,
+                    timeout: 300
+                };
+
+                if (networkRange) {
+                    requestBody.network = networkRange;
+                }
+
+                const response = await fetch(`${API_BASE}/api/scan-network-nmap`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(requestBody)
+                });
+
+                const result = await response.json();
+
+                // Hide progress indicator
+                progressDiv.classList.add('hidden');
+
+                if (result.success && result.devices.length > 0) {
+                    resultsDiv.classList.remove('hidden');
+
+                    let message = `✓ Nmap-Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`;
+                    if (autoAdd && result.added_count > 0) {
+                        message += ` ${result.added_count} automatisch zur Konfiguration hinzugefügt.`;
+                        loadDevices();  // Reload device list
+                    }
+                    showAlert(message, 'success');
+                    displayNetworkDevicesAuto(result.devices, true);
+                } else if (result.success && result.devices.length === 0) {
+                    resultsDiv.classList.remove('hidden');
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Keine Modbus-Geräte gefunden. Versuchen Sie eine andere Port-Range.</div>';
+                    showAlert('Nmap-Scan abgeschlossen. Keine Geräte gefunden.', 'info');
+                } else {
+                    resultsDiv.classList.remove('hidden');
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                    showAlert('✗ Fehler beim Nmap-Scan: ' + result.error, 'error');
+                }
+            } catch (error) {
+                progressDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+                deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                showAlert('Fehler beim Nmap-Scan: ' + error.message, 'error');
+            }
+        }
+
+        function displayNetworkDevicesAuto(devices, isNmapScan = false) {
             const deviceListDiv = document.getElementById('networkDeviceList');
             deviceListDiv.innerHTML = '';
 
@@ -603,6 +700,12 @@
                     icon = '🟦';  // Blue square for LOGO! 8
                 } else if (device.device_type === 'LOGO_0BA7') {
                     icon = '🟩';  // Green square for LOGO! 0BA7
+                } else if (device.device_type && device.device_type.includes('SIEMENS')) {
+                    icon = '🔵';  // Blue circle for Siemens
+                } else if (device.device_type && device.device_type.includes('SCHNEIDER')) {
+                    icon = '🟢';  // Green circle for Schneider
+                } else if (device.device_type && device.device_type.includes('WAGO')) {
+                    icon = '🟡';  // Yellow circle for Wago
                 }
 
                 // Device type label
@@ -611,6 +714,17 @@
                     typeLabel = 'Siemens LOGO! 8';
                 } else if (device.device_type === 'LOGO_0BA7') {
                     typeLabel = 'Siemens LOGO! 0BA7';
+                } else if (device.manufacturer && device.model) {
+                    typeLabel = `${device.manufacturer} ${device.model}`;
+                }
+
+                // Additional info for nmap scans
+                let additionalInfo = '';
+                if (isNmapScan) {
+                    additionalInfo = `<br><small style="color: #888;">`;
+                    if (device.service) additionalInfo += `Service: ${device.service} | `;
+                    if (device.product) additionalInfo += `Product: ${device.product} | `;
+                    additionalInfo += `Scan: Nmap</small>`;
                 }
 
                 deviceCard.innerHTML = `
@@ -619,6 +733,7 @@
                         <div class="device-details">
                             <strong>${typeLabel}</strong><br>
                             IP: ${device.ip}:${device.port} | Status: ${device.status === 'online' ? '✓ Online' : '✗ Offline'}
+                            ${additionalInfo}
                         </div>
                     </div>
                     <div class="device-actions">

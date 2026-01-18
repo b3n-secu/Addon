@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
+from nmap_scanner import NmapModbusScanner
 from config_generator import ModbusConfigGenerator
 
 # Configure logging
@@ -247,6 +248,103 @@ def api_scan_network():
 
     except Exception as e:
         logger.error(f"Error scanning network: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-network-nmap', methods=['POST'])
+def api_scan_network_nmap():
+    """
+    Advanced network scan using nmap with modbus-discover script
+    Supports custom port ranges and efficient scanning
+    """
+    try:
+        data = request.json or {}
+        network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
+        port_range = data.get('port_range', '502,510,20000-20100')  # Configurable port range
+        auto_add = data.get('auto_add', False)  # Automatically add to device list
+        use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
+        timeout = data.get('timeout', 300)  # Scan timeout in seconds
+
+        logger.info(f"Starting nmap network scan on {network or 'auto-detected network'}...")
+        logger.info(f"Port range: {port_range}, timeout: {timeout}s")
+
+        # Initialize nmap scanner
+        nmap_scanner = NmapModbusScanner()
+
+        # Perform nmap scan
+        found_devices = nmap_scanner.scan_network_nmap(
+            network=network,
+            port_range=port_range,
+            timeout=timeout,
+            use_modbus_discover=use_modbus_discover
+        )
+
+        # Automatically add detected devices if requested
+        added_count = 0
+        if auto_add:
+            for device in found_devices:
+                if 'manufacturer' in device and 'model' in device:
+                    new_device = {
+                        'name': device['name'],
+                        'manufacturer': device['manufacturer'],
+                        'model': device['model'],
+                        'host': device['ip'],
+                        'port': device['port'],
+                        'slave_id': 1
+                    }
+                    devices.append(new_device)
+                    added_count += 1
+                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+
+            # Save configuration if devices were added
+            if added_count > 0:
+                save_config()
+
+        logger.info(f"Nmap scan complete: found {len(found_devices)} devices, added {added_count}")
+        return jsonify({
+            'success': True,
+            'devices': found_devices,
+            'total': len(found_devices),
+            'added_count': added_count,
+            'scan_method': 'nmap'
+        })
+
+    except Exception as e:
+        logger.error(f"Error during nmap scan: {e}", exc_info=True)
+        return jsonify({'error': str(e), 'scan_method': 'nmap'}), 500
+
+
+@app.route('/api/detect-modbus-ports', methods=['POST'])
+def api_detect_modbus_ports():
+    """
+    Detect all Modbus ports on a specific IP address
+    Useful for finding non-standard Modbus ports
+    """
+    try:
+        data = request.json
+        ip = data.get('ip')
+
+        if not ip:
+            return jsonify({'error': 'IP address is required'}), 400
+
+        logger.info(f"Detecting Modbus ports on {ip}...")
+
+        # Initialize nmap scanner
+        nmap_scanner = NmapModbusScanner()
+
+        # Detect Modbus ports
+        modbus_ports = nmap_scanner.detect_modbus_ports(ip)
+
+        logger.info(f"Found {len(modbus_ports)} Modbus port(s) on {ip}: {modbus_ports}")
+        return jsonify({
+            'success': True,
+            'ip': ip,
+            'modbus_ports': modbus_ports,
+            'total': len(modbus_ports)
+        })
+
+    except Exception as e:
+        logger.error(f"Error detecting Modbus ports: {e}")
         return jsonify({'error': str(e)}), 500
 
 
