@@ -7,7 +7,7 @@ import logging
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
-from modbus_scanner import ModbusScanner
+from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
 
 # Configure logging
@@ -22,7 +22,16 @@ CORS(app)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
-MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', '/config/modbus_generated.yaml')
+# Use different default paths depending on environment
+if os.path.exists('/config'):
+    # Running in Home Assistant addon
+    DEFAULT_MODBUS_PATH = '/config/modbus_generated.yaml'
+else:
+    # Running locally or in development - use absolute path in app directory
+    DEFAULT_MODBUS_PATH = os.path.abspath('./modbus_generated.yaml')
+
+MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
+logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
 
 # Global state
 devices = []
@@ -198,6 +207,143 @@ def api_scan_device():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/scan-network', methods=['POST'])
+def api_scan_network():
+    """Scan network for Modbus devices with automatic device detection"""
+    try:
+        data = request.json or {}
+        network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
+        ports = data.get('ports', [502, 510])
+        auto_detect = data.get('auto_detect', True)  # Auto-detect device type
+        auto_add = data.get('auto_add', False)  # Automatically add to device list
+
+        logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
+        found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
+
+        # Automatically add detected devices if requested
+        added_count = 0
+        if auto_add:
+            for device in found_devices:
+                if 'manufacturer' in device and 'model' in device:
+                    new_device = {
+                        'name': device['name'],
+                        'manufacturer': device['manufacturer'],
+                        'model': device['model'],
+                        'host': device['ip'],
+                        'port': device['port'],
+                        'slave_id': 1
+                    }
+                    devices.append(new_device)
+                    added_count += 1
+                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+
+        logger.info(f"Network scan complete: found {len(found_devices)} devices, added {added_count}")
+        return jsonify({
+            'success': True,
+            'devices': found_devices,
+            'total': len(found_devices),
+            'added_count': added_count
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning network: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-logo8', methods=['POST'])
+def api_scan_logo8():
+    """Detailed scan for Siemens LOGO! 8 devices"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Starting LOGO! 8 detailed scan on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_logo8_addresses(slave_id)
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+
+        logger.info(f"LOGO! 8 scan complete: {host}:{port} - found {total} addresses")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': total
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning LOGO! 8 device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-logo0ba7', methods=['POST'])
+def api_scan_logo0ba7():
+    """Detailed scan for Siemens LOGO! 0BA7 devices"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Starting LOGO! 0BA7 detailed scan on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_logo0ba7_addresses(slave_id)
+
+        # Count total found addresses
+        total = sum(len(v) for v in results.values())
+
+        logger.info(f"LOGO! 0BA7 scan complete: {host}:{port} - found {total} addresses")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': total
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning LOGO! 0BA7 device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-addresses', methods=['POST'])
+def api_scan_addresses():
+    """Scan specific addresses"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+        address_list = data.get('addresses', [])
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        if not address_list:
+            return jsonify({'error': 'Address list is required'}), 400
+
+        logger.info(f"Scanning specific addresses on {host}:{port}...")
+        scanner = ModbusScanner(host, port)
+        results = scanner.scan_detailed_addresses(address_list, slave_id)
+
+        logger.info(f"Address scan complete: {host}:{port} - found {len(results)} values")
+        return jsonify({
+            'success': True,
+            'results': results,
+            'total': len(results)
+        })
+
+    except Exception as e:
+        logger.error(f"Error scanning addresses: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/test-connection', methods=['POST'])
 def api_test_connection():
     """Test connection to a device"""
@@ -228,14 +374,23 @@ def api_test_connection():
 def api_generate_config():
     """Generate Modbus configuration"""
     try:
-        data = request.json
+        data = request.json or {}
         output_path = data.get('output_path', MODBUS_CONFIG_PATH)
         include_scan = data.get('include_scan', False)
+
+        # Check if there are any devices
+        if not devices:
+            logger.warning("No devices configured")
+            return jsonify({
+                'success': False,
+                'error': 'Keine Geräte konfiguriert. Bitte fügen Sie zuerst ein Gerät hinzu.'
+            }), 400
 
         # Clear previous configuration
         config_generator.clear()
 
         # Add all devices
+        added_count = 0
         for device in devices:
             scan_results = None
 
@@ -257,21 +412,36 @@ def api_generate_config():
                 except Exception as e:
                     logger.warning(f"Scan failed for {device['name']}: {e}")
 
-            config_generator.add_device(device, scan_results)
+            if config_generator.add_device(device, scan_results):
+                added_count += 1
+
+        if added_count == 0:
+            return jsonify({
+                'success': False,
+                'error': 'Keine Geräte konnten zur Konfiguration hinzugefügt werden.'
+            }), 400
 
         # Generate YAML
         yaml_config = config_generator.generate_yaml(output_path)
 
-        logger.info(f"Generated configuration with {len(devices)} devices")
+        # Get absolute path for display
+        abs_path = os.path.abspath(output_path)
+
+        logger.info(f"Generated configuration with {added_count} devices at {abs_path}")
         return jsonify({
             'success': True,
             'config': yaml_config,
-            'path': output_path
+            'path': abs_path,
+            'absolute_path': abs_path,
+            'devices_count': added_count
         })
 
     except Exception as e:
-        logger.error(f"Error generating config: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error generating config: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Fehler beim Generieren der Konfiguration: {str(e)}'
+        }), 500
 
 
 @app.route('/api/config', methods=['GET'])
@@ -287,6 +457,63 @@ def api_get_config():
     except Exception as e:
         logger.error(f"Error reading config: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/check-devices-in-config', methods=['GET'])
+def api_check_devices_in_config():
+    """Check which devices are present in the generated configuration"""
+    try:
+        if not os.path.exists(MODBUS_CONFIG_PATH):
+            return jsonify({
+                'success': True,
+                'devices_in_config': {},
+                'config_exists': False
+            })
+
+        # Read the generated YAML config
+        with open(MODBUS_CONFIG_PATH, 'r') as f:
+            config_content = f.read()
+
+        # Parse YAML to get device names
+        import yaml
+        config_data = yaml.safe_load(config_content)
+
+        if not config_data:
+            return jsonify({
+                'success': True,
+                'devices_in_config': {},
+                'config_exists': True
+            })
+
+        # Extract device names from config
+        config_device_names = set()
+        if isinstance(config_data, list):
+            for device in config_data:
+                if isinstance(device, dict) and 'name' in device:
+                    config_device_names.add(device['name'])
+
+        # Check each device
+        devices_status = {}
+        for i, device in enumerate(devices):
+            device_name = device.get('name', f"{device.get('manufacturer', '')}_{device.get('model', '')}")
+            devices_status[i] = {
+                'name': device_name,
+                'in_config': device_name in config_device_names
+            }
+
+        return jsonify({
+            'success': True,
+            'devices_in_config': devices_status,
+            'config_exists': True,
+            'total_in_config': sum(1 for d in devices_status.values() if d['in_config'])
+        })
+
+    except Exception as e:
+        logger.error(f"Error checking devices in config: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 if __name__ == '__main__':

@@ -168,6 +168,31 @@
             font-weight: 600;
             color: #333;
             margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.in-config {
+            background-color: #28a745;
+            box-shadow: 0 0 8px rgba(40, 167, 69, 0.6);
+        }
+
+        .status-indicator.not-in-config {
+            background-color: #dc3545;
+            box-shadow: 0 0 8px rgba(220, 53, 69, 0.6);
+        }
+
+        .status-indicator.unknown {
+            background-color: #6c757d;
         }
 
         .device-details {
@@ -279,61 +304,37 @@
             <!-- Alert Area -->
             <div id="alertArea"></div>
 
-            <!-- Add Device Section -->
+            <!-- Network Scanner Section -->
             <div class="section">
-                <h2 class="section-title">Neues Gerät hinzufügen</h2>
+                <h2 class="section-title">🔍 Automatische Geräteerkennung</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Scannt das lokale Netzwerk (/24) automatisch nach Modbus-Geräten und erkennt den Gerätetyp automatisch.
+                    Unterstützt: Siemens LOGO! 8, LOGO! 0BA7 und generische Modbus TCP Geräte.
+                </p>
 
-                <form id="addDeviceForm">
-                    <div class="grid">
-                        <div class="form-group">
-                            <label for="manufacturer">Hersteller</label>
-                            <select id="manufacturer" required>
-                                <option value="">-- Wählen --</option>
-                            </select>
-                        </div>
+                <div class="form-group" style="max-width: 500px;">
+                    <label for="networkRange">Netzwerk (optional, /24 wird automatisch erkannt)</label>
+                    <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
+                    <small style="color: #666; display: block; margin-top: 5px;">
+                        Leer lassen für automatische Netzwerk-Erkennung
+                    </small>
+                </div>
 
-                        <div class="form-group">
-                            <label for="model">Modell</label>
-                            <select id="model" required disabled>
-                                <option value="">-- Erst Hersteller wählen --</option>
-                            </select>
-                        </div>
+                <div style="margin-top: 15px;">
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 15px;">
+                        <input type="checkbox" id="autoAddDevices" checked style="width: auto; margin-right: 8px;">
+                        <span>Gefundene Geräte automatisch zur Konfiguration hinzufügen</span>
+                    </label>
+                </div>
 
-                        <div class="form-group">
-                            <label for="deviceName">Gerätename</label>
-                            <input type="text" id="deviceName" placeholder="z.B. Logo1_Haupthaus" required>
-                        </div>
+                <button class="button button-primary" onclick="scanNetworkAuto()" style="font-size: 1.1em; padding: 15px 30px;">
+                    🌐 Netzwerk scannen & Geräte erkennen
+                </button>
 
-                        <div class="form-group">
-                            <label for="host">IP-Adresse</label>
-                            <input type="text" id="host" placeholder="192.168.1.100" required>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="port">Port</label>
-                            <input type="number" id="port" placeholder="502" value="502">
-                        </div>
-
-                        <div class="form-group">
-                            <label for="slaveId">Slave ID (optional)</label>
-                            <input type="number" id="slaveId" placeholder="1" min="1" max="247">
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 20px;">
-                        <button type="button" class="button button-secondary" onclick="testConnection()">
-                            Verbindung testen
-                        </button>
-                        <button type="button" class="button button-secondary" onclick="scanDevice()">
-                            Gerät scannen
-                        </button>
-                        <button type="submit" class="button button-primary">
-                            Gerät hinzufügen
-                        </button>
-                    </div>
-                </form>
-
-                <div id="scanResults" class="scan-results hidden"></div>
+                <div id="networkScanResults" class="hidden" style="margin-top: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Gefundene Geräte:</h3>
+                    <div id="networkDeviceList"></div>
+                </div>
             </div>
 
             <!-- Device List Section -->
@@ -365,16 +366,11 @@
 
     <script>
         const API_BASE = window.location.origin;
-        let currentScanResults = null;
+        let devicesConfigStatus = {};
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            loadManufacturers();
             loadDevices();
-
-            document.getElementById('addDeviceForm').addEventListener('submit', addDevice);
-            document.getElementById('manufacturer').addEventListener('change', onManufacturerChange);
-            document.getElementById('model').addEventListener('change', onModelChange);
         });
 
         function showAlert(message, type = 'info') {
@@ -389,199 +385,70 @@
             }, 5000);
         }
 
-        async function loadManufacturers() {
-            try {
-                const response = await fetch(`${API_BASE}/api/manufacturers`);
-                const manufacturers = await response.json();
+        async function scanNetworkAuto() {
+            const resultsDiv = document.getElementById('networkScanResults');
+            const deviceListDiv = document.getElementById('networkDeviceList');
+            const networkRange = document.getElementById('networkRange').value;
+            const autoAdd = document.getElementById('autoAddDevices').checked;
 
-                const select = document.getElementById('manufacturer');
-                manufacturers.forEach(mfr => {
-                    const option = document.createElement('option');
-                    option.value = mfr;
-                    option.textContent = mfr;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                showAlert('Fehler beim Laden der Hersteller: ' + error.message, 'error');
-            }
-        }
-
-        async function onManufacturerChange(e) {
-            const manufacturer = e.target.value;
-            const modelSelect = document.getElementById('model');
-
-            modelSelect.innerHTML = '<option value="">-- Wählen --</option>';
-            modelSelect.disabled = !manufacturer;
-
-            if (manufacturer) {
-                try {
-                    const response = await fetch(`${API_BASE}/api/models/${encodeURIComponent(manufacturer)}`);
-                    const models = await response.json();
-
-                    models.forEach(model => {
-                        const option = document.createElement('option');
-                        option.value = model;
-                        option.textContent = model;
-                        modelSelect.appendChild(option);
-                    });
-                } catch (error) {
-                    showAlert('Fehler beim Laden der Modelle: ' + error.message, 'error');
-                }
-            }
-        }
-
-        async function onModelChange(e) {
-            const manufacturer = document.getElementById('manufacturer').value;
-            const model = e.target.value;
-
-            if (manufacturer && model) {
-                try {
-                    const response = await fetch(`${API_BASE}/api/profile/${encodeURIComponent(manufacturer)}/${encodeURIComponent(model)}`);
-                    const profile = await response.json();
-
-                    if (profile.port) {
-                        document.getElementById('port').value = profile.port;
-                    }
-                } catch (error) {
-                    showAlert('Fehler beim Laden des Profils: ' + error.message, 'error');
-                }
-            }
-        }
-
-        async function testConnection() {
-            const host = document.getElementById('host').value;
-            const port = document.getElementById('port').value;
-
-            if (!host) {
-                showAlert('Bitte IP-Adresse eingeben', 'error');
-                return;
-            }
-
-            showAlert('Teste Verbindung...', 'info');
-
-            try {
-                const response = await fetch(`${API_BASE}/api/test-connection`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ host, port: parseInt(port) })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    showAlert('✓ Verbindung erfolgreich!', 'success');
-                } else {
-                    showAlert('✗ Verbindung fehlgeschlagen: ' + result.message, 'error');
-                }
-            } catch (error) {
-                showAlert('Fehler beim Testen der Verbindung: ' + error.message, 'error');
-            }
-        }
-
-        async function scanDevice() {
-            const host = document.getElementById('host').value;
-            const port = document.getElementById('port').value;
-            const manufacturer = document.getElementById('manufacturer').value;
-            const model = document.getElementById('model').value;
-            const slaveId = document.getElementById('slaveId').value;
-
-            if (!host) {
-                showAlert('Bitte IP-Adresse eingeben', 'error');
-                return;
-            }
-
-            showAlert('Scanne Gerät...', 'info');
-
-            try {
-                const response = await fetch(`${API_BASE}/api/scan`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        host,
-                        port: parseInt(port),
-                        manufacturer,
-                        model,
-                        slave_id: slaveId ? parseInt(slaveId) : 1
-                    })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    currentScanResults = result.results;
-                    displayScanResults(result);
-                    showAlert(`✓ Scan erfolgreich! ${result.total} Register gefunden.`, 'success');
-                } else {
-                    showAlert('✗ Scan fehlgeschlagen: ' + result.message, 'error');
-                }
-            } catch (error) {
-                showAlert('Fehler beim Scannen: ' + error.message, 'error');
-            }
-        }
-
-        function displayScanResults(result) {
-            const resultsDiv = document.getElementById('scanResults');
             resultsDiv.classList.remove('hidden');
+            deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk und erkenne Geräte automatisch...</p></div>';
 
-            resultsDiv.innerHTML = `
-                <h4>Scan Ergebnisse:</h4>
-                <div>
-                    <div class="scan-stat">
-                        <div class="scan-stat-label">Input Register</div>
-                        <div class="scan-stat-value">${result.results.input_registers.length}</div>
-                    </div>
-                    <div class="scan-stat">
-                        <div class="scan-stat-label">Holding Register</div>
-                        <div class="scan-stat-value">${result.results.holding_registers.length}</div>
-                    </div>
-                    <div class="scan-stat">
-                        <div class="scan-stat-label">Discrete Inputs</div>
-                        <div class="scan-stat-value">${result.results.discrete_inputs.length}</div>
-                    </div>
-                    <div class="scan-stat">
-                        <div class="scan-stat-label">Coils</div>
-                        <div class="scan-stat-value">${result.results.coils.length}</div>
-                    </div>
-                    <div class="scan-stat">
-                        <div class="scan-stat-label">Gesamt</div>
-                        <div class="scan-stat-value">${result.total}</div>
-                    </div>
-                </div>
-            `;
-        }
-
-        async function addDevice(e) {
-            e.preventDefault();
-
-            const device = {
-                manufacturer: document.getElementById('manufacturer').value,
-                model: document.getElementById('model').value,
-                name: document.getElementById('deviceName').value,
-                host: document.getElementById('host').value,
-                port: parseInt(document.getElementById('port').value),
-                slave_id: document.getElementById('slaveId').value ? parseInt(document.getElementById('slaveId').value) : null
-            };
+            showAlert('Automatischer Netzwerk-Scan gestartet... Dies kann einige Minuten dauern.', 'info');
 
             try {
-                const response = await fetch(`${API_BASE}/api/devices`, {
+                const requestBody = {
+                    auto_detect: true,
+                    auto_add: autoAdd,
+                    ports: [502, 510]
+                };
+
+                if (networkRange) {
+                    requestBody.network = networkRange;
+                }
+
+                const response = await fetch(`${API_BASE}/api/scan-network`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(device)
+                    body: JSON.stringify(requestBody)
                 });
 
                 const result = await response.json();
 
-                if (result.success) {
-                    showAlert('✓ Gerät erfolgreich hinzugefügt!', 'success');
-                    document.getElementById('addDeviceForm').reset();
-                    document.getElementById('scanResults').classList.add('hidden');
-                    loadDevices();
+                if (result.success && result.devices.length > 0) {
+                    let message = `✓ Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`;
+                    if (autoAdd && result.added_count > 0) {
+                        message += ` ${result.added_count} automatisch zur Konfiguration hinzugefügt.`;
+                        loadDevices();  // Reload device list
+                    }
+                    showAlert(message, 'success');
+                    displayNetworkDevicesAuto(result.devices);
+                } else if (result.success && result.devices.length === 0) {
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Keine Modbus-Geräte gefunden.</div>';
+                    showAlert('Scan abgeschlossen. Keine Geräte gefunden.', 'info');
                 } else {
-                    showAlert('✗ Fehler: ' + result.error, 'error');
+                    deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                    showAlert('✗ Fehler beim Scannen: ' + result.error, 'error');
                 }
             } catch (error) {
-                showAlert('Fehler beim Hinzufügen: ' + error.message, 'error');
+                deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
+                showAlert('Fehler beim automatischen Netzwerk-Scan: ' + error.message, 'error');
             }
+        }
+
+        async function checkDevicesInConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/api/check-devices-in-config`);
+                const result = await response.json();
+
+                if (result.success) {
+                    devicesConfigStatus = result.devices_in_config || {};
+                    return result;
+                }
+            } catch (error) {
+                console.error('Error checking devices in config:', error);
+            }
+            return null;
         }
 
         async function loadDevices() {
@@ -589,8 +456,13 @@
             deviceList.innerHTML = '<li class="loading"><div class="spinner"></div><p>Lade Geräte...</p></li>';
 
             try {
-                const response = await fetch(`${API_BASE}/api/devices`);
-                const devices = await response.json();
+                // Load devices and config status in parallel
+                const [devicesResponse, configStatus] = await Promise.all([
+                    fetch(`${API_BASE}/api/devices`),
+                    checkDevicesInConfig()
+                ]);
+
+                const devices = await devicesResponse.json();
 
                 if (devices.length === 0) {
                     deviceList.innerHTML = '<li style="text-align: center; padding: 20px; color: #666;">Keine Geräte konfiguriert</li>';
@@ -601,9 +473,27 @@
                 devices.forEach((device, index) => {
                     const li = document.createElement('li');
                     li.className = 'device-item';
+
+                    // Determine status indicator
+                    let statusIndicator = '';
+                    const deviceStatus = devicesConfigStatus[index];
+
+                    if (deviceStatus) {
+                        if (deviceStatus.in_config) {
+                            statusIndicator = '<span class="status-indicator in-config" title="In Konfiguration vorhanden"></span>';
+                        } else {
+                            statusIndicator = '<span class="status-indicator not-in-config" title="Nicht in Konfiguration"></span>';
+                        }
+                    } else {
+                        statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
+                    }
+
                     li.innerHTML = `
                         <div class="device-info">
-                            <div class="device-name">${device.name}</div>
+                            <div class="device-name">
+                                ${statusIndicator}
+                                <span>${device.name}</span>
+                            </div>
                             <div class="device-details">
                                 ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
                                 ${device.slave_id ? ` | Slave: ${device.slave_id}` : ''}
@@ -657,7 +547,10 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(`✓ Konfiguration erfolgreich generiert!\nPfad: ${result.path}`, 'success');
+                    showAlert(`✓ Konfiguration erfolgreich generiert!\nPfad: ${result.path}\nGeräte in Konfiguration: ${result.devices_count}`, 'success');
+
+                    // Automatically update device list to show config status
+                    loadDevices();
                 } else {
                     showAlert('✗ Fehler: ' + result.error, 'error');
                 }
@@ -694,6 +587,46 @@
             } catch (error) {
                 showAlert('Fehler beim Laden der Konfiguration: ' + error.message, 'error');
             }
+        }
+
+        function displayNetworkDevicesAuto(devices) {
+            const deviceListDiv = document.getElementById('networkDeviceList');
+            deviceListDiv.innerHTML = '';
+
+            devices.forEach(device => {
+                const deviceCard = document.createElement('div');
+                deviceCard.className = 'device-item';
+
+                // Icon based on device type
+                let icon = '🌐';
+                if (device.device_type === 'LOGO_8') {
+                    icon = '🟦';  // Blue square for LOGO! 8
+                } else if (device.device_type === 'LOGO_0BA7') {
+                    icon = '🟩';  // Green square for LOGO! 0BA7
+                }
+
+                // Device type label
+                let typeLabel = 'Generic Modbus TCP';
+                if (device.device_type === 'LOGO_8') {
+                    typeLabel = 'Siemens LOGO! 8';
+                } else if (device.device_type === 'LOGO_0BA7') {
+                    typeLabel = 'Siemens LOGO! 0BA7';
+                }
+
+                deviceCard.innerHTML = `
+                    <div class="device-info">
+                        <div class="device-name">${icon} ${device.name || device.ip}</div>
+                        <div class="device-details">
+                            <strong>${typeLabel}</strong><br>
+                            IP: ${device.ip}:${device.port} | Status: ${device.status === 'online' ? '✓ Online' : '✗ Offline'}
+                        </div>
+                    </div>
+                    <div class="device-actions">
+                        <span style="color: #28a745; font-weight: 600;">✓ Automatisch erkannt</span>
+                    </div>
+                `;
+                deviceListDiv.appendChild(deviceCard);
+            });
         }
     </script>
 </body>
