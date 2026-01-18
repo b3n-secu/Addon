@@ -1,19 +1,23 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-# Install requirements for add-on
+# Install system dependencies
 RUN apk add --no-cache \
     python3 \
     py3-pip \
     py3-flask \
     nmap \
     nmap-scripts \
-    && pip3 install --no-cache-dir \
+    gcc \
+    musl-dev \
+    python3-dev \
+    && pip3 install --no-cache-dir --break-system-packages \
     pymodbus==3.5.4 \
     pyyaml \
     flask \
     flask-cors \
-    python-nmap
+    && pip3 install --no-cache-dir --break-system-packages --no-build-isolation python-nmap \
+    && apk del gcc musl-dev python3-dev
 
 # Copy data for add-on
 COPY run.sh /
