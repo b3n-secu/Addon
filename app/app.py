@@ -8,8 +8,15 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
-from nmap_scanner import NmapModbusScanner
 from config_generator import ModbusConfigGenerator
+
+# Try to import nmap scanner (optional dependency)
+try:
+    from nmap_scanner import NmapModbusScanner
+    NMAP_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Nmap scanner not available: {e}. Install 'nmap' and 'python-nmap' for advanced scanning.")
+    NMAP_AVAILABLE = False
 
 # Configure logging
 logging.basicConfig(
@@ -73,6 +80,16 @@ def index():
 def serve_static(path):
     """Serve static files"""
     return send_from_directory('static', path)
+
+
+@app.route('/api/status', methods=['GET'])
+def api_status():
+    """Get system status and capabilities"""
+    return jsonify({
+        'success': True,
+        'nmap_available': NMAP_AVAILABLE,
+        'version': '1.0.0'
+    })
 
 
 @app.route('/api/manufacturers', methods=['GET'])
@@ -257,6 +274,13 @@ def api_scan_network_nmap():
     Advanced network scan using nmap with modbus-discover script
     Supports custom port ranges and efficient scanning
     """
+    if not NMAP_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Nmap is not available. Please install nmap and python-nmap packages.',
+            'fallback': 'Use the Quick Scan (Python) instead for basic functionality.'
+        }), 503
+
     try:
         data = request.json or {}
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
@@ -320,6 +344,12 @@ def api_detect_modbus_ports():
     Detect all Modbus ports on a specific IP address
     Useful for finding non-standard Modbus ports
     """
+    if not NMAP_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Nmap is not available. Please install nmap and python-nmap packages.'
+        }), 503
+
     try:
         data = request.json
         ip = data.get('ip')

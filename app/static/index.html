@@ -399,11 +399,40 @@
     <script>
         const API_BASE = window.location.origin;
         let devicesConfigStatus = {};
+        let nmapAvailable = false;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
+            checkSystemStatus();
             loadDevices();
         });
+
+        async function checkSystemStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/status`);
+                const status = await response.json();
+
+                if (status.success) {
+                    nmapAvailable = status.nmap_available;
+
+                    // Show warning if nmap is not available
+                    if (!nmapAvailable) {
+                        showAlert('⚠️ Nmap ist nicht verfügbar. Verwenden Sie den Quick Scan (Python) für grundlegende Funktionalität.', 'info');
+
+                        // Disable nmap scan button
+                        const nmapButton = document.querySelector('button[onclick="scanNetworkNmap()"]');
+                        if (nmapButton) {
+                            nmapButton.disabled = true;
+                            nmapButton.title = 'Nmap ist nicht installiert';
+                            nmapButton.style.opacity = '0.5';
+                            nmapButton.style.cursor = 'not-allowed';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking system status:', error);
+            }
+        }
 
         function showAlert(message, type = 'info') {
             const alertArea = document.getElementById('alertArea');
@@ -622,6 +651,12 @@
         }
 
         async function scanNetworkNmap() {
+            // Check if nmap is available
+            if (!nmapAvailable) {
+                showAlert('❌ Nmap ist nicht verfügbar. Bitte verwenden Sie den Quick Scan (Python) oder installieren Sie nmap in der Docker-Umgebung.', 'error');
+                return;
+            }
+
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
             const progressDiv = document.getElementById('scanProgress');
