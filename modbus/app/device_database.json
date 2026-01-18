@@ -1,0 +1,373 @@
+{
+  "version": "1.0.0",
+  "description": "Modbus device database with port mappings, manufacturers, and device types",
+  "last_updated": "2026-01-18",
+
+  "port_mappings": {
+    "102": {
+      "protocol": "ISO-TSAP (RFC1006)",
+      "description": "Siemens S7 Communication",
+      "common_devices": [
+        {
+          "manufacturer": "Siemens",
+          "series": "S7",
+          "models": ["S7-300", "S7-400", "S7-1200", "S7-1500"],
+          "device_type": "PLC",
+          "default_model": "S7 PLC",
+          "modbus_support": "via CP module or built-in",
+          "typical_features": {
+            "max_connections": 8,
+            "supports_read_coils": true,
+            "supports_read_discrete_inputs": true,
+            "supports_read_holding_registers": true,
+            "supports_read_input_registers": true,
+            "supports_write_single_coil": true,
+            "supports_write_single_register": true,
+            "supports_write_multiple_coils": true,
+            "supports_write_multiple_registers": true
+          }
+        }
+      ]
+    },
+
+    "161": {
+      "protocol": "SNMP",
+      "description": "Simple Network Management Protocol (sometimes used for industrial devices)",
+      "common_devices": []
+    },
+
+    "502": {
+      "protocol": "Modbus TCP",
+      "description": "Standard Modbus TCP port (IANA registered)",
+      "common_devices": [
+        {
+          "manufacturer": "Generic",
+          "device_type": "Modbus TCP Device",
+          "default_model": "Modbus TCP",
+          "modbus_support": "native",
+          "typical_features": {
+            "supports_read_coils": true,
+            "supports_read_discrete_inputs": true,
+            "supports_read_holding_registers": true,
+            "supports_read_input_registers": true,
+            "supports_write_single_coil": true,
+            "supports_write_single_register": true,
+            "supports_write_multiple_coils": true,
+            "supports_write_multiple_registers": true
+          }
+        },
+        {
+          "manufacturer": "Schneider Electric",
+          "series": "Modicon",
+          "models": ["M340", "M580", "Quantum", "Premium"],
+          "device_type": "PLC",
+          "default_model": "Modicon PLC"
+        },
+        {
+          "manufacturer": "ABB",
+          "series": "AC500",
+          "models": ["AC500", "AC500-eCo", "AC500-S"],
+          "device_type": "PLC",
+          "default_model": "AC500 PLC"
+        },
+        {
+          "manufacturer": "Wago",
+          "series": "PFC",
+          "models": ["750-8xx", "750-88xx"],
+          "device_type": "Controller",
+          "default_model": "PFC Controller"
+        }
+      ]
+    },
+
+    "510": {
+      "protocol": "Modbus TCP (alternative)",
+      "description": "Alternative Modbus TCP port",
+      "common_devices": [
+        {
+          "manufacturer": "Generic",
+          "device_type": "Modbus TCP Device",
+          "default_model": "Modbus TCP",
+          "modbus_support": "native"
+        }
+      ]
+    },
+
+    "4840": {
+      "protocol": "OPC UA",
+      "description": "OPC Unified Architecture (often alongside Modbus)",
+      "common_devices": []
+    },
+
+    "20000-20100": {
+      "protocol": "Modbus TCP Gateway",
+      "description": "Common port range for Modbus TCP/RTU gateways and converters",
+      "common_devices": [
+        {
+          "manufacturer": "Generic",
+          "device_type": "Modbus Gateway",
+          "default_model": "Modbus TCP/RTU Gateway",
+          "modbus_support": "gateway"
+        },
+        {
+          "manufacturer": "Moxa",
+          "series": "MGate",
+          "models": ["MB3170", "MB3270", "MB3480"],
+          "device_type": "Gateway",
+          "default_model": "MGate Modbus Gateway"
+        }
+      ]
+    },
+
+    "44818": {
+      "protocol": "EtherNet/IP",
+      "description": "Allen-Bradley / Rockwell Automation (sometimes supports Modbus)",
+      "common_devices": [
+        {
+          "manufacturer": "Allen-Bradley",
+          "series": "ControlLogix",
+          "models": ["1756-L8x", "CompactLogix 5380"],
+          "device_type": "PLC",
+          "default_model": "ControlLogix"
+        }
+      ]
+    },
+
+    "2222": {
+      "protocol": "EtherCAT",
+      "description": "Beckhoff (may support Modbus as secondary protocol)",
+      "common_devices": []
+    }
+  },
+
+  "manufacturers": {
+    "siemens": {
+      "name": "Siemens",
+      "country": "Germany",
+      "website": "https://www.siemens.com",
+      "product_lines": {
+        "LOGO!": {
+          "description": "Logic Module for basic automation",
+          "models": {
+            "LOGO! 8": {
+              "full_name": "LOGO! 8.x (e.g., 8.3, 8.4)",
+              "modbus_tcp": true,
+              "default_port": 502,
+              "addressing": {
+                "type": "offset-based",
+                "offset_function": "lg8add",
+                "vm_offset": 8192,
+                "am_offset": 528,
+                "naq_offset": 1032
+              },
+              "register_ranges": {
+                "digital_inputs": "I1-I24",
+                "digital_outputs": "Q1-Q20",
+                "network_inputs": "NI1-NI64",
+                "network_outputs": "NQ1-NQ64",
+                "analog_inputs": "AI1-AI8",
+                "analog_outputs": "AQ1-AQ8",
+                "markers": "M1-M64",
+                "analog_markers": "AM1-AM64"
+              }
+            },
+            "LOGO! 0BA7": {
+              "full_name": "LOGO! 0BA7 (legacy 7.x series)",
+              "modbus_tcp": true,
+              "default_port": 502,
+              "addressing": {
+                "type": "direct",
+                "note": "Different addressing than LOGO! 8"
+              },
+              "register_ranges": {
+                "digital_inputs": "I1-I24",
+                "digital_outputs": "Q1-Q16",
+                "markers": "M1-M27",
+                "analog_markers": "AM1-AM64"
+              }
+            }
+          }
+        },
+        "S7": {
+          "description": "Professional PLC series",
+          "models": {
+            "S7-300": {
+              "full_name": "SIMATIC S7-300",
+              "modbus_tcp": "via CP343-1 module or PROFINET",
+              "default_port": 102,
+              "typical_ports": [102, 502]
+            },
+            "S7-400": {
+              "full_name": "SIMATIC S7-400",
+              "modbus_tcp": "via CP443-1 module",
+              "default_port": 102,
+              "typical_ports": [102, 502]
+            },
+            "S7-1200": {
+              "full_name": "SIMATIC S7-1200",
+              "modbus_tcp": "built-in",
+              "default_port": 502,
+              "typical_ports": [502]
+            },
+            "S7-1500": {
+              "full_name": "SIMATIC S7-1500",
+              "modbus_tcp": "built-in",
+              "default_port": 502,
+              "typical_ports": [502]
+            }
+          }
+        }
+      }
+    },
+
+    "schneider": {
+      "name": "Schneider Electric",
+      "country": "France",
+      "website": "https://www.se.com",
+      "product_lines": {
+        "Modicon": {
+          "description": "Modicon PLC series (inventor of Modbus protocol)",
+          "models": {
+            "M340": {
+              "full_name": "Modicon M340",
+              "modbus_tcp": "built-in",
+              "default_port": 502
+            },
+            "M580": {
+              "full_name": "Modicon M580",
+              "modbus_tcp": "built-in",
+              "default_port": 502
+            },
+            "Quantum": {
+              "full_name": "Modicon Quantum",
+              "modbus_tcp": "via Ethernet module",
+              "default_port": 502
+            }
+          }
+        }
+      }
+    },
+
+    "abb": {
+      "name": "ABB",
+      "country": "Switzerland",
+      "website": "https://www.abb.com",
+      "product_lines": {
+        "AC500": {
+          "description": "AC500 PLC series",
+          "models": {
+            "AC500": {
+              "full_name": "ABB AC500",
+              "modbus_tcp": "built-in",
+              "default_port": 502
+            },
+            "AC500-eCo": {
+              "full_name": "ABB AC500-eCo",
+              "modbus_tcp": "built-in",
+              "default_port": 502
+            }
+          }
+        }
+      }
+    },
+
+    "wago": {
+      "name": "Wago",
+      "country": "Germany",
+      "website": "https://www.wago.com",
+      "product_lines": {
+        "PFC": {
+          "description": "PFC Controller series",
+          "models": {
+            "750-8xx": {
+              "full_name": "Wago PFC100/200",
+              "modbus_tcp": "built-in",
+              "default_port": 502
+            }
+          }
+        }
+      }
+    },
+
+    "allen-bradley": {
+      "name": "Allen-Bradley (Rockwell Automation)",
+      "country": "USA",
+      "website": "https://www.rockwellautomation.com",
+      "product_lines": {
+        "ControlLogix": {
+          "description": "ControlLogix PLC series",
+          "models": {
+            "ControlLogix": {
+              "full_name": "Allen-Bradley ControlLogix",
+              "modbus_tcp": "via gateway or module",
+              "default_port": 44818,
+              "note": "Primary protocol is EtherNet/IP"
+            }
+          }
+        }
+      }
+    },
+
+    "moxa": {
+      "name": "Moxa",
+      "country": "Taiwan",
+      "website": "https://www.moxa.com",
+      "product_lines": {
+        "MGate": {
+          "description": "Modbus Gateway series",
+          "models": {
+            "MB3170": {
+              "full_name": "MGate MB3170 (1-port)",
+              "modbus_tcp": "gateway",
+              "default_port": 502,
+              "typical_ports": [502, "20000-20001"]
+            },
+            "MB3270": {
+              "full_name": "MGate MB3270 (2-port)",
+              "modbus_tcp": "gateway",
+              "default_port": 502,
+              "typical_ports": [502, "20000-20002"]
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "detection_rules": {
+    "priority": [
+      "modbus_vendor_id",
+      "modbus_product_code",
+      "port_number",
+      "banner_detection",
+      "behavior_detection"
+    ],
+
+    "vendor_ids": {
+      "note": "Modbus vendor IDs from Modbus-IDA (not always implemented)",
+      "1": "Modicon (Schneider Electric)",
+      "42": "Siemens"
+    },
+
+    "banner_patterns": {
+      "siemens_logo": ["LOGO!", "logo 8", "logo8", "0BA7", "0BA8"],
+      "siemens_s7": ["S7-", "SIMATIC", "simatic"],
+      "schneider": ["Modicon", "MODICON", "Schneider"],
+      "abb": ["AC500", "ABB"],
+      "wago": ["WAGO", "750-"],
+      "allen_bradley": ["Allen-Bradley", "ControlLogix", "CompactLogix"]
+    }
+  },
+
+  "modbus_function_codes": {
+    "1": "Read Coils (0x01)",
+    "2": "Read Discrete Inputs (0x02)",
+    "3": "Read Holding Registers (0x03)",
+    "4": "Read Input Registers (0x04)",
+    "5": "Write Single Coil (0x05)",
+    "6": "Write Single Register (0x06)",
+    "15": "Write Multiple Coils (0x0F)",
+    "16": "Write Multiple Registers (0x10)",
+    "23": "Read/Write Multiple Registers (0x17)"
+  }
+}

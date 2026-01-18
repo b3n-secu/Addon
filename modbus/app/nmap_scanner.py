@@ -1,12 +1,14 @@
 """
 Nmap-based Modbus Scanner for efficient device discovery
 Uses nmap's modbus-discover NSE script for professional scanning
+Enhanced with device database for accurate identification
 """
 import logging
 import nmap
 import ipaddress
 import socket
 from typing import List, Dict, Optional
+from device_database import get_device_database
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +21,7 @@ class NmapModbusScanner:
 
     def __init__(self):
         self.nm = nmap.PortScanner()
+        self.device_db = get_device_database()
 
     @staticmethod
     def get_local_network(cidr=24):
@@ -120,34 +123,33 @@ class NmapModbusScanner:
                                     'scan_method': 'nmap'
                                 }
 
-                                # Parse modbus-discover script output
+                                # Parse modbus-discover script output and use database for identification
+                                modbus_info = None
                                 if 'script' in port_info and 'modbus-discover' in port_info['script']:
                                     modbus_info = port_info['script']['modbus-discover']
                                     device['modbus_info'] = modbus_info
-                                    device['device_type'] = self._parse_modbus_device_type(modbus_info)
-                                    device['manufacturer'] = self._parse_manufacturer(modbus_info)
-                                    device['model'] = self._parse_model(modbus_info)
-                                else:
-                                    # Fallback: try to detect via port number
-                                    if port == 102:
-                                        # Port 102 is typically used by Siemens S7 PLCs
-                                        device['device_type'] = 'SIEMENS_S7'
-                                        device['manufacturer'] = 'Siemens'
-                                        device['model'] = 'S7 PLC'
-                                    elif port in [502, 510]:
-                                        device['device_type'] = 'MODBUS_TCP'
-                                        device['manufacturer'] = 'Generic'
-                                        device['model'] = 'Modbus TCP'
-                                    elif port >= 20000 and port <= 20100:
-                                        # Common range for Modbus TCP gateways
-                                        device['device_type'] = 'MODBUS_TCP'
-                                        device['manufacturer'] = 'Generic'
-                                        device['model'] = 'Modbus Gateway'
-                                    else:
-                                        # Unknown port, but likely Modbus if nmap found it
-                                        device['device_type'] = 'MODBUS_DEVICE'
-                                        device['manufacturer'] = 'Unknown'
-                                        device['model'] = 'Modbus Device'
+
+                                # Use device database for intelligent identification
+                                banner = port_info.get('product', '')
+                                manufacturer, model, device_type = self.device_db.identify_device(
+                                    port=port,
+                                    banner=banner,
+                                    modbus_info=modbus_info
+                                )
+
+                                device['manufacturer'] = manufacturer
+                                device['model'] = model
+                                device['device_type'] = device_type
+
+                                # Get additional device profile information if available
+                                profile = self.device_db.get_device_profile(manufacturer, model)
+                                if profile:
+                                    device['profile'] = {
+                                        'modbus_support': profile.get('modbus_support'),
+                                        'default_port': profile.get('default_port'),
+                                        'features': profile.get('typical_features', {})
+                                    }
+                                    logger.info(f"Found device profile for {manufacturer} {model}")
 
                                 # Auto-generate device name
                                 device['name'] = self._generate_device_name(device)
@@ -165,66 +167,6 @@ class NmapModbusScanner:
             raise
 
         return devices
-
-    def _parse_modbus_device_type(self, modbus_info: str) -> str:
-        """
-        Parse device type from modbus-discover script output
-
-        Args:
-            modbus_info: Output from modbus-discover script
-
-        Returns:
-            Device type identifier
-        """
-        modbus_lower = modbus_info.lower()
-
-        # Check for known device types
-        if 'logo!' in modbus_lower or 'logo 8' in modbus_lower:
-            return 'LOGO_8'
-        elif 'logo' in modbus_lower and '0ba7' in modbus_lower:
-            return 'LOGO_0BA7'
-        elif 'siemens' in modbus_lower:
-            return 'SIEMENS_PLC'
-        elif 'schneider' in modbus_lower or 'modicon' in modbus_lower:
-            return 'SCHNEIDER_PLC'
-        elif 'allen bradley' in modbus_lower or 'rockwell' in modbus_lower:
-            return 'AB_PLC'
-        elif 'wago' in modbus_lower:
-            return 'WAGO_PLC'
-        else:
-            return 'GENERIC_MODBUS'
-
-    def _parse_manufacturer(self, modbus_info: str) -> str:
-        """Parse manufacturer from modbus info"""
-        modbus_lower = modbus_info.lower()
-
-        if 'siemens' in modbus_lower or 'logo' in modbus_lower:
-            return 'Siemens'
-        elif 'schneider' in modbus_lower or 'modicon' in modbus_lower:
-            return 'Schneider Electric'
-        elif 'allen bradley' in modbus_lower or 'rockwell' in modbus_lower:
-            return 'Allen Bradley'
-        elif 'wago' in modbus_lower:
-            return 'Wago'
-        elif 'abb' in modbus_lower:
-            return 'ABB'
-        else:
-            return 'Generic'
-
-    def _parse_model(self, modbus_info: str) -> str:
-        """Parse model from modbus info"""
-        modbus_lower = modbus_info.lower()
-
-        if 'logo! 8' in modbus_lower or 'logo 8' in modbus_lower:
-            return 'LOGO! 8'
-        elif 'logo' in modbus_lower and '0ba7' in modbus_lower:
-            return 'LOGO! 0BA7'
-        elif 'logo' in modbus_lower:
-            return 'LOGO!'
-        elif 'modicon' in modbus_lower:
-            return 'Modicon M221'
-        else:
-            return 'Modbus TCP'
 
     def _generate_device_name(self, device: Dict) -> str:
         """
