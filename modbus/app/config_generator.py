@@ -295,9 +295,9 @@ class ModbusConfigGenerator:
 # https://www.home-assistant.io/integrations/modbus/
 #
 # To use this configuration:
-# 1. Save this file as 'modbus_generated.yaml' in your Home Assistant config directory
+# 1. This file is automatically saved as 'modbus.yaml' in your Home Assistant config directory
 # 2. Add the following line to your configuration.yaml:
-#    modbus: !include modbus_generated.yaml
+#    modbus: !include modbus.yaml
 # 3. Restart Home Assistant or reload the Modbus integration
 #
 """

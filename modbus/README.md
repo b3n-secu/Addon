@@ -97,7 +97,7 @@ Siehe [DEVICE_DATABASE.md](DEVICE_DATABASE.md) für Details und Erweiterungsmög
 3. **Konfiguration generieren**: Klicken Sie auf "Konfiguration generieren"
 4. **Home Assistant Integration**: Fügen Sie in `configuration.yaml` hinzu:
    ```yaml
-   modbus: !include modbus_generated.yaml
+   modbus: !include modbus.yaml
    ```
 5. **Neu laden**: Starten Sie Home Assistant neu oder laden Sie die Konfiguration neu
 
@@ -125,7 +125,7 @@ Siehe [DEVICE_DATABASE.md](DEVICE_DATABASE.md) für Details und Erweiterungsmög
 
 ```yaml
 devices: []  # Wird automatisch gefüllt
-modbus_config_path: "/config/modbus_generated.yaml"
+modbus_config_path: "/config/modbus.yaml"
 scan_timeout: 300  # Nmap Timeout in Sekunden
 default_port_range: "102,502,510,20000-20100"
 ```
@@ -139,7 +139,7 @@ Das Add-on erkennt automatisch Ihr lokales /24 Netzwerk. Sie können aber auch m
 
 ## Generierte Konfiguration
 
-Die generierte `modbus_generated.yaml` enthält:
+Die generierte `modbus.yaml` enthält:
 - Modbus-Verbindungsparameter
 - Automatisch erkannte Geräteentities
 - Optimierte Scan-Intervalle
