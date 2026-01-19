@@ -96,6 +96,7 @@ class ModbusConfigGenerator:
             for i in range(1, digital_inputs_count + 1):
                 binary_sensor = {
                     'name': f"{device['name']}_I{i}",
+                    'unique_id': f"ID_{device['name']}_I{i}",
                     'address': i,
                     'input_type': 'discrete_input',
                     'slave': slave_id,
@@ -105,15 +106,24 @@ class ModbusConfigGenerator:
 
         # Generate digital outputs (switches) based on user-defined count
         if digital_outputs_count > 0:
-            # LOGO! uses base address 8193 (0x2001) for outputs
-            base_address = 8193
+            # LOGO! 8 addressing scheme (based on reference modbus.yaml)
+            # Write address: 1-N (direct output number)
+            # Verify address: 8198 + output_number (for state verification)
             for i in range(1, digital_outputs_count + 1):
                 switch = {
                     'name': f"{device['name']}_Q{i}",
-                    'address': base_address + (i - 1),
+                    'unique_id': f"ID_{device['name']}_Q{i}",
+                    'address': i,  # Write to output 1-N
                     'write_type': 'coil',
                     'slave': slave_id,
-                    'scan_interval': 1
+                    'command_on': 1,
+                    'command_off': 0,
+                    'verify': {
+                        'input_type': 'coil',
+                        'address': 8198 + i,  # Verify at 8199, 8200, 8201, etc.
+                        'state_on': 1,
+                        'state_off': 0
+                    }
                 }
                 switches.append(switch)
 
@@ -122,6 +132,7 @@ class ModbusConfigGenerator:
             for i in range(1, analog_inputs_count + 1):
                 sensor = {
                     'name': f"{device['name']}_AI{i}",
+                    'unique_id': f"ID_{device['name']}_AI{i}",
                     'address': i,
                     'input_type': 'input',
                     'data_type': 'uint16',
@@ -137,6 +148,7 @@ class ModbusConfigGenerator:
             for i in range(1, analog_outputs_count + 1):
                 sensor = {
                     'name': f"{device['name']}_AQ{i}",
+                    'unique_id': f"ID_{device['name']}_AQ{i}",
                     'address': base_address + (i - 1),
                     'input_type': 'holding',
                     'data_type': 'uint16',
@@ -441,6 +453,9 @@ class ModbusConfigGenerator:
                     'precision',         # Custom precision
                     'scan_interval',     # Custom scan intervals
                     'state_class',       # Custom state classes
+                    'command_on',        # Custom on command
+                    'command_off',       # Custom off command
+                    'verify',            # Custom verify configuration (for switches)
                 ]
 
                 for field in preserve_fields:
