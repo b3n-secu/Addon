@@ -277,26 +277,35 @@ class ModbusScanner:
             # Test ranges to check
             test_ranges = {
                 'discrete_inputs': [
-                    {'start': 0, 'count': 100, 'name': 'Standard (0-99)'},
-                    {'start': 1, 'count': 24, 'name': 'LOGO! Digital Inputs (I1-I24)'},
-                    {'start': 10000, 'count': 100, 'name': 'Modicon 1x Range (10001-10100)'}
+                    {'start': 0, 'count': 16, 'name': 'Standard (0-15)'},
+                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
+                    {'start': 1, 'count': 16, 'name': 'LOGO! 0BA7 Digital Inputs (I1-I16)'},
+                    {'start': 1, 'count': 24, 'name': 'LOGO! 8 Digital Inputs (I1-I24)'},
+                    {'start': 10000, 'count': 50, 'name': 'Modicon 1x Range (10001-10050)'}
                 ],
                 'coils': [
-                    {'start': 0, 'count': 100, 'name': 'Standard (0-99)'},
-                    {'start': 1, 'count': 100, 'name': 'LOGO! Direct Write (Q1-Q100)'},
-                    {'start': 8193, 'count': 100, 'name': 'LOGO! VM Outputs (8193-8292)'},
-                    {'start': 8198, 'count': 100, 'name': 'LOGO! Verify Range (8199-8298)'}
+                    {'start': 0, 'count': 16, 'name': 'Standard (0-15)'},
+                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
+                    {'start': 1, 'count': 16, 'name': 'LOGO! 0BA7 Direct Write (Q1-Q16)'},
+                    {'start': 1, 'count': 20, 'name': 'LOGO! 8 Direct Write (Q1-Q20)'},
+                    {'start': 8193, 'count': 16, 'name': 'LOGO! 0BA7 VM Outputs (8193-8208)'},
+                    {'start': 8193, 'count': 50, 'name': 'LOGO! VM Outputs Extended (8193-8242)'},
+                    {'start': 8255, 'count': 27, 'name': 'LOGO! 0BA7 Marker Bits (M1-M27)'}
                 ],
                 'input_registers': [
-                    {'start': 0, 'count': 100, 'name': 'Standard (0-99)'},
+                    {'start': 0, 'count': 10, 'name': 'Standard (0-9)'},
+                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
                     {'start': 1, 'count': 8, 'name': 'LOGO! Analog Inputs (AI1-AI8)'},
-                    {'start': 30000, 'count': 100, 'name': 'Modicon 3x Range (30001-30100)'}
+                    {'start': 30000, 'count': 50, 'name': 'Modicon 3x Range (30001-30050)'},
+                    {'start': 100, 'count': 10, 'name': 'Alternative Range (100-109)'}
                 ],
                 'holding_registers': [
-                    {'start': 0, 'count': 100, 'name': 'Standard (0-99)'},
-                    {'start': 1, 'count': 100, 'name': 'LOGO! VM Memory (V0.0-V99.0)'},
-                    {'start': 528, 'count': 8, 'name': 'LOGO! Analog Outputs (AQ1-AQ8)'},
-                    {'start': 40000, 'count': 100, 'name': 'Modicon 4x Range (40001-40100)'}
+                    {'start': 0, 'count': 10, 'name': 'Standard (0-9)'},
+                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
+                    {'start': 1, 'count': 50, 'name': 'LOGO! VM Memory (V0.0-V49.0)'},
+                    {'start': 528, 'count': 8, 'name': 'LOGO! 8 Analog Outputs (AQ1-AQ8)'},
+                    {'start': 40000, 'count': 50, 'name': 'Modicon 4x Range (40001-40050)'},
+                    {'start': 100, 'count': 10, 'name': 'Alternative Range (100-109)'}
                 ]
             }
 
@@ -478,8 +487,34 @@ class ModbusScanner:
                 r['supported'] and 'LOGO!' in r['range']
                 for r in discovery['register_ranges']['input_registers']
             )
+            has_logo_markers = any(
+                r['supported'] and 'Marker' in r['range']
+                for r in discovery['register_ranges']['coils']
+            )
+            has_logo_0ba7_di = any(
+                r['supported'] and '0BA7' in r['range']
+                for r in discovery['register_ranges']['discrete_inputs']
+            )
+            has_logo_8_di = any(
+                r['supported'] and 'LOGO! 8' in r['range']
+                for r in discovery['register_ranges']['discrete_inputs']
+            )
 
-            if has_logo_di and has_logo_coils and has_logo_ai:
+            # Check for LOGO! 0BA7 first (more specific)
+            if (has_logo_markers or has_logo_0ba7_di) and has_logo_coils:
+                discovery['detected_device'] = 'SIEMENS LOGO! 0BA7 (v7)'
+                discovery['recommendations'] = [
+                    'Device detected as Siemens LOGO! 0BA7 (Version 7)',
+                    'Use manufacturer: Siemens, model: LOGO! 0BA7',
+                    'Digital Inputs: Configure I1-I16 in device settings (max 16)',
+                    'Digital Outputs: Configure Q1-Q16 in device settings (max 16)',
+                    'Analog Inputs: Configure AI1-AI8 if used',
+                    'Port: 510 (LOGO! standard)',
+                    'Write to outputs: Address 1-N or 8193+',
+                    'Note: LOGO! 0BA7 has different addressing than LOGO! 8'
+                ]
+            # Check for LOGO! 8 (newer version)
+            elif has_logo_8_di and has_logo_coils and has_logo_ai:
                 discovery['detected_device'] = 'SIEMENS LOGO! 8'
                 discovery['recommendations'] = [
                     'Device detected as Siemens LOGO! 8',
@@ -490,6 +525,18 @@ class ModbusScanner:
                     'Port: 510 (LOGO! standard)',
                     'Write to outputs: Address 1-N',
                     'Verify outputs: Address 8199+ (8198 + N)'
+                ]
+            # Generic LOGO! detection (fallback)
+            elif has_logo_di or has_logo_coils:
+                discovery['detected_device'] = 'SIEMENS LOGO! (Generic)'
+                discovery['recommendations'] = [
+                    'LOGO! device detected (version unclear)',
+                    'Use manufacturer: Siemens',
+                    'Check your LOGO! model number for exact specification',
+                    'LOGO! 0BA7 (v7): Max 16 DI/DO',
+                    'LOGO! 8 (v8): Max 24 DI, 20 DO',
+                    'Port: 510 (LOGO! standard)',
+                    'Configure I/O counts based on scan results above'
                 ]
             elif any('Modicon' in r.get('range', '') and r.get('supported')
                     for ranges in discovery['register_ranges'].values() for r in ranges):

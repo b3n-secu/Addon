@@ -697,8 +697,8 @@ def api_discover_registers():
 
         logger.info(f"Starting register discovery for {host}:{port} slave {slave_id}")
 
-        # Create scanner
-        scanner = ModbusScanner(host, port, timeout=5)
+        # Create scanner with longer timeout for slower devices (LOGO! v7, etc.)
+        scanner = ModbusScanner(host, port, timeout=10)
 
         # Run comprehensive register discovery
         discovery_results = scanner.discover_register_map(slave=slave_id)

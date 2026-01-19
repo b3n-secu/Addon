@@ -387,16 +387,24 @@
                     Prüft direkt am Gerät, welche Modbus-Register unterstützt werden. Hilfreich zur Ermittlung
                     der tatsächlichen I/O-Anzahl und unterstützten Funktionscodes.
                 </p>
+                <div style="background: #d1ecf1; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #0c5460;">
+                    <small style="color: #0c5460;">
+                        <strong>💡 Tipp:</strong> LOGO! Geräte nutzen Port <strong>510</strong>.
+                        LOGO! v7 (0BA7): 16 DI/DO max | LOGO! v8: 24 DI/20 DO max
+                        <br>Die Analyse dauert 30-60 Sekunden und testet verschiedene Register-Bereiche.
+                    </small>
+                </div>
 
                 <div class="grid">
                     <div class="form-group">
                         <label for="discoveryHost">IP-Adresse</label>
-                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.1.100">
+                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.178.201">
                     </div>
 
                     <div class="form-group">
                         <label for="discoveryPort">Port</label>
-                        <input type="number" id="discoveryPort" value="502" placeholder="502">
+                        <input type="number" id="discoveryPort" value="510" placeholder="510 (LOGO!) oder 502 (Standard)">
+                        <small style="color: #666; display: block; margin-top: 5px;">510 für LOGO!, 502 für Standard Modbus</small>
                     </div>
 
                     <div class="form-group">
