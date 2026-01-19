@@ -683,6 +683,45 @@ def api_check_devices_in_config():
         }), 500
 
 
+@app.route('/api/discover-registers', methods=['POST'])
+def api_discover_registers():
+    """Discover supported Modbus registers for a device"""
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Starting register discovery for {host}:{port} slave {slave_id}")
+
+        # Create scanner
+        scanner = ModbusScanner(host, port, timeout=5)
+
+        # Run comprehensive register discovery
+        discovery_results = scanner.discover_register_map(slave=slave_id)
+
+        if discovery_results.get('success'):
+            logger.info(f"Register discovery completed successfully. Device: {discovery_results.get('detected_device')}")
+            return jsonify(discovery_results)
+        else:
+            error_msg = discovery_results.get('error', 'Unknown error')
+            logger.error(f"Register discovery failed: {error_msg}")
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+
+    except Exception as e:
+        logger.error(f"Error during register discovery: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
 if __name__ == '__main__':
     logger.info("Starting Universal Modbus Configurator")
     logger.info(f"Config path: {CONFIG_PATH}")

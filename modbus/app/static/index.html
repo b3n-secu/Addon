@@ -380,6 +380,41 @@
                 </ul>
             </div>
 
+            <!-- Register Discovery Section -->
+            <div class="section">
+                <h2 class="section-title">🔍 Register-Analyse (Device Capabilities)</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Prüft direkt am Gerät, welche Modbus-Register unterstützt werden. Hilfreich zur Ermittlung
+                    der tatsächlichen I/O-Anzahl und unterstützten Funktionscodes.
+                </p>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="discoveryHost">IP-Adresse</label>
+                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.1.100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoveryPort">Port</label>
+                        <input type="number" id="discoveryPort" value="502" placeholder="502">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoverySlaveId">Slave ID</label>
+                        <input type="number" id="discoverySlaveId" value="1" min="1" max="247">
+                    </div>
+                </div>
+
+                <button class="button button-primary" onclick="discoverRegisters()" style="font-size: 1.1em; padding: 15px 30px;">
+                    🔬 Register-Analyse starten
+                </button>
+
+                <div id="discoveryResults" class="hidden" style="margin-top: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Analyse-Ergebnisse:</h3>
+                    <div id="discoveryContent"></div>
+                </div>
+            </div>
+
             <!-- Generate Config Section -->
             <div class="section">
                 <h2 class="section-title">Konfiguration generieren</h2>
@@ -983,6 +1018,146 @@
                 `;
                 deviceListDiv.appendChild(deviceCard);
             });
+        }
+
+        async function discoverRegisters() {
+            const host = document.getElementById('discoveryHost').value.trim();
+            const port = parseInt(document.getElementById('discoveryPort').value) || 502;
+            const slaveId = parseInt(document.getElementById('discoverySlaveId').value) || 1;
+
+            if (!host) {
+                showAlert('Bitte IP-Adresse eingeben', 'error');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('discoveryResults');
+            const contentDiv = document.getElementById('discoveryContent');
+
+            resultsDiv.classList.remove('hidden');
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analysiere Register...</p></div>';
+
+            showAlert('Register-Analyse gestartet... Dies kann bis zu 30 Sekunden dauern.', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/discover-registers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: host,
+                        port: port,
+                        slave_id: slaveId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ Register-Analyse abgeschlossen!', 'success');
+                    displayDiscoveryResults(result);
+                } else {
+                    contentDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">
+                        <strong>Fehler:</strong> ${result.error || 'Analyse fehlgeschlagen'}
+                    </div>`;
+                    showAlert('✗ Fehler bei der Register-Analyse: ' + (result.error || 'Unbekannter Fehler'), 'error');
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">
+                    <strong>Fehler:</strong> ${error.message}
+                </div>`;
+                showAlert('Fehler bei der Register-Analyse: ' + error.message, 'error');
+            }
+        }
+
+        function displayDiscoveryResults(discovery) {
+            const contentDiv = document.getElementById('discoveryContent');
+
+            let html = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">📊 Geräteinformationen</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <strong>Erkanntes Gerät:</strong><br>
+                            <span style="font-size: 1.2em; color: #28a745;">${discovery.detected_device}</span>
+                        </div>
+                        <div>
+                            <strong>Slave ID:</strong><br>
+                            <span>${discovery.slave_id}</span>
+                        </div>
+                        <div>
+                            <strong>Unterstützte Funktionen:</strong><br>
+                            <span>${discovery.supported_functions.length > 0 ? discovery.supported_functions.join(', ') : 'Keine'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Recommendations
+            if (discovery.recommendations && discovery.recommendations.length > 0) {
+                html += `
+                    <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                        <h4 style="color: #155724; margin-bottom: 10px;">💡 Empfehlungen</h4>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            ${discovery.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Register ranges
+            const registerTypes = ['discrete_inputs', 'coils', 'input_registers', 'holding_registers'];
+            const registerLabels = {
+                'discrete_inputs': '🔵 Digital Inputs (Discrete Inputs)',
+                'coils': '🟢 Digital Outputs (Coils)',
+                'input_registers': '🟠 Analog Inputs (Input Registers)',
+                'holding_registers': '🟡 Holding Registers'
+            };
+
+            for (const regType of registerTypes) {
+                const ranges = discovery.register_ranges[regType];
+                if (!ranges || ranges.length === 0) continue;
+
+                html += `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">${registerLabels[regType]}</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Bereich</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Start</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Anzahl</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Info</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const range of ranges) {
+                    const statusIcon = range.supported ? '✅' : '❌';
+                    const statusColor = range.supported ? '#28a745' : '#dc3545';
+                    const note = range.note || (range.error ? `Fehler: ${range.error}` : '-');
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 8px;">${range.range}</td>
+                            <td style="padding: 8px;">${range.start}</td>
+                            <td style="padding: 8px;">${range.count}</td>
+                            <td style="padding: 8px; color: ${statusColor};">${statusIcon} ${range.supported ? 'Unterstützt' : 'Nicht unterstützt'}</td>
+                            <td style="padding: 8px; font-size: 0.9em;">${note}</td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            contentDiv.innerHTML = html;
         }
     </script>
 </body>
