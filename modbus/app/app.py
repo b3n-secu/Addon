@@ -30,16 +30,19 @@ CORS(app)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
-# Use different default paths depending on environment
+
+# Persistent device storage (survives addon rebuilds)
 if os.path.exists('/config'):
-    # Running in Home Assistant addon
+    PERSISTENT_DEVICES_PATH = '/config/.modbus_configurator_devices.json'
     DEFAULT_MODBUS_PATH = '/config/modbus_generated.yaml'
 else:
-    # Running locally or in development - use absolute path in app directory
+    # Running locally or in development
+    PERSISTENT_DEVICES_PATH = os.path.abspath('./devices.json')
     DEFAULT_MODBUS_PATH = os.path.abspath('./modbus_generated.yaml')
 
 MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
 logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
+logger.info(f"Persistent device storage: {PERSISTENT_DEVICES_PATH}")
 
 # Global state
 devices = []
@@ -47,27 +50,56 @@ config_generator = ModbusConfigGenerator()
 
 
 def load_config():
-    """Load configuration from Home Assistant"""
+    """Load configuration from persistent storage (survives rebuilds)"""
     global devices
+
+    # First try to load from persistent storage (survives rebuilds)
+    try:
+        if os.path.exists(PERSISTENT_DEVICES_PATH):
+            with open(PERSISTENT_DEVICES_PATH, 'r') as f:
+                devices = json.load(f)
+                logger.info(f"Loaded {len(devices)} devices from persistent storage")
+                return
+    except Exception as e:
+        logger.warning(f"Could not load from persistent storage: {e}")
+
+    # Fallback: Load from options.json (legacy)
     try:
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, 'r') as f:
                 config = json.load(f)
                 devices = config.get('devices', [])
-                logger.info(f"Loaded {len(devices)} devices from config")
+                logger.info(f"Loaded {len(devices)} devices from options.json")
+                # Migrate to persistent storage
+                if devices:
+                    save_config()
     except Exception as e:
         logger.error(f"Error loading config: {e}")
 
 
 def save_config():
-    """Save configuration to Home Assistant"""
+    """Save configuration to persistent storage (survives rebuilds)"""
+    global devices
+
+    # Save to persistent storage (primary)
+    try:
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(PERSISTENT_DEVICES_PATH), exist_ok=True)
+
+        with open(PERSISTENT_DEVICES_PATH, 'w') as f:
+            json.dump(devices, f, indent=2)
+        logger.info(f"Configuration saved to persistent storage ({len(devices)} devices)")
+    except Exception as e:
+        logger.error(f"Error saving to persistent storage: {e}")
+
+    # Also save to options.json for backward compatibility
     try:
         config = {'devices': devices}
         with open(CONFIG_PATH, 'w') as f:
             json.dump(config, f, indent=2)
-        logger.info("Configuration saved")
+        logger.debug("Configuration also saved to options.json")
     except Exception as e:
-        logger.error(f"Error saving config: {e}")
+        logger.warning(f"Could not save to options.json: {e}")
 
 
 @app.route('/')
