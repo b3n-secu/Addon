@@ -1,5 +1,5 @@
 name: Universal Modbus Configurator
-version: "1.1.0e"
+version: "1.1.0f"
 slug: universal_modbus_config
 description: Universeller Modbus Konfigurator mit professionellem Nmap-Scanner für Home Assistant - Unterstützt Siemens LOGO!, Schneider, ABB, Wago und weitere Hersteller
 arch:
@@ -19,6 +19,8 @@ ports_description:
 webui: http://[HOST]:[PORT:8099]
 startup: services
 boot: auto
+map:
+  - config:rw
 options:
   devices: []
   modbus_config_path: "/config/modbus.yaml"
