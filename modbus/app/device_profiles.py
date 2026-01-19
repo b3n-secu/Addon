@@ -126,6 +126,163 @@ DEVICE_PROFILES = {
                     "scan_interval": 1
                 }
             }
+        },
+        "S7 PLC": {
+            "port": 502,
+            "timeout": 5,
+            "note": "S7 PLCs require MB_SERVER configuration. Default generic Modbus mapping.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "Maps to DB words via MB_SERVER"
+                },
+                "input_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "input",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "Read-only registers"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 100,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Maps to Q outputs"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "Read-only inputs"
+                }
+            },
+            "presets": {
+                "generic_sensor": {
+                    "unit_of_measurement": "",
+                    "data_type": "int16",
+                    "precision": 2,
+                    "state_class": "measurement"
+                }
+            }
+        },
+        "S7-300": {
+            "port": 102,
+            "timeout": 5,
+            "note": "S7-300 uses ISO-TSAP protocol on Port 102. Requires CP module for Modbus.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 100,
+                    "write_type": "coil",
+                    "scan_interval": 1
+                }
+            }
+        },
+        "S7-400": {
+            "port": 102,
+            "timeout": 5,
+            "note": "S7-400 uses ISO-TSAP protocol on Port 102. Requires CP module for Modbus.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 100,
+                    "write_type": "coil",
+                    "scan_interval": 1
+                }
+            }
+        },
+        "S7-1200": {
+            "port": 502,
+            "timeout": 5,
+            "note": "S7-1200 with built-in Modbus TCP server (MB_SERVER). Configure via TIA Portal.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "DB data blocks"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 1024,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Q0.0 to Q1023.7"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 1024,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "I0.0 to I1023.7"
+                }
+            }
+        },
+        "S7-1500": {
+            "port": 502,
+            "timeout": 5,
+            "note": "S7-1500 with built-in Modbus TCP server (MB_SERVER). Configure via TIA Portal.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "DB data blocks"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 1024,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Q0.0 to Q1023.7"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 1024,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "I0.0 to I1023.7"
+                }
+            }
         }
     },
     "Schneider Electric": {
