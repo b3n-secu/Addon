@@ -582,7 +582,14 @@
                         <div class="device-info">
                             <div class="device-name">
                                 ${statusIndicator}
-                                <span>${device.name}</span>
+                                <span id="device-name-display-${index}">${device.name}</span>
+                                <button class="button" onclick="editDeviceName(${index})" id="edit-name-btn-${index}" style="padding: 4px 8px; font-size: 0.8em; margin-left: 10px;" title="Name bearbeiten">✏️</button>
+                            </div>
+                            <div class="device-name-edit hidden" id="device-name-edit-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
+                                <label style="font-size: 0.9em; margin-bottom: 5px; display: block;">Gerätename:</label>
+                                <input type="text" id="device-name-input-${index}" value="${device.name}" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                                <button class="button button-success" onclick="saveDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">💾 Speichern</button>
+                                <button class="button button-secondary" onclick="cancelEditDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">Abbrechen</button>
                             </div>
                             <div class="device-details">
                                 ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
@@ -720,6 +727,72 @@
                 if (result.success) {
                     showAlert('✓ I/O-Konfiguration gespeichert', 'success');
                     loadDevices();  // Reload to show updated values
+                } else {
+                    showAlert('✗ Fehler beim Speichern: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Speichern: ' + error.message, 'error');
+            }
+        }
+
+        function editDeviceName(index) {
+            // Hide display, show edit form
+            document.getElementById(`device-name-display-${index}`).style.display = 'none';
+            document.getElementById(`edit-name-btn-${index}`).style.display = 'none';
+            document.getElementById(`device-name-edit-${index}`).classList.remove('hidden');
+        }
+
+        function cancelEditDeviceName(index) {
+            // Show display, hide edit form
+            document.getElementById(`device-name-display-${index}`).style.display = 'inline';
+            document.getElementById(`edit-name-btn-${index}`).style.display = 'inline';
+            document.getElementById(`device-name-edit-${index}`).classList.add('hidden');
+        }
+
+        async function saveDeviceName(index) {
+            try {
+                // Get current device data
+                const devicesResponse = await fetch(`${API_BASE}/api/devices`);
+                const devices = await devicesResponse.json();
+                const device = devices[index];
+
+                if (!device) {
+                    showAlert('✗ Gerät nicht gefunden', 'error');
+                    return;
+                }
+
+                // Read new name from input
+                const newName = document.getElementById(`device-name-input-${index}`).value.trim();
+
+                if (!newName) {
+                    showAlert('✗ Name darf nicht leer sein', 'error');
+                    return;
+                }
+
+                // Validate name (only lowercase, numbers, underscores)
+                const validNameRegex = /^[a-z0-9_]+$/;
+                if (!validNameRegex.test(newName)) {
+                    showAlert('✗ Name darf nur Kleinbuchstaben, Zahlen und Unterstriche enthalten', 'error');
+                    return;
+                }
+
+                // Update device name
+                device.name = newName;
+
+                // Save to backend
+                const response = await fetch(`${API_BASE}/api/devices/${index}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(device)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ Gerätename gespeichert', 'success');
+                    loadDevices();  // Reload to show updated name
                 } else {
                     showAlert('✗ Fehler beim Speichern: ' + result.error, 'error');
                 }
