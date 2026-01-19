@@ -4,6 +4,7 @@ Based on official Home Assistant Modbus Integration documentation
 """
 import yaml
 import logging
+import os
 from device_profiles import get_device_profile
 
 logger = logging.getLogger(__name__)
@@ -78,29 +79,71 @@ class ModbusConfigGenerator:
         registers = profile.get('registers', {})
         slave_id = device_config.get('slave_id', 1)
 
+        # Get I/O configuration from device_config (user-defined counts)
+        io_config = device_config.get('io_config', {})
+        digital_inputs_count = io_config.get('digital_inputs', 0)
+        digital_outputs_count = io_config.get('digital_outputs', 0)
+        analog_inputs_count = io_config.get('analog_inputs', 0)
+        analog_outputs_count = io_config.get('analog_outputs', 0)
+
         # Initialize entity lists
         sensors = []
         binary_sensors = []
         switches = []
 
-        # Generate entities from profile
-        for register_name, register_config in registers.items():
-            entity_type = register_config.get('type')
+        # Generate digital inputs (binary_sensors) based on user-defined count
+        if digital_inputs_count > 0:
+            for i in range(1, digital_inputs_count + 1):
+                binary_sensor = {
+                    'name': f"{device['name']}_I{i}",
+                    'address': i,
+                    'input_type': 'discrete_input',
+                    'slave': slave_id,
+                    'scan_interval': 1
+                }
+                binary_sensors.append(binary_sensor)
 
-            if entity_type == 'sensor':
-                sensor = self._create_sensor(register_name, register_config, slave_id)
-                if sensor:
-                    sensors.append(sensor)
+        # Generate digital outputs (switches) based on user-defined count
+        if digital_outputs_count > 0:
+            # LOGO! uses base address 8193 (0x2001) for outputs
+            base_address = 8193
+            for i in range(1, digital_outputs_count + 1):
+                switch = {
+                    'name': f"{device['name']}_Q{i}",
+                    'address': base_address + (i - 1),
+                    'write_type': 'coil',
+                    'slave': slave_id,
+                    'scan_interval': 1
+                }
+                switches.append(switch)
 
-            elif entity_type == 'binary_sensor':
-                binary_sensor = self._create_binary_sensor(register_name, register_config, slave_id)
-                if binary_sensor:
-                    binary_sensors.append(binary_sensor)
+        # Generate analog inputs (sensors) based on user-defined count
+        if analog_inputs_count > 0:
+            for i in range(1, analog_inputs_count + 1):
+                sensor = {
+                    'name': f"{device['name']}_AI{i}",
+                    'address': i,
+                    'input_type': 'input',
+                    'data_type': 'uint16',
+                    'slave': slave_id,
+                    'scan_interval': 5
+                }
+                sensors.append(sensor)
 
-            elif entity_type == 'switch':
-                switch = self._create_switch(register_name, register_config, slave_id)
-                if switch:
-                    switches.append(switch)
+        # Generate analog outputs (sensors with write capability) based on user-defined count
+        if analog_outputs_count > 0:
+            # LOGO! uses base address 528 (0x0210) for analog outputs
+            base_address = 528
+            for i in range(1, analog_outputs_count + 1):
+                sensor = {
+                    'name': f"{device['name']}_AQ{i}",
+                    'address': base_address + (i - 1),
+                    'input_type': 'holding',
+                    'data_type': 'uint16',
+                    'slave': slave_id,
+                    'scan_interval': 5
+                }
+                sensors.append(sensor)
 
         # Add entity lists to device if not empty
         if sensors:
@@ -305,16 +348,134 @@ class ModbusConfigGenerator:
 
         return header + yaml_str
 
-    def save_to_file(self, file_path):
+    def _merge_with_existing(self, file_path):
+        """
+        Merge new configuration with existing manual changes
+
+        This function loads the existing modbus.yaml, compares it with the new
+        configuration, and preserves any manual changes made by the user.
+
+        Args:
+            file_path: Path to existing configuration file
+
+        Returns:
+            None (modifies self.config in place)
+        """
+        if not os.path.exists(file_path):
+            logger.info("No existing configuration file to merge with")
+            return
+
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Load existing config (skip comment lines)
+            existing_config = yaml.safe_load(content)
+
+            if not existing_config or not isinstance(existing_config, list):
+                logger.warning("Existing configuration is empty or invalid")
+                return
+
+            # Create a mapping of existing devices by name
+            existing_devices = {dev.get('name'): dev for dev in existing_config if dev.get('name')}
+
+            # Merge each new device with existing one if found
+            for new_device in self.config:
+                device_name = new_device.get('name')
+
+                if device_name in existing_devices:
+                    logger.info(f"Merging device: {device_name}")
+                    existing_device = existing_devices[device_name]
+
+                    # Merge each entity type
+                    for entity_type in ['sensors', 'binary_sensors', 'switches']:
+                        if entity_type in new_device:
+                            new_device[entity_type] = self._merge_entities(
+                                new_device[entity_type],
+                                existing_device.get(entity_type, []),
+                                entity_type
+                            )
+
+            logger.info("Configuration merge completed")
+
+        except Exception as e:
+            logger.error(f"Error merging configurations: {e}", exc_info=True)
+            # Continue with new config if merge fails
+
+    def _merge_entities(self, new_entities, existing_entities, entity_type):
+        """
+        Merge new entities with existing ones, preserving manual changes
+
+        Args:
+            new_entities: List of newly generated entities
+            existing_entities: List of entities from existing config
+            entity_type: Type of entity (sensors, binary_sensors, switches)
+
+        Returns:
+            List of merged entities
+        """
+        # Create mapping of existing entities by address
+        existing_by_address = {}
+        for entity in existing_entities:
+            address = entity.get('address')
+            if address is not None:
+                existing_by_address[address] = entity
+
+        merged_entities = []
+
+        for new_entity in new_entities:
+            address = new_entity.get('address')
+
+            # If entity exists at this address, merge with existing
+            if address in existing_by_address:
+                existing_entity = existing_by_address[address]
+                merged_entity = new_entity.copy()
+
+                # Preserve user-customized fields
+                preserve_fields = [
+                    'name',              # Custom names
+                    'scale',             # Custom scale factors
+                    'offset',            # Custom offset values
+                    'unit_of_measurement',  # Custom units
+                    'device_class',      # Custom device classes
+                    'precision',         # Custom precision
+                    'scan_interval',     # Custom scan intervals
+                    'state_class',       # Custom state classes
+                ]
+
+                for field in preserve_fields:
+                    if field in existing_entity:
+                        # Check if value was actually customized (different from default)
+                        existing_value = existing_entity[field]
+                        new_value = merged_entity.get(field)
+
+                        # If values differ, preserve the existing (manually changed) value
+                        if existing_value != new_value:
+                            merged_entity[field] = existing_value
+                            logger.debug(f"Preserved '{field}' for {merged_entity.get('name')}: {existing_value}")
+
+                merged_entities.append(merged_entity)
+            else:
+                # New entity, add as is
+                merged_entities.append(new_entity)
+
+        return merged_entities
+
+    def save_to_file(self, file_path, merge_existing=True):
         """
         Save configuration to YAML file
 
         Args:
             file_path: Path where to save the configuration
+            merge_existing: If True, merge with existing configuration to preserve manual changes
 
         Returns:
             bool: True if successful, False otherwise
         """
+        # Merge with existing configuration if requested
+        if merge_existing:
+            self._merge_with_existing(file_path)
+
         yaml_content = self.generate_yaml()
 
         if not yaml_content:

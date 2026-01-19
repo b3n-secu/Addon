@@ -569,6 +569,15 @@
                         statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
                     }
 
+                    // Build I/O configuration display
+                    const ioConfig = device.io_config || {};
+                    const baseModules = ioConfig.base_modules || 1;
+                    const expansionModules = ioConfig.expansion_modules || 0;
+                    const digitalInputs = ioConfig.digital_inputs || 24;
+                    const digitalOutputs = ioConfig.digital_outputs || 20;
+                    const analogInputs = ioConfig.analog_inputs || 8;
+                    const analogOutputs = ioConfig.analog_outputs || 0;
+
                     li.innerHTML = `
                         <div class="device-info">
                             <div class="device-name">
@@ -579,8 +588,51 @@
                                 ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
                                 ${device.slave_id ? ` | Slave: ${device.slave_id}` : ''}
                             </div>
+                            <div class="device-io-config" id="device-io-display-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 0.9em;">
+                                    <div><strong>Basis:</strong> ${baseModules}</div>
+                                    <div><strong>Erweiterung:</strong> ${expansionModules}</div>
+                                    <div><strong>DI:</strong> ${digitalInputs}</div>
+                                    <div><strong>DO:</strong> ${digitalOutputs}</div>
+                                    <div><strong>AI:</strong> ${analogInputs}</div>
+                                    <div><strong>AO:</strong> ${analogOutputs}</div>
+                                </div>
+                            </div>
+                            <div class="device-io-edit hidden" id="device-io-edit-${index}" style="margin-top: 10px; padding: 15px; background: #fff; border-radius: 4px;">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 10px;">
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Basisgeräte:</label>
+                                        <input type="number" id="base-modules-${index}" value="${baseModules}" min="1" max="10" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Erweiterungsmodule:</label>
+                                        <input type="number" id="expansion-modules-${index}" value="${expansionModules}" min="0" max="10" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Eingänge (I):</label>
+                                        <input type="number" id="digital-inputs-${index}" value="${digitalInputs}" min="0" max="256" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Ausgänge (Q):</label>
+                                        <input type="number" id="digital-outputs-${index}" value="${digitalOutputs}" min="0" max="256" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Eingänge (AI):</label>
+                                        <input type="number" id="analog-inputs-${index}" value="${analogInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Ausgänge (AQ):</label>
+                                        <input type="number" id="analog-outputs-${index}" value="${analogOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <button class="button button-success" onclick="saveDeviceIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">💾 Speichern</button>
+                                    <button class="button button-secondary" onclick="cancelEditIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">Abbrechen</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="device-actions">
+                            <button class="button button-primary" onclick="editDeviceIOConfig(${index})" id="edit-btn-${index}">⚙️ Konfigurieren</button>
                             <button class="button button-danger" onclick="deleteDevice(${index})">Löschen</button>
                         </div>
                     `;
@@ -612,6 +664,67 @@
                 }
             } catch (error) {
                 showAlert('Fehler beim Löschen: ' + error.message, 'error');
+            }
+        }
+
+        function editDeviceIOConfig(index) {
+            // Hide display, show edit form
+            document.getElementById(`device-io-display-${index}`).classList.add('hidden');
+            document.getElementById(`device-io-edit-${index}`).classList.remove('hidden');
+            document.getElementById(`edit-btn-${index}`).disabled = true;
+        }
+
+        function cancelEditIOConfig(index) {
+            // Show display, hide edit form
+            document.getElementById(`device-io-display-${index}`).classList.remove('hidden');
+            document.getElementById(`device-io-edit-${index}`).classList.add('hidden');
+            document.getElementById(`edit-btn-${index}`).disabled = false;
+        }
+
+        async function saveDeviceIOConfig(index) {
+            try {
+                // Get current device data
+                const devicesResponse = await fetch(`${API_BASE}/api/devices`);
+                const devices = await devicesResponse.json();
+                const device = devices[index];
+
+                if (!device) {
+                    showAlert('✗ Gerät nicht gefunden', 'error');
+                    return;
+                }
+
+                // Read values from form
+                const ioConfig = {
+                    base_modules: parseInt(document.getElementById(`base-modules-${index}`).value) || 1,
+                    expansion_modules: parseInt(document.getElementById(`expansion-modules-${index}`).value) || 0,
+                    digital_inputs: parseInt(document.getElementById(`digital-inputs-${index}`).value) || 0,
+                    digital_outputs: parseInt(document.getElementById(`digital-outputs-${index}`).value) || 0,
+                    analog_inputs: parseInt(document.getElementById(`analog-inputs-${index}`).value) || 0,
+                    analog_outputs: parseInt(document.getElementById(`analog-outputs-${index}`).value) || 0
+                };
+
+                // Update device with new io_config
+                device.io_config = ioConfig;
+
+                // Save to backend
+                const response = await fetch(`${API_BASE}/api/devices/${index}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(device)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ I/O-Konfiguration gespeichert', 'success');
+                    loadDevices();  // Reload to show updated values
+                } else {
+                    showAlert('✗ Fehler beim Speichern: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Speichern: ' + error.message, 'error');
             }
         }
 
