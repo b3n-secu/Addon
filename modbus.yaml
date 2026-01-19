@@ -6,11 +6,10 @@
 # Add this line to your configuration.yaml:
 #   modbus: !include modbus.yaml
 #
-modbus:
 # ========================================
 # LOGO 1 - HAUPTHAUS (192.168.178.201)
 # ========================================
-  - name: logo_1_haupthaus
+- name: logo_1_haupthaus
     type: tcp
     host: 192.168.178.201
     port: 510

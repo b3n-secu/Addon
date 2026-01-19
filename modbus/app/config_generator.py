@@ -276,14 +276,10 @@ class ModbusConfigGenerator:
             logger.warning("No devices configured")
             return None
 
-        # Create modbus configuration with proper structure
-        modbus_config = {
-            'modbus': self.config
-        }
-
-        # Generate YAML with custom formatting
+        # Generate YAML directly from config list (no 'modbus:' wrapper)
+        # The 'modbus:' key is already in configuration.yaml via !include
         yaml_str = yaml.dump(
-            modbus_config,
+            self.config,
             default_flow_style=False,
             allow_unicode=True,
             sort_keys=False,
@@ -301,6 +297,9 @@ class ModbusConfigGenerator:
 # 2. Add the following line to your configuration.yaml:
 #    modbus: !include modbus.yaml
 # 3. Restart Home Assistant or reload the Modbus integration
+#
+# IMPORTANT: This file should NOT contain 'modbus:' as root key since it's
+# already defined in configuration.yaml via the !include directive.
 #
 """
 
