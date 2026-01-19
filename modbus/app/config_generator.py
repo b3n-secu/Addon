@@ -174,8 +174,10 @@ class ModbusConfigGenerator:
         if 'scan_interval' in register_config:
             sensor['scan_interval'] = register_config['scan_interval']
 
-        # Count (number of registers)
-        if 'count' in register_config and register_config['count'] > 1:
+        # Count (number of registers) - ONLY if data_type is NOT specified
+        # Note: count and data_type are mutually exclusive in HA Modbus
+        # When data_type is specified, HA automatically determines register count
+        if 'count' in register_config and register_config['count'] > 1 and 'data_type' not in sensor:
             sensor['count'] = register_config['count']
 
         return sensor
