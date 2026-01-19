@@ -550,7 +550,14 @@ def api_generate_config():
             }), 400
 
         # Generate YAML
-        yaml_config = config_generator.generate_yaml(output_path)
+        yaml_config = config_generator.generate_yaml()
+
+        # Save to file
+        if not config_generator.save_to_file(output_path):
+            return jsonify({
+                'success': False,
+                'error': 'Fehler beim Speichern der Konfigurationsdatei.'
+            }), 500
 
         # Get absolute path for display
         abs_path = os.path.abspath(output_path)
