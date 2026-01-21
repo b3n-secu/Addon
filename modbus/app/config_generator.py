@@ -85,6 +85,8 @@ class ModbusConfigGenerator:
         digital_outputs_count = io_config.get('digital_outputs', 0)
         analog_inputs_count = io_config.get('analog_inputs', 0)
         analog_outputs_count = io_config.get('analog_outputs', 0)
+        network_inputs_count = io_config.get('network_inputs', 0)
+        network_outputs_count = io_config.get('network_outputs', 0)
 
         # Initialize entity lists
         sensors = []
@@ -109,6 +111,8 @@ class ModbusConfigGenerator:
             # LOGO! 8 addressing scheme (based on reference modbus.yaml)
             # Write address: 1-N (direct output number)
             # Verify address: 8198 + output_number (for state verification)
+            # Sync flag: Forces state synchronization (prevents desync)
+            enable_sync = io_config.get('enable_sync', False)
             for i in range(1, digital_outputs_count + 1):
                 switch = {
                     'name': f"{device['name']}_Q{i}",
@@ -125,6 +129,9 @@ class ModbusConfigGenerator:
                         'state_off': 0
                     }
                 }
+                # Add sync flag if enabled (prevents desynchronization)
+                if enable_sync:
+                    switch['verify']['sync'] = True
                 switches.append(switch)
 
         # Generate analog inputs (sensors) based on user-defined count
@@ -156,6 +163,45 @@ class ModbusConfigGenerator:
                     'scan_interval': 5
                 }
                 sensors.append(sensor)
+
+        # Generate network inputs (NI) - LOGO-to-LOGO communication (binary_sensors)
+        if network_inputs_count > 0:
+            # Network inputs start at address 0 (NI1-NI64)
+            for i in range(1, network_inputs_count + 1):
+                binary_sensor = {
+                    'name': f"{device['name']}_NI{i}",
+                    'unique_id': f"ID_{device['name']}_NI{i}",
+                    'address': i - 1,  # NI1 starts at address 0
+                    'input_type': 'discrete_input',
+                    'slave': slave_id,
+                    'scan_interval': 2
+                }
+                binary_sensors.append(binary_sensor)
+
+        # Generate network outputs (NQ) - LOGO-to-LOGO communication (switches)
+        if network_outputs_count > 0:
+            # Network outputs start at address 0 (NQ1-NQ64)
+            enable_sync = io_config.get('enable_sync', False)
+            for i in range(1, network_outputs_count + 1):
+                switch = {
+                    'name': f"{device['name']}_NQ{i}",
+                    'unique_id': f"ID_{device['name']}_NQ{i}",
+                    'address': i - 1,  # NQ1 starts at address 0
+                    'write_type': 'coil',
+                    'slave': slave_id,
+                    'command_on': 1,
+                    'command_off': 0,
+                    'verify': {
+                        'input_type': 'coil',
+                        'address': i - 1,
+                        'state_on': 1,
+                        'state_off': 0
+                    }
+                }
+                # Add sync flag if enabled (prevents desynchronization)
+                if enable_sync:
+                    switch['verify']['sync'] = True
+                switches.append(switch)
 
         # Add entity lists to device if not empty
         if sensors:

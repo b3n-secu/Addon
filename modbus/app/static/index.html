@@ -620,6 +620,8 @@
                     const digitalOutputs = ioConfig.digital_outputs || 20;
                     const analogInputs = ioConfig.analog_inputs || 8;
                     const analogOutputs = ioConfig.analog_outputs || 0;
+                    const networkInputs = ioConfig.network_inputs || 0;
+                    const networkOutputs = ioConfig.network_outputs || 0;
 
                     li.innerHTML = `
                         <div class="device-info">
@@ -646,6 +648,8 @@
                                     <div><strong>DO:</strong> ${digitalOutputs}</div>
                                     <div><strong>AI:</strong> ${analogInputs}</div>
                                     <div><strong>AO:</strong> ${analogOutputs}</div>
+                                    ${networkInputs > 0 ? `<div><strong>NI:</strong> ${networkInputs}</div>` : ''}
+                                    ${networkOutputs > 0 ? `<div><strong>NQ:</strong> ${networkOutputs}</div>` : ''}
                                 </div>
                             </div>
                             <div class="device-io-edit hidden" id="device-io-edit-${index}" style="margin-top: 10px; padding: 15px; background: #fff; border-radius: 4px;">
@@ -674,6 +678,25 @@
                                         <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Ausgänge (AQ):</label>
                                         <input type="number" id="analog-outputs-${index}" value="${analogOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
                                     </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Inputs (NI) - LOGO! 8:</label>
+                                        <input type="number" id="network-inputs-${index}" value="${networkInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                        <small style="color: #666; display: block; margin-top: 3px;">NI1-NI64 für LOGO-LOGO Kommunikation</small>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Outputs (NQ) - LOGO! 8:</label>
+                                        <input type="number" id="network-outputs-${index}" value="${networkOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                        <small style="color: #666; display: block; margin-top: 3px;">NQ1-NQ64 für LOGO-LOGO Kommunikation</small>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="enable-sync-${index}" ${device.io_config?.enable_sync ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                        <span style="font-size: 0.95em; font-weight: 500;">🔄 Sync-Flag aktivieren</span>
+                                    </label>
+                                    <small style="color: #666; display: block; margin-top: 5px; margin-left: 26px;">
+                                        Verhindert Desynchronisation zwischen Home Assistant und PLC (empfohlen für kritische Ausgänge)
+                                    </small>
                                 </div>
                                 <div style="margin-top: 10px;">
                                     <button class="button button-success" onclick="saveDeviceIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">💾 Speichern</button>
@@ -750,7 +773,10 @@
                     digital_inputs: parseInt(document.getElementById(`digital-inputs-${index}`).value) || 0,
                     digital_outputs: parseInt(document.getElementById(`digital-outputs-${index}`).value) || 0,
                     analog_inputs: parseInt(document.getElementById(`analog-inputs-${index}`).value) || 0,
-                    analog_outputs: parseInt(document.getElementById(`analog-outputs-${index}`).value) || 0
+                    analog_outputs: parseInt(document.getElementById(`analog-outputs-${index}`).value) || 0,
+                    network_inputs: parseInt(document.getElementById(`network-inputs-${index}`).value) || 0,
+                    network_outputs: parseInt(document.getElementById(`network-outputs-${index}`).value) || 0,
+                    enable_sync: document.getElementById(`enable-sync-${index}`).checked
                 };
 
                 // Update device with new io_config

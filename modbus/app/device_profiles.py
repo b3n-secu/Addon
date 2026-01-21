@@ -37,6 +37,22 @@ DEVICE_PROFILES = {
                     "input_type": "holding",
                     "data_type": "uint16",
                     "scan_interval": 5
+                },
+                "network_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,  # NI1-NI64
+                    "count": 64,
+                    "input_type": "discrete_input",
+                    "scan_interval": 2,
+                    "note": "Network Inputs for LOGO-to-LOGO communication"
+                },
+                "network_outputs": {
+                    "type": "switch",
+                    "start_address": 0,  # NQ1-NQ64
+                    "count": 64,
+                    "write_type": "coil",
+                    "scan_interval": 2,
+                    "note": "Network Outputs for LOGO-to-LOGO communication"
                 }
             },
             "presets": {
