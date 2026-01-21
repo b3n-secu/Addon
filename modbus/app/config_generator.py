@@ -78,6 +78,7 @@ class ModbusConfigGenerator:
         """Add entities (sensors, switches, etc.) to device following HA Modbus documentation"""
         registers = profile.get('registers', {})
         slave_id = device_config.get('slave_id', 1)
+        device_model = device_config.get('model', '')
 
         # Get I/O configuration from device_config (user-defined counts)
         io_config = device_config.get('io_config', {})
@@ -165,7 +166,8 @@ class ModbusConfigGenerator:
                 sensors.append(sensor)
 
         # Generate network inputs (NI) - LOGO-to-LOGO communication (binary_sensors)
-        if network_inputs_count > 0:
+        # IMPORTANT: Network I/O (NI/NQ) is ONLY available in LOGO! 8, NOT in LOGO! v7 (0BA7)
+        if network_inputs_count > 0 and device_model == "LOGO! 8":
             # Network inputs start at address 0 (NI1-NI64)
             for i in range(1, network_inputs_count + 1):
                 binary_sensor = {
@@ -179,7 +181,8 @@ class ModbusConfigGenerator:
                 binary_sensors.append(binary_sensor)
 
         # Generate network outputs (NQ) - LOGO-to-LOGO communication (switches)
-        if network_outputs_count > 0:
+        # IMPORTANT: Network I/O (NI/NQ) is ONLY available in LOGO! 8, NOT in LOGO! v7 (0BA7)
+        if network_outputs_count > 0 and device_model == "LOGO! 8":
             # Network outputs start at address 0 (NQ1-NQ64)
             enable_sync = io_config.get('enable_sync', False)
             for i in range(1, network_outputs_count + 1):
