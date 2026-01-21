@@ -8,6 +8,8 @@ import struct
 import subprocess
 import logging
 import ipaddress
+import os
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -24,6 +26,13 @@ class NetworkDetector:
         Returns dict with: ip, netmask, gateway, dns, network_range
         """
         try:
+            # Try Home Assistant Supervisor API first (for Add-on environment)
+            supervisor_info = self._get_supervisor_network_info()
+            if supervisor_info:
+                logger.info("Using network info from Supervisor API")
+                return supervisor_info
+
+            # Fallback to local detection
             network_info = {
                 'ip': self._get_local_ip(),
                 'netmask': self._get_netmask(),
@@ -57,6 +66,90 @@ class NetworkDetector:
                 'scan_range': None,
                 'error': str(e)
             }
+
+    def _get_supervisor_network_info(self):
+        """
+        Get network info from Home Assistant Supervisor API
+        This works when running as a Home Assistant Add-on
+        """
+        try:
+            supervisor_token = os.environ.get('SUPERVISOR_TOKEN')
+            if not supervisor_token:
+                logger.debug("No SUPERVISOR_TOKEN found, skipping Supervisor API")
+                return None
+
+            # Query Supervisor API for network info
+            headers = {
+                'Authorization': f'Bearer {supervisor_token}',
+                'Content-Type': 'application/json'
+            }
+
+            # Get network interface info from Supervisor
+            response = requests.get(
+                'http://supervisor/network/info',
+                headers=headers,
+                timeout=5
+            )
+
+            if response.status_code != 200:
+                logger.warning(f"Supervisor API returned status {response.status_code}")
+                return None
+
+            data = response.json()
+
+            # Find primary interface (usually eth0 or similar)
+            interfaces = data.get('data', {}).get('interfaces', [])
+            primary_interface = None
+
+            for iface in interfaces:
+                # Skip docker/loopback interfaces
+                if iface.get('interface', '').startswith(('docker', 'veth', 'lo')):
+                    continue
+
+                # Find interface with IPv4
+                if iface.get('ipv4') and iface['ipv4'].get('address'):
+                    primary_interface = iface
+                    break
+
+            if not primary_interface:
+                logger.warning("No suitable network interface found in Supervisor API")
+                return None
+
+            # Extract network info
+            ipv4 = primary_interface.get('ipv4', {})
+            ip = ipv4.get('address', [])[0] if ipv4.get('address') else None
+            gateway = ipv4.get('gateway')
+            prefix = ipv4.get('prefix', 24)  # CIDR prefix (e.g., 24 for /24)
+
+            # Get DNS from nameservers
+            dns_servers = data.get('data', {}).get('nameservers', [])
+            dns = ', '.join(dns_servers[:2]) if dns_servers else 'Unknown'
+
+            if not ip:
+                return None
+
+            # Calculate netmask from CIDR prefix
+            netmask = self._cidr_to_netmask(prefix)
+
+            # Calculate network range
+            network_range = self._calculate_network_range(ip, netmask)
+
+            network_info = {
+                'ip': ip,
+                'netmask': netmask,
+                'gateway': gateway or 'Unknown',
+                'dns': dns,
+                'network_range': network_range,
+                'scan_range': network_range
+            }
+
+            logger.info(f"Network info from Supervisor: {network_info}")
+            self.network_info = network_info
+            return network_info
+
+        except Exception as e:
+            logger.warning(f"Could not get network info from Supervisor API: {e}")
+            return None
 
     def _get_local_ip(self):
         """Get local IP address"""
