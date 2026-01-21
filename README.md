@@ -9,13 +9,17 @@ Professionelle Home Assistant Add-ons für industrielle Automatisierung und Smar
 Professioneller Modbus Konfigurator mit automatischer Geräteerkennung via Nmap.
 
 **Features:**
+- 🌐 **NEU:** Automatische Netzwerkerkennung (IP, DNS, Gateway, Netmask)
+- 📡 **NEU:** Network I/O (NI/NQ) Unterstützung für LOGO! 8
+- 🔄 **NEU:** Sync-Flag für Ausgänge (verhindert Desynchronisation)
 - 🚀 Nmap-basierte Geräteerkennung mit modbus-discover NSE Script
 - ⚡ Quick Scan für schnelle Ergebnisse
 - 🎯 Anpassbare Port-Ranges
-- 🌐 Unterstützt Siemens LOGO!, Schneider, ABB, Wago, Allen Bradley und mehr
+- ⚙️ Per-Device I/O-Konfiguration mit persistenter Speicherung
+- 🌐 Unterstützt Siemens LOGO! (v7 & v8), S7 PLCs, Schneider, ABB, Wago und mehr
 - 📝 Automatische YAML-Konfigurationsgenerierung
 
-**Version:** 1.1.0
+**Version:** 1.5.0b
 **[Zur Dokumentation →](modbus/README.md)**
 
 ---
