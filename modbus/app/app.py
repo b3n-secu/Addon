@@ -9,6 +9,7 @@ from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
+from network_detector import NetworkDetector
 
 # Try to import nmap scanner (optional dependency)
 try:
@@ -216,6 +217,19 @@ def api_delete_device(index):
 
     except Exception as e:
         logger.error(f"Error deleting device: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/network-info', methods=['GET'])
+def api_get_network_info():
+    """Get local network information (IP, DNS, Netmask, Gateway)"""
+    try:
+        detector = NetworkDetector()
+        network_info = detector.get_network_info()
+        return jsonify(network_info)
+
+    except Exception as e:
+        logger.error(f"Error getting network info: {e}")
         return jsonify({'error': str(e)}), 500
 
 

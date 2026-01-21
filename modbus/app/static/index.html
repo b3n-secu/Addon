@@ -291,9 +291,69 @@
             font-weight: 600;
             color: #667eea;
         }
+
+        /* Network Info Widget */
+        .network-info-widget {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.85em;
+            max-width: 280px;
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .network-info-widget:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .network-info-widget .network-title {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-info-widget .network-detail {
+            margin: 4px 0;
+            display: flex;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .network-info-widget .network-label {
+            font-weight: 600;
+            opacity: 0.9;
+            min-width: 60px;
+        }
+
+        .network-info-widget .network-value {
+            font-family: 'Courier New', monospace;
+            opacity: 0.95;
+        }
+
+        .network-info-widget .network-loading {
+            text-align: center;
+            padding: 10px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
+    <!-- Network Info Widget (bottom-left corner) -->
+    <div class="network-info-widget" id="networkInfoWidget">
+        <div class="network-loading">🔄 Netzwerk wird erkannt...</div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🔧 Universal Modbus Configurator</h1>
@@ -449,6 +509,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             checkSystemStatus();
             loadDevices();
+            loadNetworkInfo();
         });
 
         async function checkSystemStatus() {
@@ -478,6 +539,68 @@
             }
         }
 
+        let networkInfo = null;
+
+        async function loadNetworkInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/network-info`);
+                networkInfo = await response.json();
+                displayNetworkInfo(networkInfo);
+            } catch (error) {
+                console.error('Error loading network info:', error);
+                document.getElementById('networkInfoWidget').innerHTML = `
+                    <div class="network-title">⚠️ Netzwerk</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Erkennungsfehler</div>
+                `;
+            }
+        }
+
+        function displayNetworkInfo(info) {
+            const widget = document.getElementById('networkInfoWidget');
+            if (info.error) {
+                widget.innerHTML = `
+                    <div class="network-title">⚠️ Netzwerk</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Erkennungsfehler</div>
+                `;
+                return;
+            }
+
+            widget.innerHTML = `
+                <div class="network-title">🌐 Netzwerk-Info</div>
+                <div class="network-detail">
+                    <span class="network-label">IP:</span>
+                    <span class="network-value">${info.ip || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">Maske:</span>
+                    <span class="network-value">${info.netmask || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">Gateway:</span>
+                    <span class="network-value">${info.gateway || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">DNS:</span>
+                    <span class="network-value">${info.dns || 'N/A'}</span>
+                </div>
+                ${info.scan_range ? `
+                <div class="network-detail" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.3);">
+                    <span class="network-label">Scan:</span>
+                    <span class="network-value">${info.scan_range}</span>
+                </div>
+                ` : ''}
+            `;
+
+            // Add tooltip
+            widget.title = 'Automatisch erkannte Netzwerk-Konfiguration';
+
+            // Update placeholder in network range input field
+            const networkRangeInput = document.getElementById('networkRange');
+            if (networkRangeInput && info.scan_range) {
+                networkRangeInput.placeholder = `Auto: ${info.scan_range}`;
+            }
+        }
+
         function showAlert(message, type = 'info') {
             const alertArea = document.getElementById('alertArea');
             const alertDiv = document.createElement('div');
@@ -493,8 +616,14 @@
         async function scanNetworkAuto() {
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
-            const networkRange = document.getElementById('networkRange').value;
+            let networkRange = document.getElementById('networkRange').value;
             const autoAdd = document.getElementById('autoAddDevices').checked;
+
+            // Use auto-detected network range if field is empty
+            if (!networkRange && networkInfo && networkInfo.scan_range) {
+                networkRange = networkInfo.scan_range;
+                showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
+            }
 
             resultsDiv.classList.remove('hidden');
             deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk und erkenne Geräte automatisch...</p></div>';
@@ -949,10 +1078,16 @@
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
             const progressDiv = document.getElementById('scanProgress');
-            const networkRange = document.getElementById('networkRange').value;
+            let networkRange = document.getElementById('networkRange').value;
             const portRange = document.getElementById('portRange').value;
             const autoAdd = document.getElementById('autoAddDevices').checked;
             const useModbusDiscover = document.getElementById('useModbusDiscover').checked;
+
+            // Use auto-detected network range if field is empty
+            if (!networkRange && networkInfo && networkInfo.scan_range) {
+                networkRange = networkInfo.scan_range;
+                showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
+            }
 
             // Show progress indicator
             progressDiv.classList.remove('hidden');
