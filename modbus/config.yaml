@@ -8,7 +8,6 @@ arch:
   - aarch64
   - amd64
   - i386
-image: "ghcr.io/b3n-secu/universal-modbus-config-{arch}"
 init: false
 hassio_api: true
 hassio_role: default
