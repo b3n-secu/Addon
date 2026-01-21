@@ -14,6 +14,9 @@ jobs:
   build:
     name: Build ${{ matrix.addon }} for ${{ matrix.arch }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         addon:
@@ -32,7 +35,7 @@ jobs:
       - name: Get add-on version
         id: version
         run: |
-          version=$(jq -r '.version' ${{ matrix.addon }}/config.yaml | tr -d '"')
+          version=$(grep '^version:' ${{ matrix.addon }}/config.yaml | awk '{print $2}' | tr -d '"')
           echo "version=${version}" >> $GITHUB_OUTPUT
           echo "Add-on version: ${version}"
 
@@ -46,9 +49,9 @@ jobs:
       - name: Build and push
         uses: home-assistant/builder@master
         with:
-          args: |
-            --${{ matrix.arch }} \
-            --target ${{ matrix.addon }} \
-            --docker-hub ghcr.io/${{ github.repository_owner }} \
-            --image universal-modbus-config-{arch} \
-            --version ${{ steps.version.outputs.version }}
+          args: >
+            --${{ matrix.arch }}
+            --target ${{ matrix.addon }}
+            --docker-hub ghcr.io/${{ github.repository_owner }}
+            --image universal-modbus-config-{arch}
+
