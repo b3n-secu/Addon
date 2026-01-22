@@ -1,5 +1,41 @@
 # Changelog
 
+## Version 1.6.1 (2026-01-22)
+
+### Critical Bug Fixes
+
+- 🐛 **FINAL FIX: JSON parse error in web interface** - Completely resolved "unexpected non-whitespace character after JSON data at line 1 column 4"
+  - **Root cause identified**: Logging output was mixing with HTTP responses (stdout contamination)
+  - **Solution**: Redirected ALL logs to stderr instead of stdout
+  - Configured Python logging to use `sys.stderr` stream
+  - Reconfigured Flask/Werkzeug loggers to prevent stdout contamination
+  - Enhanced `/api/devices` endpoint with robust validation and error handling
+  - Fixed logging initialization order (BEFORE any module imports)
+
+### Technical Changes
+
+- 🔧 **Logging Configuration**:
+  - Moved `logging.basicConfig()` to the top of both `app/app.py` and `modbus/app/app.py`
+  - Added `stream=sys.stderr` to all logging configurations
+  - Configured Werkzeug logger to explicitly use stderr
+  - Prevents log messages from mixing with JSON responses
+
+- 🛡️ **Enhanced API Validation**:
+  - Added type checking in `/api/devices` GET endpoint
+  - Validates `devices` is always a proper list
+  - Filters out invalid device entries
+  - Returns empty array instead of errors for better UX
+
+- 📊 **Import Order Fix**:
+  - Logging configuration now runs BEFORE optional module imports
+  - Changed `logging.warning()` to `logger.warning()` after logger initialization
+
+### Impact
+
+This fix resolves the persistent JSON parse error that was preventing the web interface from loading device lists. The issue was caused by logging output mixing with HTTP response data when logs were written to stdout. By redirecting all logging to stderr, JSON responses remain clean and parseable.
+
+---
+
 ## Version 1.6.0a (2026-01-22)
 
 ### Critical Bug Fixes
