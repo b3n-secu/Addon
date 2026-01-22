@@ -4,9 +4,10 @@ Device profiles for different manufacturers and models
 
 DEVICE_PROFILES = {
     "Siemens": {
-        "LOGO! 8": {
+        "LOGO! 8 (0BA8)": {
             "port": 510,
             "timeout": 5,
+            "note": "LOGO! 8 with native Modbus TCP support. IMPORTANT: LOGO! v7/0BA7 does NOT support Modbus - see LOGO_COMPATIBILITY.md",
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
@@ -40,10 +41,11 @@ DEVICE_PROFILES = {
                 },
                 "merker": {
                     "type": "switch",
-                    "start_address": 8257,  # M1-M64
+                    "start_address": 8257,  # M1-M64 -> Coil 8257-8320
                     "count": 64,
                     "write_type": "coil",
-                    "scan_interval": 1
+                    "scan_interval": 1,
+                    "note": "Merker/Memory bits (M1-M64)"
                 },
                 "variable_words": {
                     "type": "number",
@@ -51,7 +53,8 @@ DEVICE_PROFILES = {
                     "count": 425,
                     "input_type": "holding",
                     "data_type": "uint16",
-                    "scan_interval": 5
+                    "scan_interval": 5,
+                    "note": "Variable Words (VW0-VW848) - Halteregister 1-425"
                 },
                 "analog_merker": {
                     "type": "number",
@@ -59,21 +62,24 @@ DEVICE_PROFILES = {
                     "count": 64,
                     "input_type": "holding",
                     "data_type": "uint16",
-                    "scan_interval": 5
+                    "scan_interval": 5,
+                    "note": "Analog Merker (AM1-AM64) - Halteregister 529-592"
                 },
                 "network_inputs": {
                     "type": "binary_sensor",
                     "start_address": 0,  # NI1-NI64
                     "count": 64,
                     "input_type": "discrete_input",
-                    "scan_interval": 1
+                    "scan_interval": 2,
+                    "note": "Network Inputs for LOGO-to-LOGO communication (LOGO! 8 only)"
                 },
                 "network_outputs": {
                     "type": "switch",
                     "start_address": 0,  # NQ1-NQ64
                     "count": 64,
                     "write_type": "coil",
-                    "scan_interval": 1
+                    "scan_interval": 2,
+                    "note": "Network Outputs for LOGO-to-LOGO communication (LOGO! 8 only)"
                 }
             },
             "presets": {
@@ -101,82 +107,160 @@ DEVICE_PROFILES = {
                 }
             }
         },
-        "LOGO! 0BA7": {
-            "port": 102,
-            "protocol": "s7",
+        "S7 PLC": {
+            "port": 502,
             "timeout": 5,
-            "warning": "⚠️ LOGO! v7/0BA7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
-            "s7_config": {
-                "rack": 0,
-                "slot": 2,
-                "local_tsap": "0x0100",
-                "remote_tsap": "0x2000"
-            },
+            "note": "S7 PLCs require MB_SERVER configuration. Default generic Modbus mapping.",
             "registers": {
-                "analog_inputs": {
+                "holding_registers": {
                     "type": "sensor",
-                    "start_address": 1,
-                    "count": 8,
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "Maps to DB words via MB_SERVER"
+                },
+                "input_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
                     "input_type": "input",
-                    "data_type": "uint16",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "Read-only registers"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 100,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Maps to Q outputs"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "Read-only inputs"
+                }
+            },
+            "presets": {
+                "generic_sensor": {
+                    "unit_of_measurement": "",
+                    "data_type": "int16",
+                    "precision": 2,
+                    "state_class": "measurement"
+                }
+            }
+        },
+        "S7-300": {
+            "port": 102,
+            "timeout": 5,
+            "note": "S7-300 uses ISO-TSAP protocol on Port 102. Requires CP module for Modbus.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
                     "scan_interval": 5
                 },
-                "digital_inputs": {
-                    "type": "binary_sensor",
-                    "start_address": 1,
-                    "count": 16,
-                    "input_type": "discrete_input",
-                    "scan_interval": 1
-                },
-                "digital_outputs": {
+                "coils": {
                     "type": "switch",
-                    "start_address": 8193,
-                    "count": 16,
+                    "start_address": 0,
+                    "count": 100,
                     "write_type": "coil",
-                    "scan_interval": 1
-                },
-                "marker_bits": {
-                    "type": "binary_sensor",
-                    "start_address": 8255,
-                    "count": 24,
-                    "input_type": "discrete_input",
                     "scan_interval": 1
                 }
             }
         },
-        "LOGO! 7": {
+        "S7-400": {
             "port": 102,
-            "protocol": "s7",
             "timeout": 5,
-            "warning": "⚠️ LOGO! v7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
-            "s7_config": {
-                "rack": 0,
-                "slot": 2,
-                "local_tsap": "0x0100",
-                "remote_tsap": "0x2000"
-            },
+            "note": "S7-400 uses ISO-TSAP protocol on Port 102. Requires CP module for Modbus.",
             "registers": {
-                "analog_inputs": {
+                "holding_registers": {
                     "type": "sensor",
-                    "start_address": 1,
-                    "count": 8,
-                    "input_type": "input",
-                    "data_type": "uint16",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
                     "scan_interval": 5
                 },
-                "digital_inputs": {
-                    "type": "binary_sensor",
-                    "start_address": 1,
-                    "count": 24,
-                    "input_type": "discrete_input",
-                    "scan_interval": 1
-                },
-                "digital_outputs": {
+                "coils": {
                     "type": "switch",
-                    "start_address": 8193,
-                    "count": 16,
+                    "start_address": 0,
+                    "count": 100,
                     "write_type": "coil",
                     "scan_interval": 1
+                }
+            }
+        },
+        "S7-1200": {
+            "port": 502,
+            "timeout": 5,
+            "note": "S7-1200 with built-in Modbus TCP server (MB_SERVER). Configure via TIA Portal.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "DB data blocks"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 1024,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Q0.0 to Q1023.7"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 1024,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "I0.0 to I1023.7"
+                }
+            }
+        },
+        "S7-1500": {
+            "port": 502,
+            "timeout": 5,
+            "note": "S7-1500 with built-in Modbus TCP server (MB_SERVER). Configure via TIA Portal.",
+            "registers": {
+                "holding_registers": {
+                    "type": "sensor",
+                    "start_address": 0,
+                    "count": 100,
+                    "input_type": "holding",
+                    "data_type": "int16",
+                    "scan_interval": 5,
+                    "note": "DB data blocks"
+                },
+                "coils": {
+                    "type": "switch",
+                    "start_address": 0,
+                    "count": 1024,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Q0.0 to Q1023.7"
+                },
+                "discrete_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,
+                    "count": 1024,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "I0.0 to I1023.7"
                 }
             }
         }
