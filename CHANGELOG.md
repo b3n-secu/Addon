@@ -1,5 +1,48 @@
 # Changelog
 
+## Version 1.6.0a (2026-01-22)
+
+### Critical Bug Fixes
+
+- 🐛 **FIXED: JSON parse error in web interface** - Resolved "unexpected non-whitespace character after JSON data at line 1 column 4"
+  - Added missing `save_config()` call in `/api/scan-network` endpoint
+  - Enhanced data validation in `/api/devices` endpoint
+  - Improved error handling in `load_config()` function
+  - Added proper type checking for device list integrity
+
+### Improvements
+
+- 🔧 **Enhanced data integrity**: Added validation to ensure devices list is always properly structured
+- 🛡️ **Better error handling**: Graceful handling of corrupted config files
+- 📊 **Improved logging**: More detailed error messages for troubleshooting
+- ✅ **Config persistence**: Automatic save after network scan device addition
+
+### Technical Changes
+
+- Added JSON validation for device data structures
+- Enhanced exception handling in API endpoints
+- Improved config file validation on load
+- Better error recovery from malformed data
+
+---
+
+## Version 1.5.0c (2026-01-22)
+
+### Bug Fixes
+
+- 🐛 Fixed JSON parse error in web interface ("unexpected non-whitespace character")
+- 🔧 Synchronized device_profiles.py between app/ and modbus/app/
+- ✅ Corrected device profile structure (LOGO! 8 (0BA8), S7 PLC)
+- 📝 Improved device profile documentation and notes
+
+### Technical Changes
+
+- 🔄 Unified device profiles across all modules
+- 🏗️ Added S7-300, S7-400, S7-1200, S7-1500 PLC profiles
+- 📊 Enhanced Siemens PLC support with comprehensive register mappings
+
+---
+
 ## Version 1.5.0b (2026-01-22)
 
 ### Major Features

@@ -53,10 +53,32 @@ def load_config():
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, 'r') as f:
                 config = json.load(f)
-                devices = config.get('devices', [])
+                loaded_devices = config.get('devices', [])
+
+                # Validate that devices is a list
+                if not isinstance(loaded_devices, list):
+                    logger.error(f"Config 'devices' is not a list: {type(loaded_devices)}")
+                    devices = []
+                    return
+
+                # Validate each device is a dict
+                devices = []
+                for i, device in enumerate(loaded_devices):
+                    if isinstance(device, dict):
+                        devices.append(device)
+                    else:
+                        logger.warning(f"Skipping invalid device at index {i}: {type(device)}")
+
                 logger.info(f"Loaded {len(devices)} devices from config")
+        else:
+            logger.info(f"Config file not found: {CONFIG_PATH}")
+            devices = []
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error loading config: {e}")
+        devices = []
     except Exception as e:
-        logger.error(f"Error loading config: {e}")
+        logger.error(f"Error loading config: {e}", exc_info=True)
+        devices = []
 
 
 def save_config():
@@ -88,7 +110,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.0.0'
+        'version': '1.6.0a'
     })
 
 
@@ -116,7 +138,24 @@ def api_profile(manufacturer, model):
 @app.route('/api/devices', methods=['GET'])
 def api_get_devices():
     """Get all configured devices"""
-    return jsonify(devices)
+    try:
+        # Ensure devices is a proper list
+        if not isinstance(devices, list):
+            logger.error(f"Devices is not a list: {type(devices)}")
+            return jsonify([])
+
+        # Validate each device is a dict
+        valid_devices = []
+        for i, device in enumerate(devices):
+            if isinstance(device, dict):
+                valid_devices.append(device)
+            else:
+                logger.warning(f"Device at index {i} is not a dict: {type(device)}")
+
+        return jsonify(valid_devices)
+    except Exception as e:
+        logger.error(f"Error getting devices: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/devices', methods=['POST'])
@@ -254,6 +293,10 @@ def api_scan_network():
                     devices.append(new_device)
                     added_count += 1
                     logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+
+            # Save configuration if devices were added
+            if added_count > 0:
+                save_config()
 
         logger.info(f"Network scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
