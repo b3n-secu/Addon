@@ -369,7 +369,7 @@
                 <h2 class="section-title">🔍 Automatische Geräteerkennung (Nmap-basiert)</h2>
                 <p style="margin-bottom: 15px; color: #666;">
                     Professioneller Netzwerk-Scan mit nmap und modbus-discover NSE Script.
-                    Unterstützt: Siemens LOGO! 8, LOGO! 0BA7, Schneider, ABB, Wago und weitere Modbus-Geräte.
+                    Unterstützt: Siemens LOGO! 8 (0BA8), Schneider, ABB, Wago und weitere Modbus-Geräte. <strong>Hinweis: LOGO! v7/0BA7 wird NICHT unterstützt (nur S7-Protokoll).</strong>
                 </p>
 
                 <div class="grid">
@@ -807,14 +807,14 @@
                                         <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Ausgänge (AQ):</label>
                                         <input type="number" id="analog-outputs-${index}" value="${analogOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
                                     </div>
-                                    ${device.model === 'LOGO! 8' ? `
+                                    ${(device.model === 'LOGO! 8' || device.model === 'LOGO! 8 (0BA8)') ? `
                                     <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Inputs (NI) - LOGO! 8:</label>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Inputs (NI) - LOGO! 8 (0BA8):</label>
                                         <input type="number" id="network-inputs-${index}" value="${networkInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
                                         <small style="color: #666; display: block; margin-top: 3px;">NI1-NI64 für LOGO-LOGO Kommunikation</small>
                                     </div>
                                     <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Outputs (NQ) - LOGO! 8:</label>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Outputs (NQ) - LOGO! 8 (0BA8):</label>
                                         <input type="number" id="network-outputs-${index}" value="${networkOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
                                         <small style="color: #666; display: block; margin-top: 3px;">NQ1-NQ64 für LOGO-LOGO Kommunikation</small>
                                     </div>

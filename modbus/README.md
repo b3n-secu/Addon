@@ -45,8 +45,8 @@ Siehe [DEVICE_DATABASE.md](DEVICE_DATABASE.md) für Details und Erweiterungsmög
 ## Unterstützte Geräte
 
 - 🟦 **Siemens** (Deutschland):
-  - LOGO! 8.x (8.3, 8.4) - Port 502
-  - LOGO! 0BA7 (7.x Serie) - Port 502
+  - LOGO! 8 (0BA8) - Port 502/510 ✅ **Vollständig unterstützt inkl. Network I/O**
+  - ⚠️ **LOGO! v7/0BA7 NICHT unterstützt** (nur S7-Protokoll, kein Modbus) - siehe [LOGO_COMPATIBILITY.md](LOGO_COMPATIBILITY.md)
   - S7-300 - Port 102, 502
   - S7-400 - Port 102, 502
   - S7-1200 - Port 502
@@ -197,6 +197,17 @@ Supervisor → Universal Modbus Configurator → Logs
 - [Issues](https://github.com/b3n-secu/Addon/issues)
 
 ## Changelog
+
+### Version 1.5.0b
+- ✨ **Network I/O Support** für LOGO! 8 (NI/NQ Inputs/Outputs)
+- ✨ **Automatische Netzwerkerkennung** via Home Assistant Supervisor API
+- ✨ **Host Network Mode** für Zugriff auf physisches Netzwerk
+- ✨ **Network Info Widget** mit Live-Netzwerkinformationen
+- ✨ **Sync-Flag** für Schalter zur Vermeidung von Desynchronisation
+- ✨ **Custom Exception Classes** für bessere Fehlerbehandlung
+- 📚 **LOGO! v7 Kompatibilitätsdokumentation** - Klarstellung über S7 vs Modbus
+- 🔧 Entfernung von LOGO! v7/0BA7 Profilen (nur S7-Protokoll, kein Modbus)
+- 🐛 Fixes für Docker-Netzwerkerkennung
 
 ### Version 1.1.0
 - ✨ Professioneller Nmap-Scanner

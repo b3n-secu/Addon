@@ -4,9 +4,10 @@ Device profiles for different manufacturers and models
 
 DEVICE_PROFILES = {
     "Siemens": {
-        "LOGO! 8": {
+        "LOGO! 8 (0BA8)": {
             "port": 510,
             "timeout": 5,
+            "note": "LOGO! 8 with native Modbus TCP support. IMPORTANT: LOGO! v7/0BA7 does NOT support Modbus - see LOGO_COMPATIBILITY.md",
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
@@ -44,7 +45,7 @@ DEVICE_PROFILES = {
                     "count": 64,
                     "input_type": "discrete_input",
                     "scan_interval": 2,
-                    "note": "Network Inputs for LOGO-to-LOGO communication"
+                    "note": "Network Inputs for LOGO-to-LOGO communication (LOGO! 8 only)"
                 },
                 "network_outputs": {
                     "type": "switch",
@@ -52,7 +53,7 @@ DEVICE_PROFILES = {
                     "count": 64,
                     "write_type": "coil",
                     "scan_interval": 2,
-                    "note": "Network Outputs for LOGO-to-LOGO communication"
+                    "note": "Network Outputs for LOGO-to-LOGO communication (LOGO! 8 only)"
                 }
             },
             "presets": {
@@ -77,69 +78,6 @@ DEVICE_PROFILES = {
                     "device_class": "power",
                     "precision": 1,
                     "state_class": "measurement"
-                }
-            }
-        },
-        "LOGO! 0BA7": {
-            "port": 510,
-            "timeout": 5,
-            "registers": {
-                "analog_inputs": {
-                    "type": "sensor",
-                    "start_address": 1,
-                    "count": 8,
-                    "input_type": "input",
-                    "data_type": "uint16",
-                    "scan_interval": 5
-                },
-                "digital_inputs": {
-                    "type": "binary_sensor",
-                    "start_address": 1,
-                    "count": 16,
-                    "input_type": "discrete_input",
-                    "scan_interval": 1
-                },
-                "digital_outputs": {
-                    "type": "switch",
-                    "start_address": 8193,
-                    "count": 16,
-                    "write_type": "coil",
-                    "scan_interval": 1
-                },
-                "marker_bits": {
-                    "type": "binary_sensor",
-                    "start_address": 8255,
-                    "count": 24,
-                    "input_type": "discrete_input",
-                    "scan_interval": 1
-                }
-            }
-        },
-        "LOGO! 7": {
-            "port": 510,
-            "timeout": 5,
-            "registers": {
-                "analog_inputs": {
-                    "type": "sensor",
-                    "start_address": 1,
-                    "count": 8,
-                    "input_type": "input",
-                    "data_type": "uint16",
-                    "scan_interval": 5
-                },
-                "digital_inputs": {
-                    "type": "binary_sensor",
-                    "start_address": 1,
-                    "count": 24,
-                    "input_type": "discrete_input",
-                    "scan_interval": 1
-                },
-                "digital_outputs": {
-                    "type": "switch",
-                    "start_address": 8193,
-                    "count": 16,
-                    "write_type": "coil",
-                    "scan_interval": 1
                 }
             }
         },
