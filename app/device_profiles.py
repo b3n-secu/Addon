@@ -102,8 +102,16 @@ DEVICE_PROFILES = {
             }
         },
         "LOGO! 0BA7": {
-            "port": 510,
+            "port": 102,
+            "protocol": "s7",
             "timeout": 5,
+            "warning": "⚠️ LOGO! v7/0BA7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
+            "s7_config": {
+                "rack": 0,
+                "slot": 2,
+                "local_tsap": "0x0100",
+                "remote_tsap": "0x2000"
+            },
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
@@ -137,8 +145,16 @@ DEVICE_PROFILES = {
             }
         },
         "LOGO! 7": {
-            "port": 510,
+            "port": 102,
+            "protocol": "s7",
             "timeout": 5,
+            "warning": "⚠️ LOGO! v7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
+            "s7_config": {
+                "rack": 0,
+                "slot": 2,
+                "local_tsap": "0x0100",
+                "remote_tsap": "0x2000"
+            },
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
