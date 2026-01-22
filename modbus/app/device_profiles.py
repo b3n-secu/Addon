@@ -39,6 +39,32 @@ DEVICE_PROFILES = {
                     "data_type": "uint16",
                     "scan_interval": 5
                 },
+                "merker": {
+                    "type": "switch",
+                    "start_address": 8257,  # M1-M64 -> Coil 8257-8320
+                    "count": 64,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Merker/Memory bits (M1-M64)"
+                },
+                "variable_words": {
+                    "type": "number",
+                    "start_address": 1,  # VW0-VW848 -> HR 1-425
+                    "count": 425,
+                    "input_type": "holding",
+                    "data_type": "uint16",
+                    "scan_interval": 5,
+                    "note": "Variable Words (VW0-VW848) - Halteregister 1-425"
+                },
+                "analog_merker": {
+                    "type": "number",
+                    "start_address": 529,  # AM1-AM64 -> HR 529-592
+                    "count": 64,
+                    "input_type": "holding",
+                    "data_type": "uint16",
+                    "scan_interval": 5,
+                    "note": "Analog Merker (AM1-AM64) - Halteregister 529-592"
+                },
                 "network_inputs": {
                     "type": "binary_sensor",
                     "start_address": 0,  # NI1-NI64

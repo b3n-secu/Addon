@@ -37,6 +37,43 @@ DEVICE_PROFILES = {
                     "input_type": "holding",
                     "data_type": "uint16",
                     "scan_interval": 5
+                },
+                "merker": {
+                    "type": "switch",
+                    "start_address": 8257,  # M1-M64
+                    "count": 64,
+                    "write_type": "coil",
+                    "scan_interval": 1
+                },
+                "variable_words": {
+                    "type": "number",
+                    "start_address": 1,  # VW0-VW848 -> HR 1-425
+                    "count": 425,
+                    "input_type": "holding",
+                    "data_type": "uint16",
+                    "scan_interval": 5
+                },
+                "analog_merker": {
+                    "type": "number",
+                    "start_address": 529,  # AM1-AM64 -> HR 529-592
+                    "count": 64,
+                    "input_type": "holding",
+                    "data_type": "uint16",
+                    "scan_interval": 5
+                },
+                "network_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 0,  # NI1-NI64
+                    "count": 64,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1
+                },
+                "network_outputs": {
+                    "type": "switch",
+                    "start_address": 0,  # NQ1-NQ64
+                    "count": 64,
+                    "write_type": "coil",
+                    "scan_interval": 1
                 }
             },
             "presets": {
@@ -65,8 +102,16 @@ DEVICE_PROFILES = {
             }
         },
         "LOGO! 0BA7": {
-            "port": 510,
+            "port": 102,
+            "protocol": "s7",
             "timeout": 5,
+            "warning": "⚠️ LOGO! v7/0BA7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
+            "s7_config": {
+                "rack": 0,
+                "slot": 2,
+                "local_tsap": "0x0100",
+                "remote_tsap": "0x2000"
+            },
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
@@ -100,8 +145,16 @@ DEVICE_PROFILES = {
             }
         },
         "LOGO! 7": {
-            "port": 510,
+            "port": 102,
+            "protocol": "s7",
             "timeout": 5,
+            "warning": "⚠️ LOGO! v7 verwendet S7-Protokoll (Port 102), NICHT Modbus TCP! Modbus-Scan wird fehlschlagen. Verwenden Sie stattdessen die S7-Integration.",
+            "s7_config": {
+                "rack": 0,
+                "slot": 2,
+                "local_tsap": "0x0100",
+                "remote_tsap": "0x2000"
+            },
             "registers": {
                 "analog_inputs": {
                     "type": "sensor",
