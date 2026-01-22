@@ -4,6 +4,7 @@ Universal Modbus Configurator - Main Application
 import os
 import json
 import logging
+import sys
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
@@ -11,23 +12,33 @@ from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
 from network_detector import NetworkDetector
 
+# Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    stream=sys.stderr  # Critical: prevents logs from mixing with HTTP response
+)
+logger = logging.getLogger(__name__)
+
 # Try to import nmap scanner (optional dependency)
 try:
     from nmap_scanner import NmapModbusScanner
     NMAP_AVAILABLE = True
 except ImportError as e:
-    logging.warning(f"Nmap scanner not available: {e}. Install 'nmap' and 'python-nmap' for advanced scanning.")
+    logger.warning(f"Nmap scanner not available: {e}. Install 'nmap' and 'python-nmap' for advanced scanning.")
     NMAP_AVAILABLE = False
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure Flask/Werkzeug loggers to use stderr
+werkzeug_logger = logging.getLogger('werkzeug')
+for handler in werkzeug_logger.handlers[:]:
+    werkzeug_logger.removeHandler(handler)
+werkzeug_handler = logging.StreamHandler(sys.stderr)
+werkzeug_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+werkzeug_logger.addHandler(werkzeug_handler)
+werkzeug_logger.setLevel(logging.INFO)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
@@ -149,7 +160,26 @@ def api_profile(manufacturer, model):
 @app.route('/api/devices', methods=['GET'])
 def api_get_devices():
     """Get all configured devices"""
-    return jsonify(devices)
+    global devices
+
+    # Ensure devices is always a valid list
+    if not isinstance(devices, list):
+        logger.error(f"devices is not a list! Type: {type(devices)}, Value: {devices}")
+        devices = []
+
+    try:
+        # Validate each device has required structure
+        valid_devices = []
+        for i, device in enumerate(devices):
+            if isinstance(device, dict):
+                valid_devices.append(device)
+            else:
+                logger.warning(f"Skipping invalid device at index {i}: {device}")
+
+        return jsonify(valid_devices)
+    except Exception as e:
+        logger.error(f"Error in api_get_devices: {e}")
+        return jsonify([]), 200
 
 
 @app.route('/api/devices', methods=['POST'])
