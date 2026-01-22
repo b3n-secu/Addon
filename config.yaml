@@ -35,7 +35,6 @@ schema:
   modbus_config_path: str
   scan_timeout: int?
   default_port_range: str?
-image: ghcr.io/homeassistant/{arch}-addon-universal-modbus-config
 panel_icon: mdi:cable-data
 panel_title: HAMCA
 panel_admin: true
