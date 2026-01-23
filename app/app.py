@@ -29,6 +29,18 @@ except ImportError as e:
     logger.warning(f"Nmap scanner not available: {e}. Install 'nmap' and 'python-nmap' for advanced scanning.")
     NMAP_AVAILABLE = False
 
+# Try to import S7 scanner (for LOGO! v7 detection)
+try:
+    from s7_scanner import S7Scanner
+    from s7_client import S7Client, SNAP7_AVAILABLE
+    S7_SCANNER_AVAILABLE = True
+except ImportError as e:
+    logger.warning(f"S7 scanner not available: {e}")
+    S7_SCANNER_AVAILABLE = False
+    S7Scanner = None
+    S7Client = None
+    SNAP7_AVAILABLE = False
+
 app = Flask(__name__)
 CORS(app)
 
@@ -465,6 +477,128 @@ def api_scan_network_nmap():
     except Exception as e:
         logger.error(f"Error during nmap scan: {e}", exc_info=True)
         return jsonify({'error': str(e), 'scan_method': 'nmap'}), 500
+
+
+@app.route('/api/scan-s7', methods=['POST'])
+def api_scan_s7():
+    """
+    Scan single IP for S7 protocol (LOGO! v7, S7-300, S7-400)
+    Uses S7comm protocol detection on port 102
+    """
+    if not S7_SCANNER_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'S7 scanner not available. Missing s7_scanner module.',
+            'info': 'S7 scanner is used for LOGO! v7/0BA7 detection on port 102'
+        }), 503
+
+    try:
+        data = request.json
+        host = data.get('host')
+        port = data.get('port', 102)
+        src_tsap = data.get('src_tsap')  # Optional, e.g., 0x0100
+        dst_tsap = data.get('dst_tsap')  # Optional, e.g., 0x2000
+        timeout = data.get('timeout', 5)
+
+        if not host:
+            return jsonify({'error': 'Host is required'}), 400
+
+        logger.info(f"Scanning {host}:{port} for S7 protocol...")
+
+        scanner = S7Scanner(host, port=port, timeout=timeout)
+        result = scanner.detect_s7_device(src_tsap=src_tsap, dst_tsap=dst_tsap)
+
+        if result['success']:
+            logger.info(f"S7 device detected: {host} - {result['device_type']}")
+        else:
+            logger.info(f"No S7 device found at {host}:{port} - {result.get('error', 'Unknown error')}")
+
+        return jsonify(result)
+
+    except Exception as e:
+        logger.error(f"Error during S7 scan: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@app.route('/api/scan-network-s7', methods=['POST'])
+def api_scan_network_s7():
+    """
+    Scan network for S7 devices (LOGO! v7, S7-300, S7-400)
+    Scans port 102 for S7comm protocol
+    """
+    if not S7_SCANNER_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'S7 scanner not available. Missing s7_scanner module.',
+            'info': 'S7 scanner is used for LOGO! v7/0BA7 detection on port 102'
+        }), 503
+
+    try:
+        data = request.json or {}
+        network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
+        timeout = data.get('timeout', 2)  # Timeout per host
+        auto_add = data.get('auto_add', False)  # Automatically add to device list
+
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network: {network}")
+
+        logger.info(f"Starting S7 network scan on {network} (timeout: {timeout}s per host)...")
+
+        # Perform S7 network scan
+        found_devices = S7Scanner.scan_network_for_s7(network, timeout=timeout)
+
+        # Automatically add detected devices if requested
+        added_count = 0
+        if auto_add:
+            for device in found_devices:
+                # Add S7 device to list (will need S7 client, not Modbus)
+                new_device = {
+                    'name': f"{device['device_type']} at {device['host']}",
+                    'manufacturer': 'Siemens',
+                    'model': device['device_type'],
+                    'host': device['host'],
+                    'port': device['port'],
+                    'protocol': 's7',  # Mark as S7 protocol
+                    'tsap_src': device['tsap_src'],
+                    'tsap_dst': device['tsap_dst'],
+                    'pdu_size': device['pdu_size']
+                }
+
+                # Only add if not already in list
+                if not any(d.get('host') == new_device['host'] and d.get('port') == new_device['port'] for d in devices):
+                    devices.append(new_device)
+                    added_count += 1
+                    logger.info(f"Auto-added S7 device: {new_device['name']}")
+
+            # Save configuration if devices were added
+            if added_count > 0:
+                save_config()
+
+        logger.info(f"S7 scan complete. Found {len(found_devices)} device(s), added {added_count}.")
+
+        return jsonify({
+            'success': True,
+            'devices': found_devices,
+            'total': len(found_devices),
+            'added_count': added_count,
+            'scan_method': 's7comm',
+            'network': network
+        })
+
+    except Exception as e:
+        logger.error(f"Error during S7 network scan: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'scan_method': 's7comm'
+        }), 500
 
 
 @app.route('/api/detect-modbus-ports', methods=['POST'])
