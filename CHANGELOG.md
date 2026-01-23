@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 1.7.3 (2026-01-23)
+
+### Release Update
+
+- 🔄 **Version bump to ensure addon rebuild**
+  - Forces Home Assistant to recognize and apply all changes from 1.7.2
+  - Ensures `/data/devices.json` persistence is properly activated
+  - Guarantees clean deployment of device configuration fixes
+
+### Notes
+
+This version contains no code changes from 1.7.2, but ensures the addon is properly rebuilt and all persistence fixes are applied.
+
+---
+
 ## Version 1.7.2 (2026-01-23)
 
 ### Critical Bug Fixes
