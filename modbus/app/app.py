@@ -316,11 +316,26 @@ def api_get_network_info():
     try:
         detector = NetworkDetector()
         network_info = detector.get_network_info()
-        return jsonify(network_info)
+
+        # Set explicit content type
+        response = jsonify(network_info)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
 
     except Exception as e:
-        logger.error(f"Error getting network info: {e}")
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Error getting network info: {e}", exc_info=True)
+        # Return fallback info
+        response = jsonify({
+            'ip': 'Unknown',
+            'netmask': 'Unknown',
+            'gateway': 'Unknown',
+            'dns': 'Unknown',
+            'network_range': None,
+            'scan_range': None,
+            'error': str(e)
+        })
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
 
 
 @app.route('/api/scan', methods=['POST'])

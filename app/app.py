@@ -11,6 +11,7 @@ from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
+from network_detector import NetworkDetector
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -319,6 +320,34 @@ def api_scan_device():
     except Exception as e:
         logger.error(f"Error scanning device: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/network-info', methods=['GET'])
+def api_get_network_info():
+    """Get local network information (IP, DNS, Netmask, Gateway)"""
+    try:
+        detector = NetworkDetector()
+        network_info = detector.get_network_info()
+
+        # Set explicit content type
+        response = jsonify(network_info)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error getting network info: {e}", exc_info=True)
+        # Return fallback info
+        response = jsonify({
+            'ip': 'Unknown',
+            'netmask': 'Unknown',
+            'gateway': 'Unknown',
+            'dns': 'Unknown',
+            'network_range': None,
+            'scan_range': None,
+            'error': str(e)
+        })
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
 
 
 @app.route('/api/scan-network', methods=['POST'])

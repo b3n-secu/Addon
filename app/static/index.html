@@ -291,9 +291,69 @@
             font-weight: 600;
             color: #667eea;
         }
+
+        /* Network Info Widget */
+        .network-info-widget {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 0.85em;
+            max-width: 280px;
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .network-info-widget:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .network-info-widget .network-title {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-info-widget .network-detail {
+            margin: 4px 0;
+            display: flex;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .network-info-widget .network-label {
+            font-weight: 600;
+            opacity: 0.9;
+            min-width: 60px;
+        }
+
+        .network-info-widget .network-value {
+            font-family: 'Courier New', monospace;
+            opacity: 0.95;
+        }
+
+        .network-info-widget .network-loading {
+            text-align: center;
+            padding: 10px;
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
+    <!-- Network Info Widget (bottom-left corner) -->
+    <div class="network-info-widget" id="networkInfoWidget">
+        <div class="network-loading">🔄 Netzwerk wird erkannt...</div>
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🔧 Universal Modbus Configurator</h1>
@@ -309,7 +369,7 @@
                 <h2 class="section-title">🔍 Automatische Geräteerkennung (Nmap-basiert)</h2>
                 <p style="margin-bottom: 15px; color: #666;">
                     Professioneller Netzwerk-Scan mit nmap und modbus-discover NSE Script.
-                    Unterstützt: Siemens LOGO! 8, LOGO! 0BA7, Schneider, ABB, Wago und weitere Modbus-Geräte.
+                    Unterstützt: Siemens LOGO! 8 (0BA8), Schneider, ABB, Wago und weitere Modbus-Geräte. <strong>Hinweis: LOGO! v7/0BA7 wird NICHT unterstützt (nur S7-Protokoll).</strong>
                 </p>
 
                 <div class="grid">
@@ -380,6 +440,49 @@
                 </ul>
             </div>
 
+            <!-- Register Discovery Section -->
+            <div class="section">
+                <h2 class="section-title">🔍 Register-Analyse (Device Capabilities)</h2>
+                <p style="margin-bottom: 15px; color: #666;">
+                    Prüft direkt am Gerät, welche Modbus-Register unterstützt werden. Hilfreich zur Ermittlung
+                    der tatsächlichen I/O-Anzahl und unterstützten Funktionscodes.
+                </p>
+                <div style="background: #d1ecf1; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #0c5460;">
+                    <small style="color: #0c5460;">
+                        <strong>💡 Tipp:</strong> LOGO! Geräte nutzen Port <strong>510</strong>.
+                        LOGO! v7 (0BA7): 16 DI/DO max | LOGO! v8: 24 DI/20 DO max
+                        <br>Die Analyse dauert 30-60 Sekunden und testet verschiedene Register-Bereiche.
+                    </small>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="discoveryHost">IP-Adresse</label>
+                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.178.201">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoveryPort">Port</label>
+                        <input type="number" id="discoveryPort" value="510" placeholder="510 (LOGO!) oder 502 (Standard)">
+                        <small style="color: #666; display: block; margin-top: 5px;">510 für LOGO!, 502 für Standard Modbus</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoverySlaveId">Slave ID</label>
+                        <input type="number" id="discoverySlaveId" value="1" min="1" max="247">
+                    </div>
+                </div>
+
+                <button class="button button-primary" onclick="discoverRegisters()" style="font-size: 1.1em; padding: 15px 30px;">
+                    🔬 Register-Analyse starten
+                </button>
+
+                <div id="discoveryResults" class="hidden" style="margin-top: 20px;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">Analyse-Ergebnisse:</h3>
+                    <div id="discoveryContent"></div>
+                </div>
+            </div>
+
             <!-- Generate Config Section -->
             <div class="section">
                 <h2 class="section-title">Konfiguration generieren</h2>
@@ -397,7 +500,8 @@
     </div>
 
     <script>
-        const API_BASE = window.location.origin;
+        // Support Home Assistant Ingress by using current path as base
+        const API_BASE = window.location.pathname.replace(/\/$/, '');
         let devicesConfigStatus = {};
         let nmapAvailable = false;
 
@@ -405,6 +509,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             checkSystemStatus();
             loadDevices();
+            loadNetworkInfo();
         });
 
         async function checkSystemStatus() {
@@ -434,6 +539,68 @@
             }
         }
 
+        let networkInfo = null;
+
+        async function loadNetworkInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/network-info`);
+                networkInfo = await response.json();
+                displayNetworkInfo(networkInfo);
+            } catch (error) {
+                console.error('Error loading network info:', error);
+                document.getElementById('networkInfoWidget').innerHTML = `
+                    <div class="network-title">⚠️ Netzwerk</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Erkennungsfehler</div>
+                `;
+            }
+        }
+
+        function displayNetworkInfo(info) {
+            const widget = document.getElementById('networkInfoWidget');
+            if (info.error) {
+                widget.innerHTML = `
+                    <div class="network-title">⚠️ Netzwerk</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Erkennungsfehler</div>
+                `;
+                return;
+            }
+
+            widget.innerHTML = `
+                <div class="network-title">🌐 Netzwerk-Info</div>
+                <div class="network-detail">
+                    <span class="network-label">IP:</span>
+                    <span class="network-value">${info.ip || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">Maske:</span>
+                    <span class="network-value">${info.netmask || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">Gateway:</span>
+                    <span class="network-value">${info.gateway || 'N/A'}</span>
+                </div>
+                <div class="network-detail">
+                    <span class="network-label">DNS:</span>
+                    <span class="network-value">${info.dns || 'N/A'}</span>
+                </div>
+                ${info.scan_range ? `
+                <div class="network-detail" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.3);">
+                    <span class="network-label">Scan:</span>
+                    <span class="network-value">${info.scan_range}</span>
+                </div>
+                ` : ''}
+            `;
+
+            // Add tooltip
+            widget.title = 'Automatisch erkannte Netzwerk-Konfiguration';
+
+            // Update placeholder in network range input field
+            const networkRangeInput = document.getElementById('networkRange');
+            if (networkRangeInput && info.scan_range) {
+                networkRangeInput.placeholder = `Auto: ${info.scan_range}`;
+            }
+        }
+
         function showAlert(message, type = 'info') {
             const alertArea = document.getElementById('alertArea');
             const alertDiv = document.createElement('div');
@@ -449,8 +616,14 @@
         async function scanNetworkAuto() {
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
-            const networkRange = document.getElementById('networkRange').value;
+            let networkRange = document.getElementById('networkRange').value;
             const autoAdd = document.getElementById('autoAddDevices').checked;
+
+            // Use auto-detected network range if field is empty
+            if (!networkRange && networkInfo && networkInfo.scan_range) {
+                networkRange = networkInfo.scan_range;
+                showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
+            }
 
             resultsDiv.classList.remove('hidden');
             deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk und erkenne Geräte automatisch...</p></div>';
@@ -568,18 +741,102 @@
                         statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
                     }
 
+                    // Build I/O configuration display
+                    const ioConfig = device.io_config || {};
+                    const baseModules = ioConfig.base_modules || 1;
+                    const expansionModules = ioConfig.expansion_modules || 0;
+                    const digitalInputs = ioConfig.digital_inputs || 24;
+                    const digitalOutputs = ioConfig.digital_outputs || 20;
+                    const analogInputs = ioConfig.analog_inputs || 8;
+                    const analogOutputs = ioConfig.analog_outputs || 0;
+                    const networkInputs = ioConfig.network_inputs || 0;
+                    const networkOutputs = ioConfig.network_outputs || 0;
+
                     li.innerHTML = `
                         <div class="device-info">
                             <div class="device-name">
                                 ${statusIndicator}
-                                <span>${device.name}</span>
+                                <span id="device-name-display-${index}">${device.name}</span>
+                                <button class="button" onclick="editDeviceName(${index})" id="edit-name-btn-${index}" style="padding: 4px 8px; font-size: 0.8em; margin-left: 10px;" title="Name bearbeiten">✏️</button>
+                            </div>
+                            <div class="device-name-edit hidden" id="device-name-edit-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
+                                <label style="font-size: 0.9em; margin-bottom: 5px; display: block;">Gerätename:</label>
+                                <input type="text" id="device-name-input-${index}" value="${device.name}" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                                <button class="button button-success" onclick="saveDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">💾 Speichern</button>
+                                <button class="button button-secondary" onclick="cancelEditDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">Abbrechen</button>
                             </div>
                             <div class="device-details">
                                 ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
                                 ${device.slave_id ? ` | Slave: ${device.slave_id}` : ''}
                             </div>
+                            <div class="device-io-config" id="device-io-display-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 0.9em;">
+                                    <div><strong>Basis:</strong> ${baseModules}</div>
+                                    <div><strong>Erweiterung:</strong> ${expansionModules}</div>
+                                    <div><strong>DI:</strong> ${digitalInputs}</div>
+                                    <div><strong>DO:</strong> ${digitalOutputs}</div>
+                                    <div><strong>AI:</strong> ${analogInputs}</div>
+                                    <div><strong>AO:</strong> ${analogOutputs}</div>
+                                    ${networkInputs > 0 ? `<div><strong>NI:</strong> ${networkInputs}</div>` : ''}
+                                    ${networkOutputs > 0 ? `<div><strong>NQ:</strong> ${networkOutputs}</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="device-io-edit hidden" id="device-io-edit-${index}" style="margin-top: 10px; padding: 15px; background: #fff; border-radius: 4px;">
+                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 10px;">
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Basisgeräte:</label>
+                                        <input type="number" id="base-modules-${index}" value="${baseModules}" min="1" max="10" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Erweiterungsmodule:</label>
+                                        <input type="number" id="expansion-modules-${index}" value="${expansionModules}" min="0" max="10" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Eingänge (I):</label>
+                                        <input type="number" id="digital-inputs-${index}" value="${digitalInputs}" min="0" max="256" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Ausgänge (Q):</label>
+                                        <input type="number" id="digital-outputs-${index}" value="${digitalOutputs}" min="0" max="256" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Eingänge (AI):</label>
+                                        <input type="number" id="analog-inputs-${index}" value="${analogInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Ausgänge (AQ):</label>
+                                        <input type="number" id="analog-outputs-${index}" value="${analogOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                    </div>
+                                    ${(device.model === 'LOGO! 8' || device.model === 'LOGO! 8 (0BA8)') ? `
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Inputs (NI) - LOGO! 8 (0BA8):</label>
+                                        <input type="number" id="network-inputs-${index}" value="${networkInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                        <small style="color: #666; display: block; margin-top: 3px;">NI1-NI64 für LOGO-LOGO Kommunikation</small>
+                                    </div>
+                                    <div>
+                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Outputs (NQ) - LOGO! 8 (0BA8):</label>
+                                        <input type="number" id="network-outputs-${index}" value="${networkOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
+                                        <small style="color: #666; display: block; margin-top: 3px;">NQ1-NQ64 für LOGO-LOGO Kommunikation</small>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="enable-sync-${index}" ${device.io_config?.enable_sync ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+                                        <span style="font-size: 0.95em; font-weight: 500;">🔄 Sync-Flag aktivieren</span>
+                                    </label>
+                                    <small style="color: #666; display: block; margin-top: 5px; margin-left: 26px;">
+                                        Verhindert Desynchronisation zwischen Home Assistant und PLC (empfohlen für kritische Ausgänge)
+                                    </small>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <button class="button button-success" onclick="saveDeviceIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">💾 Speichern</button>
+                                    <button class="button button-secondary" onclick="cancelEditIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">Abbrechen</button>
+                                </div>
+                            </div>
                         </div>
                         <div class="device-actions">
+                            <button class="button button-primary" onclick="editDeviceIOConfig(${index})" id="edit-btn-${index}">⚙️ Konfigurieren</button>
                             <button class="button button-danger" onclick="deleteDevice(${index})">Löschen</button>
                         </div>
                     `;
@@ -611,6 +868,148 @@
                 }
             } catch (error) {
                 showAlert('Fehler beim Löschen: ' + error.message, 'error');
+            }
+        }
+
+        function editDeviceIOConfig(index) {
+            // Hide display, show edit form
+            document.getElementById(`device-io-display-${index}`).classList.add('hidden');
+            document.getElementById(`device-io-edit-${index}`).classList.remove('hidden');
+            document.getElementById(`edit-btn-${index}`).disabled = true;
+        }
+
+        function cancelEditIOConfig(index) {
+            // Show display, hide edit form
+            document.getElementById(`device-io-display-${index}`).classList.remove('hidden');
+            document.getElementById(`device-io-edit-${index}`).classList.add('hidden');
+            document.getElementById(`edit-btn-${index}`).disabled = false;
+        }
+
+        async function saveDeviceIOConfig(index) {
+            try {
+                // Get current device data
+                const devicesResponse = await fetch(`${API_BASE}/api/devices`);
+                const devices = await devicesResponse.json();
+                const device = devices[index];
+
+                if (!device) {
+                    showAlert('✗ Gerät nicht gefunden', 'error');
+                    return;
+                }
+
+                // Read values from form
+                const ioConfig = {
+                    base_modules: parseInt(document.getElementById(`base-modules-${index}`).value) || 1,
+                    expansion_modules: parseInt(document.getElementById(`expansion-modules-${index}`).value) || 0,
+                    digital_inputs: parseInt(document.getElementById(`digital-inputs-${index}`).value) || 0,
+                    digital_outputs: parseInt(document.getElementById(`digital-outputs-${index}`).value) || 0,
+                    analog_inputs: parseInt(document.getElementById(`analog-inputs-${index}`).value) || 0,
+                    analog_outputs: parseInt(document.getElementById(`analog-outputs-${index}`).value) || 0,
+                    enable_sync: document.getElementById(`enable-sync-${index}`).checked
+                };
+
+                // Only read NI/NQ if fields exist (LOGO! 8 only)
+                const niField = document.getElementById(`network-inputs-${index}`);
+                const nqField = document.getElementById(`network-outputs-${index}`);
+                if (niField) {
+                    ioConfig.network_inputs = parseInt(niField.value) || 0;
+                } else {
+                    ioConfig.network_inputs = 0;
+                }
+                if (nqField) {
+                    ioConfig.network_outputs = parseInt(nqField.value) || 0;
+                } else {
+                    ioConfig.network_outputs = 0;
+                }
+
+                // Update device with new io_config
+                device.io_config = ioConfig;
+
+                // Save to backend
+                const response = await fetch(`${API_BASE}/api/devices/${index}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(device)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ I/O-Konfiguration gespeichert', 'success');
+                    loadDevices();  // Reload to show updated values
+                } else {
+                    showAlert('✗ Fehler beim Speichern: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Speichern: ' + error.message, 'error');
+            }
+        }
+
+        function editDeviceName(index) {
+            // Hide display, show edit form
+            document.getElementById(`device-name-display-${index}`).style.display = 'none';
+            document.getElementById(`edit-name-btn-${index}`).style.display = 'none';
+            document.getElementById(`device-name-edit-${index}`).classList.remove('hidden');
+        }
+
+        function cancelEditDeviceName(index) {
+            // Show display, hide edit form
+            document.getElementById(`device-name-display-${index}`).style.display = 'inline';
+            document.getElementById(`edit-name-btn-${index}`).style.display = 'inline';
+            document.getElementById(`device-name-edit-${index}`).classList.add('hidden');
+        }
+
+        async function saveDeviceName(index) {
+            try {
+                // Get current device data
+                const devicesResponse = await fetch(`${API_BASE}/api/devices`);
+                const devices = await devicesResponse.json();
+                const device = devices[index];
+
+                if (!device) {
+                    showAlert('✗ Gerät nicht gefunden', 'error');
+                    return;
+                }
+
+                // Read new name from input
+                const newName = document.getElementById(`device-name-input-${index}`).value.trim();
+
+                if (!newName) {
+                    showAlert('✗ Name darf nicht leer sein', 'error');
+                    return;
+                }
+
+                // Validate name (only lowercase, numbers, underscores)
+                const validNameRegex = /^[a-z0-9_]+$/;
+                if (!validNameRegex.test(newName)) {
+                    showAlert('✗ Name darf nur Kleinbuchstaben, Zahlen und Unterstriche enthalten', 'error');
+                    return;
+                }
+
+                // Update device name
+                device.name = newName;
+
+                // Save to backend
+                const response = await fetch(`${API_BASE}/api/devices/${index}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(device)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ Gerätename gespeichert', 'success');
+                    loadDevices();  // Reload to show updated name
+                } else {
+                    showAlert('✗ Fehler beim Speichern: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler beim Speichern: ' + error.message, 'error');
             }
         }
 
@@ -679,10 +1078,16 @@
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
             const progressDiv = document.getElementById('scanProgress');
-            const networkRange = document.getElementById('networkRange').value;
+            let networkRange = document.getElementById('networkRange').value;
             const portRange = document.getElementById('portRange').value;
             const autoAdd = document.getElementById('autoAddDevices').checked;
             const useModbusDiscover = document.getElementById('useModbusDiscover').checked;
+
+            // Use auto-detected network range if field is empty
+            if (!networkRange && networkInfo && networkInfo.scan_range) {
+                networkRange = networkInfo.scan_range;
+                showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
+            }
 
             // Show progress indicator
             progressDiv.classList.remove('hidden');
@@ -693,7 +1098,7 @@
             try {
                 const requestBody = {
                     auto_add: autoAdd,
-                    port_range: portRange || '502,510,20000-20100',
+                    port_range: portRange || '102,502,510,20000-20100',
                     use_modbus_discover: useModbusDiscover,
                     timeout: 300
                 };
@@ -796,6 +1201,146 @@
                 `;
                 deviceListDiv.appendChild(deviceCard);
             });
+        }
+
+        async function discoverRegisters() {
+            const host = document.getElementById('discoveryHost').value.trim();
+            const port = parseInt(document.getElementById('discoveryPort').value) || 502;
+            const slaveId = parseInt(document.getElementById('discoverySlaveId').value) || 1;
+
+            if (!host) {
+                showAlert('Bitte IP-Adresse eingeben', 'error');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('discoveryResults');
+            const contentDiv = document.getElementById('discoveryContent');
+
+            resultsDiv.classList.remove('hidden');
+            contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analysiere Register...</p></div>';
+
+            showAlert('Register-Analyse gestartet... Dies kann bis zu 30 Sekunden dauern.', 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/discover-registers`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        host: host,
+                        port: port,
+                        slave_id: slaveId
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('✓ Register-Analyse abgeschlossen!', 'success');
+                    displayDiscoveryResults(result);
+                } else {
+                    contentDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">
+                        <strong>Fehler:</strong> ${result.error || 'Analyse fehlgeschlagen'}
+                    </div>`;
+                    showAlert('✗ Fehler bei der Register-Analyse: ' + (result.error || 'Unbekannter Fehler'), 'error');
+                }
+            } catch (error) {
+                contentDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: #dc3545;">
+                    <strong>Fehler:</strong> ${error.message}
+                </div>`;
+                showAlert('Fehler bei der Register-Analyse: ' + error.message, 'error');
+            }
+        }
+
+        function displayDiscoveryResults(discovery) {
+            const contentDiv = document.getElementById('discoveryContent');
+
+            let html = `
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <h4 style="color: #667eea; margin-bottom: 15px;">📊 Geräteinformationen</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div>
+                            <strong>Erkanntes Gerät:</strong><br>
+                            <span style="font-size: 1.2em; color: #28a745;">${discovery.detected_device}</span>
+                        </div>
+                        <div>
+                            <strong>Slave ID:</strong><br>
+                            <span>${discovery.slave_id}</span>
+                        </div>
+                        <div>
+                            <strong>Unterstützte Funktionen:</strong><br>
+                            <span>${discovery.supported_functions.length > 0 ? discovery.supported_functions.join(', ') : 'Keine'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Recommendations
+            if (discovery.recommendations && discovery.recommendations.length > 0) {
+                html += `
+                    <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+                        <h4 style="color: #155724; margin-bottom: 10px;">💡 Empfehlungen</h4>
+                        <ul style="margin: 0; padding-left: 20px;">
+                            ${discovery.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            // Register ranges
+            const registerTypes = ['discrete_inputs', 'coils', 'input_registers', 'holding_registers'];
+            const registerLabels = {
+                'discrete_inputs': '🔵 Digital Inputs (Discrete Inputs)',
+                'coils': '🟢 Digital Outputs (Coils)',
+                'input_registers': '🟠 Analog Inputs (Input Registers)',
+                'holding_registers': '🟡 Holding Registers'
+            };
+
+            for (const regType of registerTypes) {
+                const ranges = discovery.register_ranges[regType];
+                if (!ranges || ranges.length === 0) continue;
+
+                html += `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd;">
+                        <h4 style="color: #667eea; margin-bottom: 10px;">${registerLabels[regType]}</h4>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Bereich</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Start</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Anzahl</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Status</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Info</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const range of ranges) {
+                    const statusIcon = range.supported ? '✅' : '❌';
+                    const statusColor = range.supported ? '#28a745' : '#dc3545';
+                    const note = range.note || (range.error ? `Fehler: ${range.error}` : '-');
+
+                    html += `
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="padding: 8px;">${range.range}</td>
+                            <td style="padding: 8px;">${range.start}</td>
+                            <td style="padding: 8px;">${range.count}</td>
+                            <td style="padding: 8px; color: ${statusColor};">${statusIcon} ${range.supported ? 'Unterstützt' : 'Nicht unterstützt'}</td>
+                            <td style="padding: 8px; font-size: 0.9em;">${note}</td>
+                        </tr>
+                    `;
+                }
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            contentDiv.innerHTML = html;
         }
     </script>
 </body>
