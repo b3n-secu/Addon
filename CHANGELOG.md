@@ -1,5 +1,30 @@
 # Changelog
 
+## Version 1.7.2 (2026-01-23)
+
+### Critical Bug Fixes
+
+- 🐛 **Device Configuration Persistence Fixed** - Devices now properly saved across addon restarts
+  - **Problem**: Devices added in Web UI were not saved persistently
+  - **Root cause**: App was writing to `/data/options.json` which is managed by Home Assistant Supervisor and gets overwritten on restart
+  - **Solution**: Use separate `/data/devices.json` file for persistent device storage
+  - Automatic migration from `options.json` to `devices.json` on first run
+  - Both `app/app.py` and `modbus/app/app.py` now use unified persistence approach
+
+### Technical Changes
+
+- Added `DEVICES_PATH = '/data/devices.json'` constant for device storage
+- Updated `load_config()` to load from `devices.json` with fallback migration
+- Updated `save_config()` to save directly to `devices.json`
+- Device configuration now survives addon rebuilds and restarts
+- Migration logic ensures existing configurations are preserved
+
+### Impact
+
+Users can now add devices through the Web UI and they will remain configured after addon restarts, updates, or rebuilds. This resolves the major workflow issue where device configuration was lost on every restart.
+
+---
+
 ## Version 1.7.1 (2026-01-23)
 
 ### Bug Fixes
