@@ -347,7 +347,95 @@
             opacity: 0.8;
         }
 
-        /* New Layout Styles */
+        /* New Layout Styles - Sidebar with Buttons */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .button-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            height: fit-content;
+        }
+
+        .button-sidebar .button {
+            width: 100%;
+            margin: 0;
+            text-align: left;
+            padding: 12px 15px;
+            font-size: 0.9em;
+        }
+
+        .input-inline-area {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .input-inline-area .input-area-title {
+            font-size: 1.15em;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .inline-inputs {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .inline-inputs .form-group {
+            margin-bottom: 0;
+        }
+
+        .inline-inputs label {
+            font-size: 0.8em;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .inline-inputs input {
+            padding: 8px 10px;
+            font-size: 0.85em;
+        }
+
+        .inline-inputs small {
+            display: none;
+        }
+
+        .checkbox-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .checkbox-row label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin: 0;
+        }
+
+        .checkbox-row input[type="checkbox"] {
+            width: auto;
+            margin-right: 6px;
+        }
+
         .button-bar {
             display: flex;
             flex-wrap: wrap;
@@ -406,6 +494,21 @@
             .three-column-layout {
                 grid-template-columns: 1fr;
             }
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            .inline-inputs {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .inline-inputs {
+                grid-template-columns: 1fr;
+            }
+            .inline-inputs small {
+                display: block;
+            }
         }
     </style>
 </head>
@@ -425,81 +528,76 @@
             <!-- Alert Area -->
             <div id="alertArea"></div>
 
-            <!-- Button Bar - All Actions at Top -->
-            <div class="button-bar">
-                <button class="button button-primary" onclick="scanNetworkNmap()" style="font-size: 1.05em;">
-                    🚀 Nmap Scan starten
-                </button>
-                <button class="button button-secondary" onclick="scanNetworkAuto()">
-                    ⚡ Quick Scan (Python)
-                </button>
-                <button class="button button-primary" onclick="discoverRegisters()" style="background: #17a2b8;">
-                    🔍 Register-Analyse starten
-                </button>
-                <button class="button button-success" onclick="generateConfig()">
-                    📄 Konfiguration generieren
-                </button>
-                <button class="button button-secondary" onclick="viewConfig()">
-                    👁️ Aktuelle Konfiguration anzeigen
-                </button>
-            </div>
-
-            <!-- Input Area - All Input Fields Below Buttons -->
-            <div class="input-area">
-                <div class="input-area-title">📝 Eingabeparameter</div>
-
-                <div style="background: #e7f3ff; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #667eea;">
-                    <small style="color: #004085;">
-                        <strong>ℹ️ Hinweis:</strong> LOGO! v7/0BA7 wird NICHT unterstützt (nur S7-Protokoll).
-                        LOGO! 8 (0BA8), Schneider, ABB, Wago und weitere Modbus-Geräte werden unterstützt.
-                    </small>
+            <!-- Main Layout: Sidebar with Buttons + Input Area -->
+            <div class="main-layout">
+                <!-- Button Sidebar (Left) -->
+                <div class="button-sidebar">
+                    <button class="button button-primary" onclick="scanNetworkNmap()">
+                        🚀 Nmap Scan
+                    </button>
+                    <button class="button button-secondary" onclick="scanNetworkAuto()">
+                        ⚡ Quick Scan
+                    </button>
+                    <button class="button button-primary" onclick="discoverRegisters()" style="background: #17a2b8;">
+                        🔍 Register-Analyse
+                    </button>
+                    <button class="button button-success" onclick="generateConfig()">
+                        📄 Config generieren
+                    </button>
+                    <button class="button button-secondary" onclick="viewConfig()">
+                        👁️ Config anzeigen
+                    </button>
                 </div>
 
-                <div class="grid">
-                    <div class="form-group">
-                        <label for="networkRange">🌐 Netzwerk (optional, /24 wird automatisch erkannt)</label>
-                        <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            Leer lassen für automatische Netzwerk-Erkennung
+                <!-- Input Area (Right) -->
+                <div class="input-inline-area">
+                    <div class="input-area-title">📝 Eingabeparameter</div>
+
+                    <div style="background: #e7f3ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #667eea;">
+                        <small style="color: #004085;">
+                            <strong>ℹ️</strong> LOGO! v7/0BA7 nicht unterstützt (nur S7). LOGO! 8, Schneider, ABB, Wago werden unterstützt.
                         </small>
                     </div>
 
-                    <div class="form-group">
-                        <label for="portRange">🔌 Port-Range (anpassbar)</label>
-                        <input type="text" id="portRange" placeholder="502,510,20000-20100" value="502,510,20000-20100">
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            Format: Einzelne Ports (502,510) oder Bereiche (20000-20100)
-                        </small>
+                    <!-- Inline Input Fields -->
+                    <div class="inline-inputs">
+                        <div class="form-group">
+                            <label for="networkRange">Netzwerk</label>
+                            <input type="text" id="networkRange" placeholder="10.0.0.0/24">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="portRange">Port-Range</label>
+                            <input type="text" id="portRange" placeholder="502,510" value="502,510,20000-20100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="discoveryHost">IP-Adresse</label>
+                            <input type="text" id="discoveryHost" placeholder="192.168.1.201">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="discoveryPort">Port</label>
+                            <input type="number" id="discoveryPort" placeholder="510" value="510">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="discoverySlaveId">Slave ID</label>
+                            <input type="number" id="discoverySlaveId" placeholder="1" value="1" min="1" max="247">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label for="discoveryHost">🎯 IP-Adresse (für Register-Analyse)</label>
-                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.178.201">
+                    <!-- Checkboxes -->
+                    <div class="checkbox-row">
+                        <label>
+                            <input type="checkbox" id="autoAddDevices" checked>
+                            <span>Geräte automatisch hinzufügen</span>
+                        </label>
+                        <label>
+                            <input type="checkbox" id="useModbusDiscover" checked>
+                            <span>Nmap modbus-discover NSE Script verwenden</span>
+                        </label>
                     </div>
-
-                    <div class="form-group">
-                        <label for="discoveryPort">📡 Port (für Register-Analyse)</label>
-                        <input type="number" id="discoveryPort" placeholder="510" value="510">
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            510 für LOGO!, 502 für Standard Modbus
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="discoverySlaveId">🔢 Slave ID</label>
-                        <input type="number" id="discoverySlaveId" placeholder="1" value="1" min="1" max="247">
-                    </div>
-                </div>
-
-                <div style="margin-top: 15px;">
-                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px; margin-right: 20px;">
-                        <input type="checkbox" id="autoAddDevices" checked style="width: auto; margin-right: 8px;">
-                        <span>✅ Gefundene Geräte automatisch zur Konfiguration hinzufügen</span>
-                    </label>
-                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
-                        <input type="checkbox" id="useModbusDiscover" checked style="width: auto; margin-right: 8px;">
-                        <span>🔧 Nmap modbus-discover NSE Script verwenden (empfohlen)</span>
-                    </label>
                 </div>
             </div>
 
