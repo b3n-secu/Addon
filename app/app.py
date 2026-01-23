@@ -55,6 +55,8 @@ werkzeug_logger.setLevel(logging.INFO)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
+# Use separate file for device storage (not managed by Supervisor)
+DEVICES_PATH = os.environ.get('DEVICES_PATH', '/data/devices.json')
 # Use different default paths depending on environment
 if os.path.exists('/config'):
     # Running in Home Assistant addon
@@ -65,6 +67,7 @@ else:
 
 MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
 logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
+logger.info(f"Device storage path: {DEVICES_PATH}")
 
 # Global state
 devices = []
@@ -72,28 +75,21 @@ config_generator = ModbusConfigGenerator()
 
 
 def load_config():
-    """Load configuration from Home Assistant"""
+    """Load device configuration from persistent storage"""
     global devices
 
     # Initialize devices as empty list
     devices = []
 
     try:
-        if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH, 'r') as f:
-                config = json.load(f)
-
-                # Ensure config is a dict
-                if not isinstance(config, dict):
-                    logger.error(f"Config is not a dict: {type(config)}")
-                    devices = []
-                    return
-
-                loaded_devices = config.get('devices', [])
+        # First, try to load from persistent devices.json file
+        if os.path.exists(DEVICES_PATH):
+            with open(DEVICES_PATH, 'r') as f:
+                loaded_devices = json.load(f)
 
                 # Validate that devices is a list
                 if not isinstance(loaded_devices, list):
-                    logger.error(f"Config 'devices' is not a list: {type(loaded_devices)}")
+                    logger.error(f"Devices file contains invalid data: {type(loaded_devices)}")
                     devices = []
                     return
 
@@ -105,25 +101,49 @@ def load_config():
                     else:
                         logger.warning(f"Skipping invalid device at index {i}: {type(device)}")
 
-                logger.info(f"Loaded {len(devices)} devices from config")
+                logger.info(f"Loaded {len(devices)} devices from {DEVICES_PATH}")
+
+        # Migration: If devices.json doesn't exist, try to migrate from options.json
+        elif os.path.exists(CONFIG_PATH):
+            logger.info(f"Migrating devices from {CONFIG_PATH} to {DEVICES_PATH}")
+            with open(CONFIG_PATH, 'r') as f:
+                config = json.load(f)
+
+                # Ensure config is a dict
+                if isinstance(config, dict):
+                    loaded_devices = config.get('devices', [])
+
+                    # Validate that devices is a list
+                    if isinstance(loaded_devices, list):
+                        # Validate each device is a dict
+                        for device in loaded_devices:
+                            if isinstance(device, dict):
+                                devices.append(device)
+
+                        # Save to new location
+                        if devices:
+                            save_config()
+                            logger.info(f"Migrated {len(devices)} devices to {DEVICES_PATH}")
+
         else:
-            logger.info(f"Config file not found: {CONFIG_PATH}")
+            logger.info(f"No existing device configuration found")
             devices = []
+
     except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error loading config: {e}")
+        logger.error(f"JSON decode error loading devices: {e}")
         devices = []
     except Exception as e:
-        logger.error(f"Error loading config: {e}", exc_info=True)
+        logger.error(f"Error loading devices: {e}", exc_info=True)
         devices = []
 
 
 def save_config():
-    """Save configuration to Home Assistant"""
+    """Save device configuration to persistent storage"""
     global devices
 
     # Ensure devices is always a list
     if not isinstance(devices, list):
-        logger.error(f"Cannot save config: devices is not a list! Type: {type(devices)}")
+        logger.error(f"Cannot save devices: devices is not a list! Type: {type(devices)}")
         devices = []
 
     # Validate all devices are JSON-serializable
@@ -141,12 +161,15 @@ def save_config():
     devices = valid_devices
 
     try:
-        config = {'devices': devices}
-        with open(CONFIG_PATH, 'w') as f:
-            json.dump(config, f, indent=2)
-        logger.info(f"Configuration saved ({len(devices)} devices)")
+        # Ensure /data directory exists
+        os.makedirs(os.path.dirname(DEVICES_PATH), exist_ok=True)
+
+        # Save directly as list (not wrapped in {'devices': ...})
+        with open(DEVICES_PATH, 'w') as f:
+            json.dump(devices, f, indent=2)
+        logger.info(f"Devices saved to {DEVICES_PATH} ({len(devices)} devices)")
     except Exception as e:
-        logger.error(f"Error saving config: {e}")
+        logger.error(f"Error saving devices: {e}", exc_info=True)
 
 
 @app.route('/')
