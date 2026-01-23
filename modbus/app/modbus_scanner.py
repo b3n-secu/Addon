@@ -52,7 +52,7 @@ class ModbusScanner:
             try:
                 self.client.close()
                 logger.info(f"Disconnected from {self.host}:{self.port}")
-            except:
+            except Exception as e:
                 pass
 
     def scan_coils(self, start_address=0, count=100, slave=1):
@@ -225,7 +225,7 @@ class ModbusScanner:
                             if not q16_test.isError():
                                 logger.info("Device detected as: LOGO! 0BA7")
                                 return 'LOGO_0BA7'
-            except:
+            except Exception as e:
                 pass
 
             # Generic Modbus device
@@ -235,7 +235,7 @@ class ModbusScanner:
                 if not result.isError():
                     logger.info("Device detected as: Generic Modbus")
                     return 'GENERIC'
-            except:
+            except Exception as e:
                 pass
 
         except Exception as e:
@@ -624,7 +624,7 @@ class ModbusScanner:
                             'value': result.bits[0],
                             'type': 'discrete_input'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Digital Outputs (Q1-Q20): Address 8193-8212 (0x2001-0x2014)
@@ -641,7 +641,7 @@ class ModbusScanner:
                             'value': result.bits[0],
                             'type': 'coil'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Analog Inputs (AI1-AI8): Multiple access methods
@@ -685,7 +685,7 @@ class ModbusScanner:
                             'type': 'holding_register',
                             'method': 'am_mapping'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Analog Outputs (AQ1-AQ8): Address 528.1 onwards or via VM
@@ -703,7 +703,7 @@ class ModbusScanner:
                             'value': result.registers[0],
                             'type': 'holding_register'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # VM Memory (VW0-VW850): Sample key addresses
@@ -720,7 +720,7 @@ class ModbusScanner:
                             'value': result.registers[0],
                             'type': 'holding_register'
                         })
-                except:
+                except Exception as e:
                     pass
 
         finally:
@@ -763,7 +763,7 @@ class ModbusScanner:
                             'value': result.bits[0],
                             'type': 'discrete_input'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Digital Outputs (Q1-Q16): Address 8193-8208 (0x2001-0x2010)
@@ -780,7 +780,7 @@ class ModbusScanner:
                             'value': result.bits[0],
                             'type': 'coil'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Marker Bits (M1-M24): Address 8255-8278 (0x203F-0x2056)
@@ -797,7 +797,7 @@ class ModbusScanner:
                             'value': result.bits[0],
                             'type': 'coil'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Analog Inputs (AI1-AI8): Multiple access methods
@@ -828,7 +828,7 @@ class ModbusScanner:
                             'type': 'holding_register',
                             'method': 'vm_mapping'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # Analog Outputs (AQ1-AQ2): 0BA7 typically has fewer analog outputs
@@ -846,7 +846,7 @@ class ModbusScanner:
                             'value': result.registers[0],
                             'type': 'holding_register'
                         })
-                except:
+                except Exception as e:
                     pass
 
             # VM Memory (VW0-VW850): Sample key addresses
@@ -863,7 +863,7 @@ class ModbusScanner:
                             'value': result.registers[0],
                             'type': 'holding_register'
                         })
-                except:
+                except Exception as e:
                     pass
 
         finally:
@@ -953,7 +953,7 @@ class NetworkScanner:
             # Assume /24 network
             network = ipaddress.IPv4Network(f"{local_ip}/24", strict=False)
             return str(network)
-        except:
+        except Exception as e:
             return "192.168.1.0/24"
 
     @staticmethod

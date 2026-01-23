@@ -5,11 +5,13 @@ import os
 import json
 import logging
 import sys
+import yaml
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
+from network_detector import NetworkDetector
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -60,10 +62,21 @@ config_generator = ModbusConfigGenerator()
 def load_config():
     """Load configuration from Home Assistant"""
     global devices
+
+    # Initialize devices as empty list
+    devices = []
+
     try:
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, 'r') as f:
                 config = json.load(f)
+
+                # Ensure config is a dict
+                if not isinstance(config, dict):
+                    logger.error(f"Config is not a dict: {type(config)}")
+                    devices = []
+                    return
+
                 loaded_devices = config.get('devices', [])
 
                 # Validate that devices is a list
@@ -94,11 +107,32 @@ def load_config():
 
 def save_config():
     """Save configuration to Home Assistant"""
+    global devices
+
+    # Ensure devices is always a list
+    if not isinstance(devices, list):
+        logger.error(f"Cannot save config: devices is not a list! Type: {type(devices)}")
+        devices = []
+
+    # Validate all devices are JSON-serializable
+    valid_devices = []
+    for i, device in enumerate(devices):
+        if isinstance(device, dict):
+            try:
+                json.dumps(device)  # Test if device is JSON-serializable
+                valid_devices.append(device)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Skipping non-serializable device at index {i}: {e}")
+        else:
+            logger.warning(f"Skipping invalid device at index {i}: {type(device)}")
+
+    devices = valid_devices
+
     try:
         config = {'devices': devices}
         with open(CONFIG_PATH, 'w') as f:
             json.dump(config, f, indent=2)
-        logger.info("Configuration saved")
+        logger.info(f"Configuration saved ({len(devices)} devices)")
     except Exception as e:
         logger.error(f"Error saving config: {e}")
 
@@ -121,7 +155,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.6.0a'
+        'version': '1.6.1'
     })
 
 
@@ -153,20 +187,33 @@ def api_get_devices():
         # Ensure devices is a proper list
         if not isinstance(devices, list):
             logger.error(f"Devices is not a list: {type(devices)}")
-            return jsonify([])
+            response = jsonify([])
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            return response
 
-        # Validate each device is a dict
+        # Validate each device is a dict and is JSON-serializable
         valid_devices = []
         for i, device in enumerate(devices):
             if isinstance(device, dict):
-                valid_devices.append(device)
+                # Test if device is JSON-serializable
+                try:
+                    json.dumps(device)
+                    valid_devices.append(device)
+                except (TypeError, ValueError) as e:
+                    logger.warning(f"Device at index {i} is not JSON-serializable: {e}")
             else:
                 logger.warning(f"Device at index {i} is not a dict: {type(device)}")
 
-        return jsonify(valid_devices)
+        # Create response with explicit content type
+        response = jsonify(valid_devices)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     except Exception as e:
         logger.error(f"Error getting devices: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+        # Return empty array as fallback
+        response = jsonify([])
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
 
 
 @app.route('/api/devices', methods=['POST'])
@@ -273,6 +320,34 @@ def api_scan_device():
     except Exception as e:
         logger.error(f"Error scanning device: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/network-info', methods=['GET'])
+def api_get_network_info():
+    """Get local network information (IP, DNS, Netmask, Gateway)"""
+    try:
+        detector = NetworkDetector()
+        network_info = detector.get_network_info()
+
+        # Set explicit content type
+        response = jsonify(network_info)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error getting network info: {e}", exc_info=True)
+        # Return fallback info
+        response = jsonify({
+            'ip': 'Unknown',
+            'netmask': 'Unknown',
+            'gateway': 'Unknown',
+            'dns': 'Unknown',
+            'network_range': None,
+            'scan_range': None,
+            'error': str(e)
+        })
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
 
 
 @app.route('/api/scan-network', methods=['POST'])
@@ -657,7 +732,6 @@ def api_check_devices_in_config():
             config_content = f.read()
 
         # Parse YAML to get device names
-        import yaml
         config_data = yaml.safe_load(config_content)
 
         if not config_data:
