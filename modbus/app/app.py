@@ -66,33 +66,81 @@ def load_config():
     """Load configuration from persistent storage (survives rebuilds)"""
     global devices
 
+    # Initialize devices as empty list
+    devices = []
+
     # First try to load from persistent storage (survives rebuilds)
     try:
         if os.path.exists(PERSISTENT_DEVICES_PATH):
             with open(PERSISTENT_DEVICES_PATH, 'r') as f:
-                devices = json.load(f)
-                logger.info(f"Loaded {len(devices)} devices from persistent storage")
+                loaded_data = json.load(f)
+
+                # Ensure loaded data is a list
+                if isinstance(loaded_data, list):
+                    devices = loaded_data
+                    logger.info(f"Loaded {len(devices)} devices from persistent storage")
+                else:
+                    logger.error(f"Persistent storage contains invalid data type: {type(loaded_data)}")
+                    devices = []
                 return
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error in persistent storage: {e}")
+        devices = []
     except Exception as e:
         logger.warning(f"Could not load from persistent storage: {e}")
+        devices = []
 
     # Fallback: Load from options.json (legacy)
     try:
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH, 'r') as f:
                 config = json.load(f)
-                devices = config.get('devices', [])
-                logger.info(f"Loaded {len(devices)} devices from options.json")
-                # Migrate to persistent storage
-                if devices:
-                    save_config()
+
+                # Ensure config is a dict and devices is a list
+                if isinstance(config, dict):
+                    loaded_devices = config.get('devices', [])
+                    if isinstance(loaded_devices, list):
+                        devices = loaded_devices
+                        logger.info(f"Loaded {len(devices)} devices from options.json")
+                        # Migrate to persistent storage
+                        if devices:
+                            save_config()
+                    else:
+                        logger.error(f"Config 'devices' is not a list: {type(loaded_devices)}")
+                        devices = []
+                else:
+                    logger.error(f"Config is not a dict: {type(config)}")
+                    devices = []
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error in options.json: {e}")
+        devices = []
     except Exception as e:
         logger.error(f"Error loading config: {e}")
+        devices = []
 
 
 def save_config():
     """Save configuration to persistent storage (survives rebuilds)"""
     global devices
+
+    # Ensure devices is always a list
+    if not isinstance(devices, list):
+        logger.error(f"Cannot save config: devices is not a list! Type: {type(devices)}")
+        devices = []
+
+    # Validate all devices are JSON-serializable
+    valid_devices = []
+    for i, device in enumerate(devices):
+        if isinstance(device, dict):
+            try:
+                json.dumps(device)  # Test if device is JSON-serializable
+                valid_devices.append(device)
+            except (TypeError, ValueError) as e:
+                logger.warning(f"Skipping non-serializable device at index {i}: {e}")
+        else:
+            logger.warning(f"Skipping invalid device at index {i}: {type(device)}")
+
+    devices = valid_devices
 
     # Save to persistent storage (primary)
     try:
@@ -173,14 +221,25 @@ def api_get_devices():
         valid_devices = []
         for i, device in enumerate(devices):
             if isinstance(device, dict):
-                valid_devices.append(device)
+                # Ensure device has all required fields and is JSON-serializable
+                try:
+                    json.dumps(device)  # Test if device is JSON-serializable
+                    valid_devices.append(device)
+                except (TypeError, ValueError) as e:
+                    logger.warning(f"Device at index {i} is not JSON-serializable: {e}")
             else:
                 logger.warning(f"Skipping invalid device at index {i}: {device}")
 
-        return jsonify(valid_devices)
+        # Create response with explicit content type
+        response = jsonify(valid_devices)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
     except Exception as e:
-        logger.error(f"Error in api_get_devices: {e}")
-        return jsonify([]), 200
+        logger.error(f"Error in api_get_devices: {e}", exc_info=True)
+        # Return empty array as fallback
+        response = jsonify([])
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
 
 
 @app.route('/api/devices', methods=['POST'])
