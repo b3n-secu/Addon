@@ -1,5 +1,78 @@
 # Changelog
 
+## Version 1.6.2 (2026-01-23)
+
+### Critical Bug Fixes
+
+- 🐛 **YAML Configuration Errors Fixed** - Resolved critical YAML syntax errors in modbus.yaml
+  - Fixed incorrect indentation on device properties (type, host, port, timeout)
+  - Corrected inconsistent list indentation in sensors, binary_sensors, and switches
+  - Standardized all device entries to start at column 0
+  - Fixed duplicate register address 13 (changed I21 to address 21 as per naming)
+  - All YAML syntax now validates correctly with Python yaml.safe_load()
+
+- 🐛 **JSON Parse Error Improvements** - Enhanced robustness of device loading API
+  - Improved load_config() with explicit JSON decode error handling
+  - Added validation that loaded data is always a list before assignment
+  - Enhanced save_config() to test each device for JSON serializability
+  - Hardened api_get_devices() endpoint with explicit Content-Type headers
+  - All API responses now return valid JSON with correct headers
+
+### New Features
+
+- 🌐 **Network Info Display Widget** - Restored missing network information display
+  - Added NetworkDetector module for automatic network detection
+  - New /api/network-info endpoint for Docker/Home Assistant environments
+  - Widget displays: IP, Netmask, Gateway, DNS, and Scan Range
+  - Works correctly with internal Docker IP ranges
+  - Uses Home Assistant Supervisor API when available
+  - Graceful fallback to system commands (ip, /etc/resolv.conf)
+  - Modern UI widget positioned in bottom-left corner
+
+### Code Quality Improvements
+
+- 🔧 **Exception Handling** - Replaced ~30 bare `except:` clauses with `except Exception as e:`
+  - Affects: app/modbus_scanner.py, modbus/app/modbus_scanner.py
+  - Improved debugging and error tracking capabilities
+
+- 📦 **Import Organization** - Moved deferred imports to module level
+  - Fixed `import yaml` statements in app/app.py and modbus/app/app.py
+  - Prevents potential runtime errors and follows Python best practices
+
+- 🔢 **Version Standardization** - All version references now consistently show 1.6.2
+  - Updated config.yaml, modbus/config.yaml
+  - Updated version strings in app/app.py, modbus/app/app.py
+
+### Technical Changes
+
+- Enhanced logging with stack traces for better debugging
+- Improved data validation in configuration loading
+- Better error recovery from corrupted config files
+- Frontend now includes network info widget with auto-refresh
+- Skips docker/veth/loopback interfaces in network detection
+- Calculates network scan range automatically
+
+### Files Changed
+
+- app/app.py: Added NetworkDetector import and /api/network-info endpoint
+- app/static/index.html: Enhanced with network info widget (545 new lines)
+- app/network_detector.py: New file for network detection
+- app/modbus_scanner.py: Improved exception handling
+- modbus/app/app.py: Enhanced API endpoints and error handling
+- modbus/app/modbus_scanner.py: Improved exception handling
+- modbus.yaml: Fixed all YAML syntax errors
+- config.yaml, modbus/config.yaml: Version bumped to 1.6.2
+
+### Impact
+
+This release fixes critical issues that prevented proper operation:
+- YAML configuration now loads without errors in Home Assistant
+- Device list API no longer returns parse errors
+- Network information is visible to users
+- Code quality significantly improved for maintainability
+
+---
+
 ## Version 1.6.1 (2026-01-22)
 
 ### Critical Bug Fixes
