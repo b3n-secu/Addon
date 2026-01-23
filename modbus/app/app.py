@@ -218,33 +218,33 @@ def api_profile(manufacturer, model):
 @app.route('/api/devices', methods=['GET'])
 def api_get_devices():
     """Get all configured devices"""
-    global devices
-
-    # Ensure devices is always a valid list
-    if not isinstance(devices, list):
-        logger.error(f"devices is not a list! Type: {type(devices)}, Value: {devices}")
-        devices = []
-
     try:
-        # Validate each device has required structure
+        # Ensure devices is a proper list
+        if not isinstance(devices, list):
+            logger.error(f"Devices is not a list: {type(devices)}")
+            response = jsonify([])
+            response.headers['Content-Type'] = 'application/json; charset=utf-8'
+            return response
+
+        # Validate each device is a dict and is JSON-serializable
         valid_devices = []
         for i, device in enumerate(devices):
             if isinstance(device, dict):
-                # Ensure device has all required fields and is JSON-serializable
+                # Test if device is JSON-serializable
                 try:
-                    json.dumps(device)  # Test if device is JSON-serializable
+                    json.dumps(device)
                     valid_devices.append(device)
                 except (TypeError, ValueError) as e:
                     logger.warning(f"Device at index {i} is not JSON-serializable: {e}")
             else:
-                logger.warning(f"Skipping invalid device at index {i}: {device}")
+                logger.warning(f"Device at index {i} is not a dict: {type(device)}")
 
         # Create response with explicit content type
         response = jsonify(valid_devices)
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
         return response
     except Exception as e:
-        logger.error(f"Error in api_get_devices: {e}", exc_info=True)
+        logger.error(f"Error getting devices: {e}", exc_info=True)
         # Return empty array as fallback
         response = jsonify([])
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
@@ -319,34 +319,6 @@ def api_delete_device(index):
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/network-info', methods=['GET'])
-def api_get_network_info():
-    """Get local network information (IP, DNS, Netmask, Gateway)"""
-    try:
-        detector = NetworkDetector()
-        network_info = detector.get_network_info()
-
-        # Set explicit content type
-        response = jsonify(network_info)
-        response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        return response
-
-    except Exception as e:
-        logger.error(f"Error getting network info: {e}", exc_info=True)
-        # Return fallback info
-        response = jsonify({
-            'ip': 'Unknown',
-            'netmask': 'Unknown',
-            'gateway': 'Unknown',
-            'dns': 'Unknown',
-            'network_range': None,
-            'scan_range': None,
-            'error': str(e)
-        })
-        response.headers['Content-Type'] = 'application/json; charset=utf-8'
-        return response, 200
-
-
 @app.route('/api/scan', methods=['POST'])
 def api_scan_device():
     """Scan a device for available registers"""
@@ -385,6 +357,34 @@ def api_scan_device():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/network-info', methods=['GET'])
+def api_get_network_info():
+    """Get local network information (IP, DNS, Netmask, Gateway)"""
+    try:
+        detector = NetworkDetector()
+        network_info = detector.get_network_info()
+
+        # Set explicit content type
+        response = jsonify(network_info)
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response
+
+    except Exception as e:
+        logger.error(f"Error getting network info: {e}", exc_info=True)
+        # Return fallback info
+        response = jsonify({
+            'ip': 'Unknown',
+            'netmask': 'Unknown',
+            'gateway': 'Unknown',
+            'dns': 'Unknown',
+            'network_range': None,
+            'scan_range': None,
+            'error': str(e)
+        })
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+        return response, 200
+
+
 @app.route('/api/scan-network', methods=['POST'])
 def api_scan_network():
     """Scan network for Modbus devices with automatic device detection"""
@@ -393,7 +393,7 @@ def api_scan_network():
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
         ports = data.get('ports', [502, 510])
         auto_detect = data.get('auto_detect', True)  # Auto-detect device type
-        auto_add = data.get('auto_add', True)  # Automatically add to device list (default: True)
+        auto_add = data.get('auto_add', True)  # Automatically add to device list
 
         logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
         found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
@@ -402,18 +402,29 @@ def api_scan_network():
         added_count = 0
         if auto_add:
             for device in found_devices:
-                if 'manufacturer' in device and 'model' in device:
-                    new_device = {
-                        'name': device['name'],
-                        'manufacturer': device['manufacturer'],
-                        'model': device['model'],
-                        'host': device['ip'],
-                        'port': device['port'],
-                        'slave_id': 1
-                    }
-                    devices.append(new_device)
-                    added_count += 1
-                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+                # Check if device is already in list to avoid duplicates
+                host = device.get('ip')
+                port = device.get('port', 502)
+                if any(d.get('host') == host and d.get('port') == port for d in devices):
+                    logger.info(f"Device {host}:{port} already in list, skipping")
+                    continue
+
+                # Add device even if manufacturer/model not detected
+                new_device = {
+                    'name': device.get('name', f"Device at {host}:{port}"),
+                    'manufacturer': device.get('manufacturer', 'Generic'),
+                    'model': device.get('model', 'Modbus TCP'),
+                    'host': host,
+                    'port': port,
+                    'slave_id': device.get('slave_id', 1)
+                }
+                devices.append(new_device)
+                added_count += 1
+                logger.info(f"Auto-added device: {new_device['name']} at {host}:{port}")
+
+            # Save configuration if devices were added
+            if added_count > 0:
+                save_config()
 
         logger.info(f"Network scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
@@ -444,8 +455,8 @@ def api_scan_network_nmap():
     try:
         data = request.json or {}
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
-        port_range = data.get('port_range', '102,502,510,20000-20100')  # Configurable port range
-        auto_add = data.get('auto_add', True)  # Automatically add to device list (default: True)
+        port_range = data.get('port_range', '502,510,20000-20100')  # Configurable port range
+        auto_add = data.get('auto_add', True)  # Automatically add to device list
         use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
         timeout = data.get('timeout', 300)  # Scan timeout in seconds
 
@@ -467,18 +478,25 @@ def api_scan_network_nmap():
         added_count = 0
         if auto_add:
             for device in found_devices:
-                if 'manufacturer' in device and 'model' in device:
-                    new_device = {
-                        'name': device['name'],
-                        'manufacturer': device['manufacturer'],
-                        'model': device['model'],
-                        'host': device['ip'],
-                        'port': device['port'],
-                        'slave_id': 1
-                    }
-                    devices.append(new_device)
-                    added_count += 1
-                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+                # Check if device is already in list to avoid duplicates
+                host = device.get('ip')
+                port = device.get('port', 502)
+                if any(d.get('host') == host and d.get('port') == port for d in devices):
+                    logger.info(f"Device {host}:{port} already in list, skipping")
+                    continue
+
+                # Add device even if manufacturer/model not detected
+                new_device = {
+                    'name': device.get('name', f"Device at {host}:{port}"),
+                    'manufacturer': device.get('manufacturer', 'Generic'),
+                    'model': device.get('model', 'Modbus TCP'),
+                    'host': host,
+                    'port': port,
+                    'slave_id': device.get('slave_id', 1)
+                }
+                devices.append(new_device)
+                added_count += 1
+                logger.info(f"Auto-added device: {new_device['name']} at {host}:{port}")
 
             # Save configuration if devices were added
             if added_count > 0:
@@ -859,14 +877,7 @@ def api_generate_config():
             }), 400
 
         # Generate YAML
-        yaml_config = config_generator.generate_yaml()
-
-        # Save to file
-        if not config_generator.save_to_file(output_path):
-            return jsonify({
-                'success': False,
-                'error': 'Fehler beim Speichern der Konfigurationsdatei.'
-            }), 500
+        yaml_config = config_generator.generate_yaml(output_path)
 
         # Get absolute path for display
         abs_path = os.path.abspath(output_path)
@@ -953,45 +964,6 @@ def api_check_devices_in_config():
 
     except Exception as e:
         logger.error(f"Error checking devices in config: {e}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
-
-
-@app.route('/api/discover-registers', methods=['POST'])
-def api_discover_registers():
-    """Discover supported Modbus registers for a device"""
-    try:
-        data = request.json
-        host = data.get('host')
-        port = data.get('port', 502)
-        slave_id = data.get('slave_id', 1)
-
-        if not host:
-            return jsonify({'error': 'Host is required'}), 400
-
-        logger.info(f"Starting register discovery for {host}:{port} slave {slave_id}")
-
-        # Create scanner with longer timeout for slower devices (LOGO! v7, etc.)
-        scanner = ModbusScanner(host, port, timeout=10)
-
-        # Run comprehensive register discovery
-        discovery_results = scanner.discover_register_map(slave=slave_id)
-
-        if discovery_results.get('success'):
-            logger.info(f"Register discovery completed successfully. Device: {discovery_results.get('detected_device')}")
-            return jsonify(discovery_results)
-        else:
-            error_msg = discovery_results.get('error', 'Unknown error')
-            logger.error(f"Register discovery failed: {error_msg}")
-            return jsonify({
-                'success': False,
-                'error': error_msg
-            }), 500
-
-    except Exception as e:
-        logger.error(f"Error during register discovery: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)

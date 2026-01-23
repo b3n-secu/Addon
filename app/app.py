@@ -402,18 +402,25 @@ def api_scan_network():
         added_count = 0
         if auto_add:
             for device in found_devices:
-                if 'manufacturer' in device and 'model' in device:
-                    new_device = {
-                        'name': device['name'],
-                        'manufacturer': device['manufacturer'],
-                        'model': device['model'],
-                        'host': device['ip'],
-                        'port': device['port'],
-                        'slave_id': 1
-                    }
-                    devices.append(new_device)
-                    added_count += 1
-                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+                # Check if device is already in list to avoid duplicates
+                host = device.get('ip')
+                port = device.get('port', 502)
+                if any(d.get('host') == host and d.get('port') == port for d in devices):
+                    logger.info(f"Device {host}:{port} already in list, skipping")
+                    continue
+
+                # Add device even if manufacturer/model not detected
+                new_device = {
+                    'name': device.get('name', f"Device at {host}:{port}"),
+                    'manufacturer': device.get('manufacturer', 'Generic'),
+                    'model': device.get('model', 'Modbus TCP'),
+                    'host': host,
+                    'port': port,
+                    'slave_id': device.get('slave_id', 1)
+                }
+                devices.append(new_device)
+                added_count += 1
+                logger.info(f"Auto-added device: {new_device['name']} at {host}:{port}")
 
             # Save configuration if devices were added
             if added_count > 0:
@@ -471,18 +478,25 @@ def api_scan_network_nmap():
         added_count = 0
         if auto_add:
             for device in found_devices:
-                if 'manufacturer' in device and 'model' in device:
-                    new_device = {
-                        'name': device['name'],
-                        'manufacturer': device['manufacturer'],
-                        'model': device['model'],
-                        'host': device['ip'],
-                        'port': device['port'],
-                        'slave_id': 1
-                    }
-                    devices.append(new_device)
-                    added_count += 1
-                    logger.info(f"Auto-added device: {device['name']} at {device['ip']}:{device['port']}")
+                # Check if device is already in list to avoid duplicates
+                host = device.get('ip')
+                port = device.get('port', 502)
+                if any(d.get('host') == host and d.get('port') == port for d in devices):
+                    logger.info(f"Device {host}:{port} already in list, skipping")
+                    continue
+
+                # Add device even if manufacturer/model not detected
+                new_device = {
+                    'name': device.get('name', f"Device at {host}:{port}"),
+                    'manufacturer': device.get('manufacturer', 'Generic'),
+                    'model': device.get('model', 'Modbus TCP'),
+                    'host': host,
+                    'port': port,
+                    'slave_id': device.get('slave_id', 1)
+                }
+                devices.append(new_device)
+                added_count += 1
+                logger.info(f"Auto-added device: {new_device['name']} at {host}:{port}")
 
             # Save configuration if devices were added
             if added_count > 0:

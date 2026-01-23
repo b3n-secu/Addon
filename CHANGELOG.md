@@ -1,5 +1,32 @@
 # Changelog
 
+## Version 1.7.7 (2026-01-23)
+
+### Critical Bug Fixes
+
+- 🐛 **Auto-Add All Devices Fixed** - Found devices now automatically added regardless of detection status
+  - **Problem**: Devices without detected manufacturer/model (e.g., "Device_45") were not automatically added to configuration despite checkbox being checked
+  - **Root cause**: Backend required 'manufacturer' and 'model' fields to be present for auto-add
+  - **Solution**:
+    - Remove manufacturer/model requirement for auto-add
+    - Use default values: manufacturer='Generic', model='Modbus TCP'
+    - Add duplicate detection to prevent adding same device twice (checks host:port)
+    - Use `.get()` for safe field access with defaults
+
+### Technical Changes
+
+- Modified `api_scan_network()` and `api_scan_network_nmap()` in both `app/app.py` and `modbus/app/app.py`
+- Changed from: `if 'manufacturer' in device and 'model' in device:`
+- Changed to: Always add device, use `device.get('manufacturer', 'Generic')`
+- Added duplicate detection: Check if host:port combination already exists
+- Better error handling with safe `.get()` access
+
+### Impact
+
+All found devices are now automatically added to configuration when auto-add checkbox is enabled, regardless of whether manufacturer/model could be detected. This fixes the workflow where scanned devices appeared in "Gefundene Geräte" but not in "Konfigurierte Geräte".
+
+---
+
 ## Version 1.7.6 (2026-01-23)
 
 ### UI/UX Improvements
