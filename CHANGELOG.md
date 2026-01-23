@@ -1,5 +1,45 @@
 # Changelog
 
+## Version 1.7.6 (2026-01-23)
+
+### UI/UX Improvements
+
+- 🎨 **Optimized Layout - Sidebar & Inline Inputs**
+  - **Button Sidebar (Left)**: All action buttons now arranged vertically in a compact sidebar
+    - Cleaner, more compact button layout
+    - Easy access to all main functions
+    - Fixed width sidebar (250px)
+  - **Inline Input Fields**: All input parameters now displayed in a single horizontal row
+    - Network, Port-Range, IP-Address, Port, Slave ID all in one line
+    - More space-efficient layout
+    - Shorter, clearer labels
+    - Tooltips removed for cleaner appearance
+  - **Responsive Design**: Automatically adjusts to stacked layout on smaller screens
+
+### Technical Changes
+
+- Added `.main-layout` CSS class for sidebar + content grid layout
+- Added `.button-sidebar` for vertical button arrangement
+- Added `.input-inline-area` for inline input field layout
+- Added `.inline-inputs` with 5-column grid layout
+- Optimized `.checkbox-row` for compact checkbox display
+- Reduced label font size to 0.8em for better fit
+- Hidden small hints on desktop, shown only on mobile
+
+### Benefits
+
+- 💨 More compact interface with better space utilization
+- 🎯 Clearer visual hierarchy with sidebar navigation
+- 📱 Better responsive behavior on different screen sizes
+- ✨ Cleaner, more professional appearance
+
+### Files Changed
+
+- `app/static/index.html`: Sidebar layout with inline inputs
+- `modbus/app/static/index.html`: Same layout changes
+
+---
+
 ## Version 1.7.5 (2026-01-23)
 
 ### UI/UX Improvements
