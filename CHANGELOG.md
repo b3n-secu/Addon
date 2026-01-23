@@ -1,5 +1,217 @@
 # Changelog
 
+## Version 1.7.0 (2026-01-23)
+
+### Major New Features - Multi-Protocol Support & Device Management
+
+This release introduces comprehensive multi-protocol support, automatic register detection, and advanced device management capabilities.
+
+### 🌐 Multi-Protocol Scanner (protocol_scanner.py)
+
+**Supported Protocols:**
+- ✅ **Modbus TCP** (Port 502) - Fully supported with auto-detection
+- ✅ **Modbus UDP** (Port 502) - Fully supported with auto-detection
+- ✅ **S7comm** (Port 102) - Siemens S7 PLCs and LOGO! v7
+- ✅ **KNX/IP** (Port 3671) - Building automation (requires KNX/IP Gateway)
+- ✅ **BACnet/IP** (Port 47808) - Building automation
+- 🔶 **PROFINET** (Ports 34962-34964) - Detection only (requires Gateway)
+- 🔶 **PROFIBUS** - Detection only (requires PROFIBUS Gateway)
+- 🔶 **CANbus** - Detection only (requires CAN Gateway)
+- 🔶 **CANopen** - Detection only (requires CANopen Gateway)
+
+**Features:**
+- Automatic protocol detection on network scan
+- Single host or full network scanning
+- Gateway detection and identification
+- Protocol-specific probing and verification
+- Transport protocol detection (TCP/UDP)
+
+### 📊 Device Manager (device_manager.py)
+
+**Device Categorization:**
+- Separate management for **Modbus devices** and **S7comm devices**
+- Automatic protocol detection and classification
+- Device metadata tracking (manufacturer, model, connection status)
+- Persistent device storage
+
+**Device Properties:**
+- Protocol type (Modbus, S7comm, etc.)
+- Connection parameters (host, port, slave_id, TSAP)
+- Register availability maps
+- I/O configuration storage
+- Last scan timestamp and status
+
+### 🔍 Automatic Register Detection (register_scanner.py)
+
+**Register Status Indicators:**
+- 🟡 **Yellow dot (AVAILABLE)** - Register exists and is readable
+- ⚫ **Black dot (ERROR)** - Register doesn't exist or read error
+- ⚪ **Gray dot (UNTESTED)** - Not yet tested
+
+**Modbus Register Scanning:**
+- **Coils** (Digital Outputs) - FC01, FC05, FC15
+- **Discrete Inputs** (Digital Inputs) - FC02
+- **Input Registers** (Analog Inputs) - FC04
+- **Holding Registers** (Analog Outputs) - FC03, FC06, FC16
+
+**S7 Register Scanning:**
+- Digital Inputs (I/Q memory areas)
+- Digital Outputs (Q memory areas)
+- Markers (M memory areas)
+- Data Blocks (DB)
+- Analog Inputs and Outputs
+
+**Features:**
+- Batch register reading for efficiency
+- Configurable scan ranges
+- Automatic register grouping
+- Status reporting per register
+
+### 🔧 I/O Configuration Management
+
+**Configurable I/O Points:**
+- Digital Inputs (Discrete Inputs)
+- Digital Outputs (Coils)
+- Analog Inputs (Input Registers)
+- Analog Outputs (Holding Registers)
+
+**Configuration Options:**
+- Name/Label for each I/O point
+- Register address
+- Unit of measurement
+- Scaling factor
+- Offset value
+- Device class (for Home Assistant integration)
+
+### 📋 Device Management Features
+
+**Device Discovery:**
+1. Network-wide protocol scanning
+2. Automatic device detection (Modbus, S7comm, KNX, etc.)
+3. Protocol-specific device identification
+4. Gateway detection for serial-based protocols
+
+**Device Organization:**
+1. **Modbus devices** → Modbus configuration category
+2. **S7comm devices** → Separate S7 configuration category
+3. Other protocols → Respective protocol categories
+
+**Automatic Configuration:**
+- Register scanning on device addition
+- Automatic I/O point discovery
+- Configuration templates based on device type
+- Export to Home Assistant YAML format
+
+### 🚀 New Capabilities
+
+**Network Discovery:**
+- Scan entire network for control devices
+- Detect all protocol types simultaneously
+- Identify gateway requirements
+- Report connection status
+
+**Register Management:**
+- Automatic register availability testing
+- Visual status indicators (yellow/black/gray dots)
+- Register range optimization
+- Error detection and reporting
+
+**Configuration Export:**
+- Modbus devices → `modbus.yaml`
+- S7 devices → Separate S7 configuration
+- Protocol-specific configuration generation
+
+### 📁 New Files
+
+1. **app/protocol_scanner.py** (420 lines)
+   - Multi-protocol detection engine
+   - Support for 9+ industrial protocols
+   - Gateway identification
+
+2. **app/device_manager.py** (330 lines)
+   - Device lifecycle management
+   - Protocol categorization
+   - I/O configuration storage
+
+3. **app/register_scanner.py** (380 lines)
+   - Automatic register detection
+   - Modbus and S7 support
+   - Status indicator system
+
+4. **modbus/app/protocol_scanner.py** (copy)
+5. **modbus/app/device_manager.py** (copy)
+6. **modbus/app/register_scanner.py** (copy)
+
+### 🔄 Modified Files
+
+- config.yaml: Version 1.6.3 → 1.7.0
+- modbus/config.yaml: Version 1.6.3 → 1.7.0
+- app/app.py: API version 1.6.3 → 1.7.0
+- modbus/app/app.py: API version 1.6.3 → 1.7.0
+
+### 🎯 Technical Implementation
+
+**Protocol Detection Process:**
+1. Port scanning on target network
+2. TCP/UDP probing for each protocol
+3. Protocol-specific handshake verification
+4. Device type identification
+5. Register availability scanning
+6. Configuration generation
+
+**Register Scanning Process:**
+1. Connect to device (Modbus/S7)
+2. Batch-read registers in groups
+3. Mark each register as AVAILABLE or ERROR
+4. Generate register availability map
+5. Store results in device configuration
+
+**Gateway Detection:**
+- PROFINET → Requires PROFINET Gateway
+- PROFIBUS → Requires PROFIBUS Gateway
+- CANbus → Requires CAN Gateway
+- CANopen → Requires CANopen Gateway
+- KNX → Requires KNX/IP Gateway
+
+### 📊 Protocol Support Matrix
+
+| Protocol | Detection | Auto-Config | Register Scan | Gateway Required |
+|----------|-----------|-------------|---------------|------------------|
+| Modbus TCP | ✅ Full | ✅ Full | ✅ Full | ❌ No |
+| Modbus UDP | ✅ Full | ✅ Full | ✅ Full | ❌ No |
+| S7comm | ✅ Full | ✅ Full | ✅ Full | ❌ No |
+| KNX/IP | ✅ Full | 🔶 Partial | ❌ No | ✅ Yes |
+| BACnet/IP | ✅ Full | 🔶 Partial | ❌ No | ❌ No |
+| PROFINET | 🔶 Detection | ❌ No | ❌ No | ✅ Yes |
+| PROFIBUS | 🔶 Detection | ❌ No | ❌ No | ✅ Yes |
+| CANbus | 🔶 Detection | ❌ No | ❌ No | ✅ Yes |
+| CANopen | 🔶 Detection | ❌ No | ❌ No | ✅ Yes |
+
+### ✅ Benefits
+
+- **Universal Protocol Support**: Detect and identify multiple industrial protocols
+- **Intelligent Categorization**: Automatic device organization by protocol type
+- **Visual Feedback**: Register status indicators (yellow/black/gray dots)
+- **Gateway Awareness**: Identifies when gateways are required
+- **Modbus ↔ S7 Separation**: Clear distinction between Modbus and S7 devices
+- **Auto-Configuration**: Reduces manual configuration effort
+- **Extensible Architecture**: Easy to add new protocols
+
+### 🔮 Future Enhancements
+
+- Web UI for device management
+- Interactive register configuration
+- Protocol-specific configuration wizards
+- Real-time register monitoring
+- Multi-device batch operations
+- Advanced gateway configuration
+
+### 📝 Notes
+
+This release focuses on backend infrastructure for multi-protocol support. Full UI integration will be added in future versions.
+
+---
+
 ## Version 1.6.3 (2026-01-23)
 
 ### Major New Features
