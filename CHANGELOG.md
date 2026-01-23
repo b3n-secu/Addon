@@ -1,5 +1,27 @@
 # Changelog
 
+## Version 1.7.4 (2026-01-23)
+
+### Bug Fixes
+
+- 🐛 **Auto-Add Default Fixed** - Network scan now automatically adds found devices by default
+  - **Problem**: Found devices were not automatically added to configuration despite checkbox being checked
+  - **Root cause**: `auto_add` parameter defaulted to `False` in `/api/scan-network` and `/api/scan-network-nmap` endpoints
+  - **Solution**: Changed default to `True` to match UI checkbox behavior
+  - Fixed in `app/app.py` for both `/api/scan-network` and `/api/scan-network-nmap` endpoints
+
+### Technical Changes
+
+- `/api/scan-network`: Changed `auto_add = data.get('auto_add', False)` → `auto_add = data.get('auto_add', True)`
+- `/api/scan-network-nmap`: Changed `auto_add = data.get('auto_add', False)` → `auto_add = data.get('auto_add', True)`
+- `modbus/app/app.py` already had correct defaults
+
+### Impact
+
+When users perform a network scan with the "Gefundene Geräte automatisch zur Konfiguration hinzufügen" checkbox enabled (default), found devices are now correctly added to the "Konfigurierte Geräte" list automatically.
+
+---
+
 ## Version 1.7.3 (2026-01-23)
 
 ### Release Update
