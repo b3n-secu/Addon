@@ -346,6 +346,67 @@
             padding: 10px;
             opacity: 0.8;
         }
+
+        /* New Layout Styles */
+        .button-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+
+        .button-bar .button {
+            flex: 1 1 auto;
+            min-width: 200px;
+            margin: 0;
+        }
+
+        .input-area {
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .input-area-title {
+            font-size: 1.3em;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .three-column-layout {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .column {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .column-title {
+            font-size: 1.2em;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .three-column-layout {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -364,131 +425,17 @@
             <!-- Alert Area -->
             <div id="alertArea"></div>
 
-            <!-- Network Scanner Section -->
-            <div class="section">
-                <h2 class="section-title">🔍 Automatische Geräteerkennung (Nmap-basiert)</h2>
-                <p style="margin-bottom: 15px; color: #666;">
-                    Professioneller Netzwerk-Scan mit nmap und modbus-discover NSE Script.
-                    Unterstützt: Siemens LOGO! 8 (0BA8), Schneider, ABB, Wago und weitere Modbus-Geräte. <strong>Hinweis: LOGO! v7/0BA7 wird NICHT unterstützt (nur S7-Protokoll).</strong>
-                </p>
-
-                <div class="grid">
-                    <div class="form-group">
-                        <label for="networkRange">Netzwerk (optional, /24 wird automatisch erkannt)</label>
-                        <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            Leer lassen für automatische Netzwerk-Erkennung
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="portRange">Port-Range (anpassbar)</label>
-                        <input type="text" id="portRange" placeholder="502,510,20000-20100" value="502,510,20000-20100">
-                        <small style="color: #666; display: block; margin-top: 5px;">
-                            Format: Einzelne Ports (502,510) oder Bereiche (20000-20100)
-                        </small>
-                    </div>
-                </div>
-
-                <div style="margin-top: 15px;">
-                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
-                        <input type="checkbox" id="autoAddDevices" checked style="width: auto; margin-right: 8px;">
-                        <span>Gefundene Geräte automatisch zur Konfiguration hinzufügen</span>
-                    </label>
-                    <br>
-                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
-                        <input type="checkbox" id="useModbusDiscover" checked style="width: auto; margin-right: 8px;">
-                        <span>Nmap modbus-discover NSE Script verwenden (empfohlen)</span>
-                    </label>
-                </div>
-
-                <div style="margin-top: 15px;">
-                    <button class="button button-primary" onclick="scanNetworkNmap()" style="font-size: 1.1em; padding: 15px 30px;">
-                        🚀 Nmap Scan starten
-                    </button>
-                    <button class="button button-secondary" onclick="scanNetworkAuto()" style="padding: 15px 30px;">
-                        ⚡ Quick Scan (Python)
-                    </button>
-                </div>
-
-                <div id="scanProgress" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <div class="spinner"></div>
-                        <div>
-                            <strong>Scan läuft...</strong>
-                            <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;" id="scanProgressText">
-                                Nmap scannt das Netzwerk. Dies kann mehrere Minuten dauern.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="networkScanResults" class="hidden" style="margin-top: 20px;">
-                    <h3 style="color: #667eea; margin-bottom: 15px;">Gefundene Geräte:</h3>
-                    <div id="networkDeviceList"></div>
-                </div>
-            </div>
-
-            <!-- Device List Section -->
-            <div class="section">
-                <h2 class="section-title">Konfigurierte Geräte</h2>
-                <ul id="deviceList" class="device-list">
-                    <li class="loading">
-                        <div class="spinner"></div>
-                        <p>Lade Geräte...</p>
-                    </li>
-                </ul>
-            </div>
-
-            <!-- Register Discovery Section -->
-            <div class="section">
-                <h2 class="section-title">🔍 Register-Analyse (Device Capabilities)</h2>
-                <p style="margin-bottom: 15px; color: #666;">
-                    Prüft direkt am Gerät, welche Modbus-Register unterstützt werden. Hilfreich zur Ermittlung
-                    der tatsächlichen I/O-Anzahl und unterstützten Funktionscodes.
-                </p>
-                <div style="background: #d1ecf1; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #0c5460;">
-                    <small style="color: #0c5460;">
-                        <strong>💡 Tipp:</strong> LOGO! Geräte nutzen Port <strong>510</strong>.
-                        LOGO! v7 (0BA7): 16 DI/DO max | LOGO! v8: 24 DI/20 DO max
-                        <br>Die Analyse dauert 30-60 Sekunden und testet verschiedene Register-Bereiche.
-                    </small>
-                </div>
-
-                <div class="grid">
-                    <div class="form-group">
-                        <label for="discoveryHost">IP-Adresse</label>
-                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.178.201">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="discoveryPort">Port</label>
-                        <input type="number" id="discoveryPort" value="510" placeholder="510 (LOGO!) oder 502 (Standard)">
-                        <small style="color: #666; display: block; margin-top: 5px;">510 für LOGO!, 502 für Standard Modbus</small>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="discoverySlaveId">Slave ID</label>
-                        <input type="number" id="discoverySlaveId" value="1" min="1" max="247">
-                    </div>
-                </div>
-
-                <button class="button button-primary" onclick="discoverRegisters()" style="font-size: 1.1em; padding: 15px 30px;">
-                    🔬 Register-Analyse starten
+            <!-- Button Bar - All Actions at Top -->
+            <div class="button-bar">
+                <button class="button button-primary" onclick="scanNetworkNmap()" style="font-size: 1.05em;">
+                    🚀 Nmap Scan starten
                 </button>
-
-                <div id="discoveryResults" class="hidden" style="margin-top: 20px;">
-                    <h3 style="color: #667eea; margin-bottom: 15px;">Analyse-Ergebnisse:</h3>
-                    <div id="discoveryContent"></div>
-                </div>
-            </div>
-
-            <!-- Generate Config Section -->
-            <div class="section">
-                <h2 class="section-title">Konfiguration generieren</h2>
-                <p style="margin-bottom: 15px; color: #666;">
-                    Generiert eine modbus.yaml Datei für Home Assistant basierend auf den konfigurierten Geräten.
-                </p>
+                <button class="button button-secondary" onclick="scanNetworkAuto()">
+                    ⚡ Quick Scan (Python)
+                </button>
+                <button class="button button-primary" onclick="discoverRegisters()" style="background: #17a2b8;">
+                    🔍 Register-Analyse starten
+                </button>
                 <button class="button button-success" onclick="generateConfig()">
                     📄 Konfiguration generieren
                 </button>
@@ -496,6 +443,124 @@
                     👁️ Aktuelle Konfiguration anzeigen
                 </button>
             </div>
+
+            <!-- Input Area - All Input Fields Below Buttons -->
+            <div class="input-area">
+                <div class="input-area-title">📝 Eingabeparameter</div>
+
+                <div style="background: #e7f3ff; padding: 12px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                    <small style="color: #004085;">
+                        <strong>ℹ️ Hinweis:</strong> LOGO! v7/0BA7 wird NICHT unterstützt (nur S7-Protokoll).
+                        LOGO! 8 (0BA8), Schneider, ABB, Wago und weitere Modbus-Geräte werden unterstützt.
+                    </small>
+                </div>
+
+                <div class="grid">
+                    <div class="form-group">
+                        <label for="networkRange">🌐 Netzwerk (optional, /24 wird automatisch erkannt)</label>
+                        <input type="text" id="networkRange" placeholder="z.B. 192.168.1.0/24">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Leer lassen für automatische Netzwerk-Erkennung
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="portRange">🔌 Port-Range (anpassbar)</label>
+                        <input type="text" id="portRange" placeholder="502,510,20000-20100" value="502,510,20000-20100">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Format: Einzelne Ports (502,510) oder Bereiche (20000-20100)
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoveryHost">🎯 IP-Adresse (für Register-Analyse)</label>
+                        <input type="text" id="discoveryHost" placeholder="z.B. 192.168.178.201">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoveryPort">📡 Port (für Register-Analyse)</label>
+                        <input type="number" id="discoveryPort" placeholder="510" value="510">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            510 für LOGO!, 502 für Standard Modbus
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="discoverySlaveId">🔢 Slave ID</label>
+                        <input type="number" id="discoverySlaveId" placeholder="1" value="1" min="1" max="247">
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px; margin-right: 20px;">
+                        <input type="checkbox" id="autoAddDevices" checked style="width: auto; margin-right: 8px;">
+                        <span>✅ Gefundene Geräte automatisch zur Konfiguration hinzufügen</span>
+                    </label>
+                    <label style="display: inline-flex; align-items: center; cursor: pointer; margin-bottom: 10px;">
+                        <input type="checkbox" id="useModbusDiscover" checked style="width: auto; margin-right: 8px;">
+                        <span>🔧 Nmap modbus-discover NSE Script verwenden (empfohlen)</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Scan Progress Indicator -->
+            <div id="scanProgress" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 2px solid #667eea;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="spinner"></div>
+                    <div>
+                        <strong>Scan läuft...</strong>
+                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;" id="scanProgressText">
+                            Nmap scannt das Netzwerk. Dies kann mehrere Minuten dauern.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Three Column Layout - Results Area -->
+            <div class="three-column-layout">
+                <!-- Column 1: Found Devices -->
+                <div class="column">
+                    <div class="column-title">🔍 Gefundene Geräte</div>
+                    <div id="networkScanResults" class="hidden">
+                        <div id="networkDeviceList"></div>
+                    </div>
+                    <div id="noFoundDevices" style="padding: 20px; text-align: center; color: #666;">
+                        <p>🔎 Keine Geräte gefunden</p>
+                        <small>Starten Sie einen Netzwerk-Scan, um Geräte zu finden</small>
+                    </div>
+                </div>
+
+                <!-- Column 2: Configured Devices -->
+                <div class="column">
+                    <div class="column-title">⚙️ Konfigurierte Geräte</div>
+                    <ul id="deviceList" class="device-list">
+                        <li class="loading">
+                            <div class="spinner"></div>
+                            <p>Lade Geräte...</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Column 3: Register Analysis Results -->
+                <div class="column">
+                    <div class="column-title">📊 Register-Analyse</div>
+                    <div style="background: #d1ecf1; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #0c5460;">
+                        <small style="color: #0c5460;">
+                            <strong>💡 Tipp:</strong> LOGO! Geräte nutzen Port <strong>510</strong>.
+                            LOGO! v7 (0BA7): 16 DI/DO max | LOGO! v8: 24 DI/20 DO max
+                            <br>Die Analyse dauert 30-60 Sekunden und testet verschiedene Register-Bereiche.
+                        </small>
+                    </div>
+                    <div id="discoveryResults" class="hidden">
+                        <div id="discoveryContent"></div>
+                    </div>
+                    <div id="noAnalysisResults" style="padding: 20px; text-align: center; color: #666;">
+                        <p>📈 Keine Analyse-Ergebnisse</p>
+                        <small>Starten Sie eine Register-Analyse für ein Gerät</small>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -626,6 +691,7 @@
             }
 
             resultsDiv.classList.remove('hidden');
+            document.getElementById('noFoundDevices').style.display = 'none';
             deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk und erkenne Geräte automatisch...</p></div>';
 
             showAlert('Automatischer Netzwerk-Scan gestartet... Dies kann einige Minuten dauern.', 'info');
@@ -1120,6 +1186,7 @@
 
                 if (result.success && result.devices.length > 0) {
                     resultsDiv.classList.remove('hidden');
+                    document.getElementById('noFoundDevices').style.display = 'none';
 
                     let message = `✓ Nmap-Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`;
                     if (autoAdd && result.added_count > 0) {
@@ -1130,10 +1197,12 @@
                     displayNetworkDevicesAuto(result.devices, true);
                 } else if (result.success && result.devices.length === 0) {
                     resultsDiv.classList.remove('hidden');
+                    document.getElementById('noFoundDevices').style.display = 'none';
                     deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;">Keine Modbus-Geräte gefunden. Versuchen Sie eine andere Port-Range.</div>';
                     showAlert('Nmap-Scan abgeschlossen. Keine Geräte gefunden.', 'info');
                 } else {
                     resultsDiv.classList.remove('hidden');
+                    document.getElementById('noFoundDevices').style.display = 'none';
                     deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
                     showAlert('✗ Fehler beim Nmap-Scan: ' + result.error, 'error');
                 }
@@ -1217,6 +1286,7 @@
             const contentDiv = document.getElementById('discoveryContent');
 
             resultsDiv.classList.remove('hidden');
+            document.getElementById('noAnalysisResults').style.display = 'none';
             contentDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analysiere Register...</p></div>';
 
             showAlert('Register-Analyse gestartet... Dies kann bis zu 30 Sekunden dauern.', 'info');
