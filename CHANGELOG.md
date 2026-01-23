@@ -1,5 +1,30 @@
 # Changelog
 
+## Version 1.7.1 (2026-01-23)
+
+### Bug Fixes
+
+- 🐛 **S7 Device Auto-Add Fixed** - LOGO! v7 devices now automatically added to device list
+  - Changed default `auto_add` parameter from False to True in S7 scan endpoints
+  - Fixed "Keine Geräte konfiguriert" error when detecting LOGO! v7 on port 102
+  - Detected S7 devices are now automatically saved to configuration
+  - Single IP scan (`/api/scan-s7`) now includes auto-add functionality
+  - Network scan (`/api/scan-network-s7`) also defaults to auto-add
+
+### Technical Changes
+
+- Modified `api_scan_s7()` function in app/app.py and modbus/app/app.py
+- Auto-add logic creates device entry with protocol='s7' marker
+- Device includes all S7 parameters (tsap_src, tsap_dst, pdu_size)
+- Prevents duplicate device entries (checks host:port combination)
+- Configuration automatically persisted with `save_config()`
+
+### Impact
+
+Users can now scan for LOGO! v7 devices and they will be immediately available in the device list without manual addition. This resolves the workflow issue where detected devices were not usable until manually added.
+
+---
+
 ## Version 1.7.0 (2026-01-23)
 
 ### Major New Features - Multi-Protocol Support & Device Management

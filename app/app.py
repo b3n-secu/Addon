@@ -499,6 +499,7 @@ def api_scan_s7():
         src_tsap = data.get('src_tsap')  # Optional, e.g., 0x0100
         dst_tsap = data.get('dst_tsap')  # Optional, e.g., 0x2000
         timeout = data.get('timeout', 5)
+        auto_add = data.get('auto_add', True)  # Automatically add to device list (default: True)
 
         if not host:
             return jsonify({'error': 'Host is required'}), 400
@@ -510,6 +511,32 @@ def api_scan_s7():
 
         if result['success']:
             logger.info(f"S7 device detected: {host} - {result['device_type']}")
+
+            # Automatically add device if requested
+            if auto_add:
+                new_device = {
+                    'name': f"{result['device_type']} at {host}",
+                    'manufacturer': 'Siemens',
+                    'model': result['device_type'],
+                    'host': host,
+                    'port': port,
+                    'protocol': 's7',  # Mark as S7 protocol
+                    'tsap_src': result['tsap_src'],
+                    'tsap_dst': result['tsap_dst'],
+                    'pdu_size': result['pdu_size']
+                }
+
+                # Only add if not already in list
+                if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                    devices.append(new_device)
+                    save_config()
+                    logger.info(f"Auto-added S7 device: {new_device['name']}")
+                    result['added'] = True
+                else:
+                    logger.info(f"S7 device already in list: {host}:{port}")
+                    result['added'] = False
+            else:
+                result['added'] = False
         else:
             logger.info(f"No S7 device found at {host}:{port} - {result.get('error', 'Unknown error')}")
 
@@ -540,7 +567,7 @@ def api_scan_network_s7():
         data = request.json or {}
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
         timeout = data.get('timeout', 2)  # Timeout per host
-        auto_add = data.get('auto_add', False)  # Automatically add to device list
+        auto_add = data.get('auto_add', True)  # Automatically add to device list (default: True)
 
         # Auto-detect network if not provided
         if not network:
