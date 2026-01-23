@@ -1,5 +1,66 @@
 # Changelog
 
+## Version 1.7.5 (2026-01-23)
+
+### UI/UX Improvements
+
+- 🎨 **Completely Redesigned Web Interface Layout**
+  - **Button Bar at Top**: All action buttons now grouped in a prominent button bar for quick access
+    - Nmap Scan, Quick Scan, Register Analysis, Generate Config, View Config all in one place
+  - **Input Area Below Buttons**: All input fields grouped together in a dedicated input area
+    - Network range, port range, IP address, port, slave ID all in one organized section
+    - Clear labels with icons for better visual guidance
+  - **Three-Column Results Layout**: Results now displayed in three organized columns
+    - Column 1: 🔍 Found Devices (network scan results)
+    - Column 2: ⚙️ Configured Devices (device list)
+    - Column 3: 📊 Register Analysis (analysis results)
+  - **Responsive Design**: Automatically adjusts to single column on smaller screens (<1200px)
+
+### Technical Changes
+
+- Added new CSS classes: `.button-bar`, `.input-area`, `.three-column-layout`, `.column`
+- Removed duplicate sections from old layout
+- Enhanced visibility toggling for empty state placeholders
+- Improved visual hierarchy with icons and consistent spacing
+- Better mobile responsiveness
+
+### Benefits
+
+- ⚡ Faster workflow: All actions accessible from top button bar
+- 👁️ Better overview: See found devices, configured devices, and analysis results at a glance
+- 📱 Responsive: Works well on different screen sizes
+- 🎯 Cleaner interface: Logical grouping of inputs and results
+- ✨ Modern look: Enhanced visual design with icons and improved spacing
+
+### Files Changed
+
+- `app/static/index.html`: Complete layout restructure
+- `modbus/app/static/index.html`: Same layout restructure
+
+---
+
+## Version 1.7.4 (2026-01-23)
+
+### Bug Fixes
+
+- 🐛 **Auto-Add Default Fixed** - Network scan now automatically adds found devices by default
+  - **Problem**: Found devices were not automatically added to configuration despite checkbox being checked
+  - **Root cause**: `auto_add` parameter defaulted to `False` in `/api/scan-network` and `/api/scan-network-nmap` endpoints
+  - **Solution**: Changed default to `True` to match UI checkbox behavior
+  - Fixed in `app/app.py` for both `/api/scan-network` and `/api/scan-network-nmap` endpoints
+
+### Technical Changes
+
+- `/api/scan-network`: Changed `auto_add = data.get('auto_add', False)` → `auto_add = data.get('auto_add', True)`
+- `/api/scan-network-nmap`: Changed `auto_add = data.get('auto_add', False)` → `auto_add = data.get('auto_add', True)`
+- `modbus/app/app.py` already had correct defaults
+
+### Impact
+
+When users perform a network scan with the "Gefundene Geräte automatisch zur Konfiguration hinzufügen" checkbox enabled (default), found devices are now correctly added to the "Konfigurierte Geräte" list automatically.
+
+---
+
 ## Version 1.7.3 (2026-01-23)
 
 ### Release Update

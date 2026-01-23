@@ -393,7 +393,7 @@ def api_scan_network():
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
         ports = data.get('ports', [502, 510])
         auto_detect = data.get('auto_detect', True)  # Auto-detect device type
-        auto_add = data.get('auto_add', False)  # Automatically add to device list
+        auto_add = data.get('auto_add', True)  # Automatically add to device list
 
         logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
         found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
@@ -449,7 +449,7 @@ def api_scan_network_nmap():
         data = request.json or {}
         network = data.get('network')  # Optional, e.g. "192.168.1.0/24"
         port_range = data.get('port_range', '502,510,20000-20100')  # Configurable port range
-        auto_add = data.get('auto_add', False)  # Automatically add to device list
+        auto_add = data.get('auto_add', True)  # Automatically add to device list
         use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
         timeout = data.get('timeout', 300)  # Scan timeout in seconds
 
