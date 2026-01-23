@@ -5,6 +5,7 @@ import os
 import json
 import logging
 import sys
+import yaml
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_cors import CORS
 from device_profiles import get_manufacturers, get_models, get_device_profile
@@ -132,7 +133,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.0.0'
+        'version': '1.6.1'
     })
 
 
@@ -686,7 +687,6 @@ def api_check_devices_in_config():
             config_content = f.read()
 
         # Parse YAML to get device names
-        import yaml
         config_data = yaml.safe_load(config_content)
 
         if not config_data:
