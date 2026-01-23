@@ -16,6 +16,7 @@ RUN apk add --no-cache \
     pyyaml \
     flask \
     flask-cors \
+    requests==2.31.0 \
     python-snap7==1.3 \
     && pip3 install --no-cache-dir --break-system-packages --no-build-isolation python-nmap \
     && apk del gcc musl-dev python3-dev
