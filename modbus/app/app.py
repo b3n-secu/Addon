@@ -55,19 +55,19 @@ werkzeug_logger.setLevel(logging.INFO)
 
 # Configuration
 CONFIG_PATH = os.environ.get('CONFIG_PATH', '/data/options.json')
-
-# Persistent device storage (survives addon rebuilds)
+# Use separate file for device storage (not managed by Supervisor)
+DEVICES_PATH = os.environ.get('DEVICES_PATH', '/data/devices.json')
+# Use different default paths depending on environment
 if os.path.exists('/config'):
-    PERSISTENT_DEVICES_PATH = '/config/.modbus_configurator_devices.json'
+    # Running in Home Assistant addon
     DEFAULT_MODBUS_PATH = '/config/modbus_generated.yaml'
 else:
-    # Running locally or in development
-    PERSISTENT_DEVICES_PATH = os.path.abspath('./devices.json')
+    # Running locally or in development - use absolute path in app directory
     DEFAULT_MODBUS_PATH = os.path.abspath('./modbus_generated.yaml')
 
 MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
 logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
-logger.info(f"Persistent device storage: {PERSISTENT_DEVICES_PATH}")
+logger.info(f"Device storage path: {DEVICES_PATH}")
 
 # Global state
 devices = []
@@ -75,69 +75,75 @@ config_generator = ModbusConfigGenerator()
 
 
 def load_config():
-    """Load configuration from persistent storage (survives rebuilds)"""
+    """Load device configuration from persistent storage"""
     global devices
 
     # Initialize devices as empty list
     devices = []
 
-    # First try to load from persistent storage (survives rebuilds)
     try:
-        if os.path.exists(PERSISTENT_DEVICES_PATH):
-            with open(PERSISTENT_DEVICES_PATH, 'r') as f:
-                loaded_data = json.load(f)
+        # First, try to load from persistent devices.json file
+        if os.path.exists(DEVICES_PATH):
+            with open(DEVICES_PATH, 'r') as f:
+                loaded_devices = json.load(f)
 
-                # Ensure loaded data is a list
-                if isinstance(loaded_data, list):
-                    devices = loaded_data
-                    logger.info(f"Loaded {len(devices)} devices from persistent storage")
-                else:
-                    logger.error(f"Persistent storage contains invalid data type: {type(loaded_data)}")
+                # Validate that devices is a list
+                if not isinstance(loaded_devices, list):
+                    logger.error(f"Devices file contains invalid data: {type(loaded_devices)}")
                     devices = []
-                return
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error in persistent storage: {e}")
-        devices = []
-    except Exception as e:
-        logger.warning(f"Could not load from persistent storage: {e}")
-        devices = []
+                    return
 
-    # Fallback: Load from options.json (legacy)
-    try:
-        if os.path.exists(CONFIG_PATH):
+                # Validate each device is a dict
+                devices = []
+                for i, device in enumerate(loaded_devices):
+                    if isinstance(device, dict):
+                        devices.append(device)
+                    else:
+                        logger.warning(f"Skipping invalid device at index {i}: {type(device)}")
+
+                logger.info(f"Loaded {len(devices)} devices from {DEVICES_PATH}")
+
+        # Migration: If devices.json doesn't exist, try to migrate from options.json
+        elif os.path.exists(CONFIG_PATH):
+            logger.info(f"Migrating devices from {CONFIG_PATH} to {DEVICES_PATH}")
             with open(CONFIG_PATH, 'r') as f:
                 config = json.load(f)
 
-                # Ensure config is a dict and devices is a list
+                # Ensure config is a dict
                 if isinstance(config, dict):
                     loaded_devices = config.get('devices', [])
+
+                    # Validate that devices is a list
                     if isinstance(loaded_devices, list):
-                        devices = loaded_devices
-                        logger.info(f"Loaded {len(devices)} devices from options.json")
-                        # Migrate to persistent storage
+                        # Validate each device is a dict
+                        for device in loaded_devices:
+                            if isinstance(device, dict):
+                                devices.append(device)
+
+                        # Save to new location
                         if devices:
                             save_config()
-                    else:
-                        logger.error(f"Config 'devices' is not a list: {type(loaded_devices)}")
-                        devices = []
-                else:
-                    logger.error(f"Config is not a dict: {type(config)}")
-                    devices = []
+                            logger.info(f"Migrated {len(devices)} devices to {DEVICES_PATH}")
+
+        else:
+            logger.info(f"No existing device configuration found")
+            devices = []
+
     except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error in options.json: {e}")
+        logger.error(f"JSON decode error loading devices: {e}")
         devices = []
     except Exception as e:
-        logger.error(f"Error loading config: {e}")
+        logger.error(f"Error loading devices: {e}", exc_info=True)
         devices = []
 
 
 def save_config():
-    """Save configuration to persistent storage (survives rebuilds)"""
+    """Save device configuration to persistent storage"""
     global devices
 
     # Ensure devices is always a list
     if not isinstance(devices, list):
-        logger.error(f"Cannot save config: devices is not a list! Type: {type(devices)}")
+        logger.error(f"Cannot save devices: devices is not a list! Type: {type(devices)}")
         devices = []
 
     # Validate all devices are JSON-serializable
@@ -154,25 +160,16 @@ def save_config():
 
     devices = valid_devices
 
-    # Save to persistent storage (primary)
     try:
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(PERSISTENT_DEVICES_PATH), exist_ok=True)
+        # Ensure /data directory exists
+        os.makedirs(os.path.dirname(DEVICES_PATH), exist_ok=True)
 
-        with open(PERSISTENT_DEVICES_PATH, 'w') as f:
+        # Save directly as list (not wrapped in {'devices': ...})
+        with open(DEVICES_PATH, 'w') as f:
             json.dump(devices, f, indent=2)
-        logger.info(f"Configuration saved to persistent storage ({len(devices)} devices)")
+        logger.info(f"Devices saved to {DEVICES_PATH} ({len(devices)} devices)")
     except Exception as e:
-        logger.error(f"Error saving to persistent storage: {e}")
-
-    # Also save to options.json for backward compatibility
-    try:
-        config = {'devices': devices}
-        with open(CONFIG_PATH, 'w') as f:
-            json.dump(config, f, indent=2)
-        logger.debug("Configuration also saved to options.json")
-    except Exception as e:
-        logger.warning(f"Could not save to options.json: {e}")
+        logger.error(f"Error saving devices: {e}", exc_info=True)
 
 
 @app.route('/')
