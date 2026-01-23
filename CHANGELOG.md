@@ -1,5 +1,147 @@
 # Changelog
 
+## Version 1.6.3 (2026-01-23)
+
+### Major New Features
+
+- 🔍 **S7 Protocol Detection for LOGO! v7** - Complete S7comm implementation for automatic LOGO! v7/0BA7 detection
+  - Full S7comm protocol stack (TPKT, COTP, S7comm)
+  - Port 102 scanning and device identification
+  - TSAP (Transport Service Access Point) support
+  - 3-step connection: TCP → COTP Connect → S7comm Setup
+  - Automatic PDU size negotiation
+  - Device type identification (LOGO! v7, S7-300, S7-400)
+
+### New S7 Scanner Module (s7_scanner.py)
+
+**Protocol Implementation:**
+- TPKT (RFC 1006) - ISO transport services on TCP
+- COTP (ISO 8073) - Connection-Oriented Transport Protocol
+- S7comm - Siemens proprietary protocol (Protocol ID: 0x32)
+- Complete packet creation and parsing
+- Error handling for all connection steps
+
+**TSAP Support:**
+- Create TSAP from communication type, rack, and slot
+- Default TSAPs: 0x0100 (PG/local), 0x2000 (OP/LOGO!)
+- Helper function: `S7Scanner.create_tsap(comm_type, rack, slot)`
+- Automatic device identification based on TSAP and PDU size
+
+**Device Detection:**
+- **LOGO! v7 (0BA7)**: PDU size 480, TSAP 0x2000, Port 102
+- **S7-300 Series**: Variable PDU, rack/slot based TSAP
+- **S7-400 Series**: Large PDU, rack/slot identification
+- **Unknown S7 devices**: Generic identification
+
+### New API Endpoints
+
+**POST /api/scan-s7** - Scan single IP for S7 protocol
+```json
+Request: {
+  "host": "192.168.178.201",
+  "port": 102,
+  "timeout": 5
+}
+
+Response: {
+  "success": true,
+  "device_type": "LOGO! v7 (0BA7)",
+  "pdu_size": 480,
+  "tsap_src": 256,
+  "tsap_dst": 512
+}
+```
+
+**POST /api/scan-network-s7** - Scan network for S7 devices
+```json
+Request: {
+  "network": "192.168.178.0/24",
+  "timeout": 2,
+  "auto_add": false
+}
+
+Response: {
+  "success": true,
+  "devices": [...],
+  "total": 3,
+  "scan_method": "s7comm"
+}
+```
+
+### Bug Fixes
+
+- 🐛 **Missing requests dependency** - Fixed ModuleNotFoundError causing startup failure
+  - Added requests==2.31.0 to Dockerfile
+  - Added requests==2.31.0 to app/requirements.txt
+  - NetworkDetector module now works correctly
+
+### Documentation
+
+- 📚 **S7_DETECTION.md** - Comprehensive S7 protocol documentation (610 lines)
+  - Protocol stack explanation (OSI layers)
+  - S7comm connection establishment steps
+  - TSAP structure and examples
+  - Device identification methods
+  - API endpoint documentation with examples
+  - Troubleshooting guide
+  - Implementation details (packet structures)
+  - References to RFCs and Wireshark Wiki
+
+### Technical Details
+
+**S7comm Connection Sequence:**
+1. TCP SYN to port 102
+2. COTP Connect Request (0xE0) with TSAP parameters
+3. COTP Connect Confirm (0xD0) from device
+4. S7comm Setup (Function 0xF0) with PDU negotiation
+5. S7comm Ack_Data (ROSCTR 0x03) with negotiated parameters
+
+**TSAP Structure (2 bytes):**
+- Byte 1: Communication Type (1=PG, 2=OP, 3=S7 Basic)
+- Byte 2: Rack (bits 5-7) + Slot (bits 0-4)
+
+**Example TSAP Values:**
+- 0x0100: PG communication, Rack 0, Slot 0 (Local)
+- 0x2000: OP communication, Rack 0, Slot 0 (LOGO! v7)
+- 0x0102: PG communication, Rack 0, Slot 2 (S7-300)
+
+### Files Added
+
+- app/s7_scanner.py: Complete S7 scanner implementation (845 lines)
+- modbus/app/s7_scanner.py: Copy for modbus directory
+- S7_DETECTION.md: Comprehensive S7 protocol documentation
+
+### Files Modified
+
+- app/app.py: Added S7 scanner imports and API endpoints
+- modbus/app/app.py: Added S7 scanner imports and API endpoints
+- Dockerfile: Added requests==2.31.0 dependency
+- modbus/Dockerfile: Added requests==2.31.0 and python-snap7==1.3
+- app/requirements.txt: Added requests==2.31.0
+- config.yaml: Version bumped to 1.6.3
+- modbus/config.yaml: Version bumped to 1.6.3
+
+### Benefits
+
+✅ Automatic LOGO! v7 detection (distinguishes from LOGO! v8)
+✅ No manual configuration needed for LOGO! v7 devices
+✅ Support for S7-300/400 PLCs
+✅ Network-wide discovery of S7 devices
+✅ Professional protocol implementation based on Wireshark specification
+✅ Extensible for future S7 communication features
+✅ Startup issues resolved (requests dependency added)
+
+### Impact
+
+This release enables:
+- Automatic detection of LOGO! v7/0BA7 devices on port 102
+- Clear distinction between LOGO! v7 (S7 only) and LOGO! v8 (Modbus)
+- Professional S7comm protocol support
+- Network scanning for all S7-compatible devices
+- Addon starts without errors (requests dependency fixed)
+
+---
+
 ## Version 1.6.2 (2026-01-23)
 
 ### Critical Bug Fixes
