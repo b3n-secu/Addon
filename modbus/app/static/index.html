@@ -1162,9 +1162,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="device-actions">
-                            <button class="button button-primary" onclick="editDeviceIOConfig(${index})" id="edit-btn-${index}">⚙️ Konfigurieren</button>
-                            <button class="button button-danger" onclick="deleteDevice(${index})">Löschen</button>
+                        <div class="device-actions" style="display: flex; flex-direction: column; gap: 4px;">
+                            <button class="button button-primary" onclick="editDeviceIOConfig(${index})" id="edit-btn-${index}" style="padding: 6px 10px; font-size: 0.85em;" title="Konfigurieren">⚙️</button>
+                            <button class="button button-danger" onclick="deleteDevice(${index})" style="padding: 6px 10px; font-size: 0.85em;" title="Löschen">🗑️</button>
                         </div>
                     `;
                     deviceList.appendChild(li);
