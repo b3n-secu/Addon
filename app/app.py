@@ -395,7 +395,14 @@ def api_scan_network():
         auto_detect = data.get('auto_detect', True)  # Auto-detect device type
         auto_add = data.get('auto_add', True)  # Automatically add to device list
 
-        logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network: {network}")
+
+        logger.info(f"Starting network scan on {network}...")
         found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
 
         # Automatically add detected devices if requested
@@ -431,7 +438,8 @@ def api_scan_network():
             'success': True,
             'devices': found_devices,
             'total': len(found_devices),
-            'added_count': added_count
+            'added_count': added_count,
+            'network': network
         })
 
     except Exception as e:
@@ -460,7 +468,14 @@ def api_scan_network_nmap():
         use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
         timeout = data.get('timeout', 300)  # Scan timeout in seconds
 
-        logger.info(f"Starting nmap network scan on {network or 'auto-detected network'}...")
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network: {network}")
+
+        logger.info(f"Starting nmap network scan on {network}...")
         logger.info(f"Port range: {port_range}, timeout: {timeout}s")
 
         # Initialize nmap scanner
@@ -508,7 +523,8 @@ def api_scan_network_nmap():
             'devices': found_devices,
             'total': len(found_devices),
             'added_count': added_count,
-            'scan_method': 'nmap'
+            'scan_method': 'nmap',
+            'network': network
         })
 
     except Exception as e:
