@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Universal Modbus Configurator</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'><rect x='25' y='35' width='50' height='45' rx='5' fill='%23667eea' stroke='%23fff' stroke-width='2'/><rect x='30' y='15' width='40' height='25' rx='3' fill='%23764ba2' stroke='%23fff' stroke-width='2'/><line x1='50' y1='15' x2='50' y2='8' stroke='%23fff' stroke-width='2'/><circle cx='50' cy='6' r='3' fill='%23ffd700'/><circle cx='40' cy='25' r='4' fill='%23fff'/><circle cx='60' cy='25' r='4' fill='%23fff'/><circle cx='40' cy='25' r='2' fill='%23333'/><circle cx='60' cy='25' r='2' fill='%23333'/><path d='M 50 38 Q 60 40 70 38' stroke='%23ffd700' stroke-width='3' fill='none'/><rect x='73' y='36' width='4' height='4' fill='%23666'/><rect x='15' y='45' width='12' height='6' rx='2' fill='%23667eea' stroke='%23fff' stroke-width='1.5'/><rect x='73' y='45' width='12' height='6' rx='2' fill='%23667eea' stroke='%23fff' stroke-width='1.5'/><rect x='32' y='78' width='10' height='15' rx='2' fill='%23764ba2' stroke='%23fff' stroke-width='1.5'/><rect x='58' y='78' width='10' height='15' rx='2' fill='%23764ba2' stroke='%23fff' stroke-width='1.5'/><circle cx='40' cy='55' r='2.5' fill='%2300ff00' opacity='0.8'/><circle cx='50' cy='55' r='2.5' fill='%2300ff00' opacity='0.8'/><circle cx='60' cy='55' r='2.5' fill='%2300ff00' opacity='0.8'/></svg>">
     <style>
         * {
             margin: 0;
@@ -536,6 +538,48 @@
                 font-size: 0.9em;
             }
         }
+
+        /* Robot Mascot Styles */
+        .robot-mascot {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        .robot-mascot-large {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+        }
+
+        @keyframes robot-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        @keyframes eye-blink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+
+        @keyframes cable-bite {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-2deg); }
+        }
+
+        .robot-mascot svg {
+            animation: robot-bounce 2s ease-in-out infinite;
+        }
+
+        .robot-eye {
+            animation: eye-blink 4s ease-in-out infinite;
+        }
+
+        .robot-cable {
+            animation: cable-bite 1.5s ease-in-out infinite;
+        }
     </style>
 </head>
 <body>
@@ -550,14 +594,56 @@
 
             <!-- Center: Title -->
             <div class="header-center">
-                <h1>🔧 Universal Modbus Configurator</h1>
+                <h1>
+                    <span class="robot-mascot">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Robot Body -->
+                            <rect x="25" y="35" width="50" height="45" rx="5" fill="#667eea" stroke="#fff" stroke-width="2"/>
+
+                            <!-- Robot Head -->
+                            <rect x="30" y="15" width="40" height="25" rx="3" fill="#764ba2" stroke="#fff" stroke-width="2"/>
+
+                            <!-- Antenna -->
+                            <line x1="50" y1="15" x2="50" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="50" cy="6" r="3" fill="#ffd700"/>
+
+                            <!-- Eyes -->
+                            <circle class="robot-eye" cx="40" cy="25" r="4" fill="#fff"/>
+                            <circle class="robot-eye" cx="60" cy="25" r="4" fill="#fff"/>
+                            <circle cx="40" cy="25" r="2" fill="#333"/>
+                            <circle cx="60" cy="25" r="2" fill="#333"/>
+
+                            <!-- Network Cable in mouth -->
+                            <g class="robot-cable">
+                                <path d="M 50 38 Q 60 40 70 38" stroke="#ffd700" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                <path d="M 70 38 L 75 37 L 75 39 Z" fill="#ffd700"/>
+                                <!-- Cable plug -->
+                                <rect x="73" y="36" width="4" height="4" fill="#666"/>
+                            </g>
+
+                            <!-- Arms -->
+                            <rect x="15" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
+                            <rect x="73" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
+
+                            <!-- Legs -->
+                            <rect x="32" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
+                            <rect x="58" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
+
+                            <!-- Panel lights -->
+                            <circle cx="40" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                            <circle cx="50" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                            <circle cx="60" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                        </svg>
+                    </span>
+                    Universal Modbus Configurator
+                </h1>
                 <p>Einfache Konfiguration von Modbus-Geräten für Home Assistant</p>
             </div>
 
             <!-- Right: Version -->
             <div class="header-right">
                 <div class="version-badge">
-                    v1.7.8
+                    v1.7.9
                 </div>
             </div>
         </div>
@@ -570,6 +656,51 @@
             <div class="main-layout">
                 <!-- Button Sidebar (Left) -->
                 <div class="button-sidebar">
+                    <!-- Robot Mascot -->
+                    <div style="text-align: center;">
+                        <div class="robot-mascot robot-mascot-large">
+                            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Robot Body -->
+                                <rect x="25" y="35" width="50" height="45" rx="5" fill="#667eea" stroke="#fff" stroke-width="2"/>
+
+                                <!-- Robot Head -->
+                                <rect x="30" y="15" width="40" height="25" rx="3" fill="#764ba2" stroke="#fff" stroke-width="2"/>
+
+                                <!-- Antenna -->
+                                <line x1="50" y1="15" x2="50" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+                                <circle cx="50" cy="6" r="3" fill="#ffd700"/>
+
+                                <!-- Eyes -->
+                                <circle class="robot-eye" cx="40" cy="25" r="4" fill="#fff"/>
+                                <circle class="robot-eye" cx="60" cy="25" r="4" fill="#fff"/>
+                                <circle cx="40" cy="25" r="2" fill="#333"/>
+                                <circle cx="60" cy="25" r="2" fill="#333"/>
+
+                                <!-- Network Cable in mouth -->
+                                <g class="robot-cable">
+                                    <path d="M 50 38 Q 60 40 70 38" stroke="#ffd700" stroke-width="3" fill="none" stroke-linecap="round"/>
+                                    <path d="M 70 38 L 75 37 L 75 39 Z" fill="#ffd700"/>
+                                    <!-- Cable plug -->
+                                    <rect x="73" y="36" width="4" height="4" fill="#666"/>
+                                </g>
+
+                                <!-- Arms -->
+                                <rect x="15" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
+                                <rect x="73" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
+
+                                <!-- Legs -->
+                                <rect x="32" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
+                                <rect x="58" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
+
+                                <!-- Panel lights -->
+                                <circle cx="40" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                                <circle cx="50" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                                <circle cx="60" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
+                            </svg>
+                        </div>
+                        <div style="font-size: 0.75em; color: #667eea; font-weight: 600; margin-top: -5px;">HAMCA</div>
+                    </div>
+
                     <button class="button button-primary" onclick="scanNetworkNmap()">
                         🚀 Nmap Scan
                     </button>
