@@ -1,0 +1,239 @@
+﻿s Welche Ports sind für die Modbus/TCP-Kommunikation freigegeben und wie viele Beitrags-ID: 34010717
+Modbus-Clients können mit einer SIMATIC S7-CPU als Modbus-Server kommunizieren?
+
+Baugruppe Artikelnummer Firmware-Version Multiport freigegebene Ports
+S7-1500 CPUs
+CPU 1511-1 PN 6ES7511-1AK00-0AB0 ab V1.1 ja alle außer:
+
+6ES7511-1AK01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1511F-1 PN 6ES7511-1FK00-0AB0 ab V1.7 ja alle außer:
+
+6ES7511-1FK01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1513-1 PN 6ES7513-1AL00-0AB0 ab V1.1 ja alle außer:
+
+6ES7513-1AL01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1513F-1 PN 6ES7513-1FL00-0AB0 ab V1.7 ja alle außer:
+
+6ES7513-1FL01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1515-2 PN 6ES7515-2AM00-0AB0 ab V1.5 ja alle außer:
+
+6ES7515-2AM01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1515F-2 PN 6ES7515-2FM00-0AB0 ab V1.6 ja alle außer:
+
+6ES7515-2FM01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1516-3 PN/DP 6ES7516-3AN00-0AB0 ab V1.1 ja alle außer:
+
+6ES7516-3AN01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1516F-3 PN/DP 6ES7516-3FN00-0AB0 ab V1.5 ja alle außer:
+
+6ES7516-3FN01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1517(F)-3 PN/DP 6ES7517-3AP00-0AB0 ab V1.6 ja alle außer:
+
+6ES7517-3FP00-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1518(F)-4 PN/DP 6ES7518-4AP00-0AB0 ab V1.5 ja alle außer:
+
+6ES7518-4FP00-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1510SP-1 PN 6ES7510-1DJ00-0AB0 ab V1.6 ja alle außer:
+
+6ES7510-1DJ01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1510SP F-1 PN 6ES7510-1SJ00-0AB0 ab V1.7 ja alle außer:
+
+6ES7510-1SJ01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1512SP-1 PN 6ES7510-1DK00-0AB0 ab V1.6 ja alle außer:
+
+6ES7510-1DK01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1512SP F-1 PN 6ES7512-1SK00-0AB0 ab V1.7 ja alle außer:
+
+6ES7512-1SK01-0AB0 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1511C-1 PN 6ES7511-1CK00-0AB0 ab V1.8 ja alle außer:
+
+20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1512C-1 PN 6ES7512-1CK00-0AB0 ab V1.8 ja alle außer:
+
+20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1507S 6ES7672-7AC00-0YA0 ab V1.8 ja alle außer:
+
+20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+CPU 1505S 6ES7672-5AC00-0YA0 ab V1.8 ja alle außer:
+
+20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+
+Dieser Beitrag stammt aus dem Siemens Industry Online Support.
+Änderungsdatum: 25.11.2020 Es gelten die  Nutzungsbedingungen unter (www.siemens.com/nutzungsbedingungen). Seite: 1/4
+
+
+
+s Welche Ports sind für die Modbus/TCP-Kommunikation freigegeben und wie viele Beitrags-ID: 34010717
+Modbus-Clients können mit einer SIMATIC S7-CPU als Modbus-Server kommunizieren?
+
+Baugruppe Artikelnummer Firmware-Version Multiport freigegebene Ports
+S7-1200 CPUs
+CPU 1211C 6ES7211-1AD30-0XB0 ab V1.02 Nein alle außer:
+
+6ES7211-1AE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7211-1AE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7211-1BD30-0XB0 ab V1.02 Nein alle außer:
+6ES7211-1BE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7211-1BE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7211-1HD30-0XB0 ab V1.02 Nein alle außer:
+6ES7211-1HE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7211-1HE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+CPU 1212C 6ES7212-1AD30-0XB0 ab V1.02 Nein alle außer:
+
+6ES7212-1AE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7212-1AE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7212-1BD30-0XB0 ab V1.02 Nein alle außer:
+6ES7212-1BE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7212-1BE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7212-1HD30-0XB0 ab V1.02 Nein alle außer:
+6ES7212-1HE31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7212-1HE40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+CPU 1214C 6ES7214-1AE30-0XB0 ab V1.02 Nein alle außer:
+
+6ES7214-1AG31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7214-1AG40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7214-1BE30-0XB0 ab V1.02 Nein alle außer:
+6ES7214-1BG31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7214-1BG40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7214-1HE30-0XB0 ab V1.02 Nein alle außer:
+6ES7214-1HG31-0XB0 ab V3.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+6ES7214-1HG40-0XB0 ab V4.0 Nein Hinweis
+
+ab V4.1 Ja Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+
+Dieser Beitrag stammt aus dem Siemens Industry Online Support.
+Änderungsdatum: 25.11.2020 Es gelten die  Nutzungsbedingungen unter (www.siemens.com/nutzungsbedingungen). Seite: 2/4
+
+
+
+s Welche Ports sind für die Modbus/TCP-Kommunikation freigegeben und wie viele Beitrags-ID: 34010717
+Modbus-Clients können mit einer SIMATIC S7-CPU als Modbus-Server kommunizieren?
+
+Baugruppe Artikelnummer Firmware-Version Multiport freigegebene Ports
+CPU 1214 FC 6ES7214-1AF40-0XB0 ab V4.1.2 Ja alle außer:
+
+6ES7214-1HF40-0XB0 20, 21, 25, 80, 102, 5001, 34962, 34963 und 34964
+CPU 1215C 6ES7215-1AG31-0XB0 ab V3.0 Nein alle außer:
+
+6ES7215-1AG40-0XB0 ab V4.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+ab V4.1 Ja Hinweis
+
+Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+6ES7215-1BG31-0XB0 ab V3.0 Nein alle außer:
+6ES7215-1BG40-0XB0 ab V4.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+
+ab V4.1 Ja Hinweis
+Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+
+6ES7215-1HG31-0XB0 ab V3.0 Nein alle außer:
+6ES7215-1HG40-0XB0 ab V4.0 Nein 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+
+ab V4.1 Ja Hinweis
+Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+
+CPU 1215 FC 6ES7215-1AF40-0XB0 ab V4.1.2 Ja alle außer:
+6ES7215-1HF40-0XB0 20, 21, 25, 80, 102, 5001, 34962, 34963 und 34964
+
+CPU 1217C 6ES7217-1AG40-0XB0 ab V4.0 Nein alle außer:
+ab V4.1 Ja 20, 21, 25, 80, 102, 123, 5001, 34962, 34963 und 34964
+
+Hinweis
+Ab V4.1.2 ist zusätzlich Port 123 freigegeben.
+
+S7-400 CPUs
+CPU 412-2 PN 6ES7412-2EK06-0AB0 ab V6.0 Ja alle
+CPU 412-2 PN 6ES7412-2EK07-0AB0 ab V7.0 Ja alle
+CPU 414-3 PN/DP 6ES7414-3EM05-0AB0 ab V5.0 Nein alle
+CPU 414(F)-3 PN/DP 6ES7414-3EM06-0AB0 ab V6.0 Ja alle
+
+6ES7414-3FM06-0AB0
+CPU 414(F)-3 PN/DP 6ES7414-3EM07-0AB0 ab V7.0 Ja alle
+
+6ES7414-3FM07-0AB0
+CPU 416(F)-3 PN/DP 6ES7416-3ER05-0AB0 ab V5.0 Nein alle
+
+6ES7416-3FR05-0AB0
+CPU 416(F)-3 PN/DP 6ES7416-3ES06-0AB0 ab V6.0 Ja alle
+
+6ES7416-3FS06-0AB0
+CPU 416(F)-3 PN/DP 6ES7416-3ES07-0AB0 ab V7.0 Ja alle
+
+6ES7416-3FS07-0AB0
+CPU 412-5H PN/DP 6ES7412-5HK06-0AB0 ab V6.0 Ja alle
+CPU 414-5H PN/DP 6ES7414-5HM06-0AB0 ab V6.0 Ja alle
+CPU 416-5H PN/DP 6ES7416-5HS06-0AB0 ab V6.0 Ja alle
+CPU 417-5H PN/DP 6ES7417-5HT06-0AB0 ab V6.0 Ja alle
+
+Dieser Beitrag stammt aus dem Siemens Industry Online Support.
+Änderungsdatum: 25.11.2020 Es gelten die  Nutzungsbedingungen unter (www.siemens.com/nutzungsbedingungen). Seite: 3/4
+
+
+
+s Welche Ports sind für die Modbus/TCP-Kommunikation freigegeben und wie viele Beitrags-ID: 34010717
+Modbus-Clients können mit einer SIMATIC S7-CPU als Modbus-Server kommunizieren?
+
+Baugruppe Artikelnummer Firmware-Version Multiport freigegebene Ports
+CPU 410-5H 6ES7410-5HX08-0AB0 ab V8.0 Ja alle
+CPU 410 SMART 6ES7410-5HN08-0AB0 ab V8.1 Ja alle
+S7-300 CPUs
+CPU 314C-2 PN/DP 6ES7314-6EH04-0AB0 ab V3.3 Ja alle
+CPU 315(F)-2 PN/DP 6ES7315-2EG10-0AB0 bis V2.3.4 Nein 2000 bis 5000
+
+6ES7315-2EH13-0AB0
+6ES7315-2FH10-0AB0
+6ES7315-2FH13-0AB0
+
+CPU 315(F)-2 PN/DP 6ES7315-2EH14-0AB0 ab V3.1 Ja alle
+6ES7315-2FJ14-0AB0
+
+CPU 315T-3 PN/DP 6ES7315-7TJ10-0AB0 ab V3.2 Ja alle
+CPU 317(F)-2 PN/DP 6ES7317-2EK13-0AB0 bis V2.3 Nein 2000 bis 5000
+
+6ES7317-2FK13-0AB0
+CPU 317(F)-2 PN/DP 6ES7317-2EK14-0AB0 ab V3.1 Ja alle
+
+6ES7317-2FK14-0AB0
+CPU 317T-3 PN/DP 6ES7317-7TK10-0AB0 ab V3.2 Ja alle
+CPU 317TF-3 PN/DP 6ES7317-7UL10-0AB0 ab V3.2 Ja alle
+CPU 319(F)-3 PN/DP 6ES7318-3EL00-0AB0 bis V2.6 Nein 2000 bis 5000
+
+6ES7318-3FL00-0AB0
+CPU 319(F)-3 PN/DP 6ES7318-3EL00-0AB0 ab V2.7 Nein alle
+
+6ES7318-3FL00-0AB0
+CPU 319(F)-3 PN/DP 6ES7318-3EL01-0AB0 ab V3.2 Ja alle
+
+6ES7318-3FL01-0AB0
+ET 200 CPUs
+IM 151-8(F) PN/DP CPU 6ES7151-8AB00-0AB0 bis V2.6 Nein 2000 bis 5000
+
+6ES7151-8FB00-0AB0
+IM 151-8(F) PN/DP CPU 6ES7151-8AB00-0AB0 ab V2.7 Nein alle
+
+6ES7151-8FB00-0AB0
+IM 151-8(F) PN/DP CPU 6ES7151-8AB01-0AB0 ab V3.2 Ja alle
+
+6ES7151-8FB01-0AB0
+IM 154-8 PN/DP CPU 6ES7154-8AB00-0AB0 bis V2.5 Nein 2000 bis 5000
+IM 154-8 PN/DP CPU 6ES7154-8AB01-0AB0 ab V3.2 Ja alle
+IM 154-8F PN/DP CPU 6ES7154-8FB01-0AB0 ab V3.2 Ja alle
+IM 154-8FX PN/DP CPU 6ES7154-8FX00-0AB0 ab V3.2 Ja alle
+
+Dieser Beitrag stammt aus dem Siemens Industry Online Support.
+Änderungsdatum: 25.11.2020 Es gelten die  Nutzungsbedingungen unter (www.siemens.com/nutzungsbedingungen). Seite: 4/4

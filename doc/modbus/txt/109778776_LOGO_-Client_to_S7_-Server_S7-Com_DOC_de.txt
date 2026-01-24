@@ -1,0 +1,1287 @@
+﻿LOGO! 
+S7-Verbindung mit 
+LOGO! Client und 
+S7-1200/1500 Server 
+
+ Siemens 
+LOGO! 8; S7-1200; S7-1500; STEP 7; TIA Portal Industry 
+ Online 
+
+https://support.industry.siemens.com/cs/ww/de/view/109778776 Support 
+ 
+   
+
+ 
+
+
+
+Rechtliche Hinweise 
+ 
+
+Rechtliche Hinweise 
+Nutzung der Anwendungsbeispiele 
+
+In den Anwendungsbeispielen wird die Lösung von Automatisierungsaufgaben im Zusammen-
+spiel mehrerer Komponenten in Form von Text, Grafiken und/oder Software-Bausteinen 
+beispielhaft dargestellt. Die Anwendungsbeispiele sind ein kostenloser Service der Siemens AG 
+und/oder einer Tochtergesellschaft der Siemens AG („Siemens“). Sie sind unverbindlich und 
+erheben keinen Anspruch auf Vollständigkeit und Funktionsfähigkeit hinsichtlich Konfiguration 
+und Ausstattung. Die Anwendungsbeispiele stellen keine kundenspezifischen Lösungen dar, 
+sondern bieten lediglich Hilfestellung bei typischen Aufgabenstellungen. Sie sind selbst für den 
+sachgemäßen und sicheren Betrieb der Produkte innerhalb der geltenden Vorschriften 
+verantwortlich und müssen dazu die Funktion des jeweiligen Anwendungsbeispiels überprüfen 
+und auf Ihre Anlage individuell anpassen. 
+Sie erhalten von Siemens das nicht ausschließliche, nicht unterlizenzierbare und nicht 
+übertragbare Recht, die Anwendungsbeispiele durch fachlich geschultes Personal zu nutzen. 
+Jede Änderung an den Anwendungsbeispielen erfolgt auf Ihre Verantwortung. Die Weitergabe an 
+Dritte oder Vervielfältigung der Anwendungsbeispiele oder von Auszügen daraus ist nur in 
+Kombination mit Ihren eigenen Produkten gestattet. Die Anwendungsbeispiele unterliegen nicht 
+zwingend den üblichen Tests und Qualitätsprüfungen eines kostenpflichtigen Produkts, können 
+Funktions- und Leistungsmängel enthalten und mit Fehlern behaftet sein. Sie sind verpflichtet, die 
+Nutzung so zu gestalten, dass eventuelle Fehlfunktionen nicht zu Sachschäden oder der 
+Verletzung von Personen führen. 
+
+Haftungsausschluss 
+Siemens schließt seine Haftung, gleich aus welchem Rechtsgrund, insbesondere für die 
+Verwendbarkeit, Verfügbarkeit, Vollständigkeit und Mangelfreiheit der Anwendungsbeispiele, 
+sowie dazugehöriger Hinweise, Projektierungs- und Leistungsdaten und dadurch verursachte 
+Schäden aus. Dies gilt nicht, soweit Siemens zwingend haftet, z.B. nach dem Produkthaftungs-
+gesetz, in Fällen des Vorsatzes, der groben Fahrlässigkeit, wegen der schuldhaften Verletzung 
+des Lebens, des Körpers oder der Gesundheit, bei Nichteinhaltung einer übernommenen 
+Garantie, wegen des arglistigen Verschweigens eines Mangels oder wegen der schuldhaften 
+Verletzung wesentlicher Vertragspflichten. Der Schadensersatzanspruch für die Verletzung 
+wesentlicher Vertragspflichten ist jedoch auf den vertragstypischen, vorhersehbaren Schaden 
+begrenzt, soweit nicht Vorsatz oder grobe Fahrlässigkeit vorliegen oder wegen der Verletzung 
+des Lebens, des Körpers oder der Gesundheit gehaftet wird. Eine Änderung der Beweislast zu 
+Ihrem Nachteil ist mit den vorstehenden Regelungen nicht verbunden. Von in diesem Zusammen-
+hang bestehenden oder entstehenden Ansprüchen Dritter stellen Sie Siemens frei, soweit 
+Siemens nicht gesetzlich zwingend haftet. 
+Durch Nutzung der Anwendungsbeispiele erkennen Sie an, dass Siemens über die beschriebene 
+Haftungsregelung hinaus nicht für etwaige Schäden haftbar gemacht werden kann. 
+
+Weitere Hinweise 
+Siemens behält sich das Recht vor, Änderungen an den Anwendungsbeispielen jederzeit ohne 
+Ankündigung durchzuführen. Bei Abweichungen zwischen den Vorschlägen in den Anwendungs-
+beispielen und anderen Siemens Publikationen, wie z. B. Katalogen, hat der Inhalt der anderen 
+Dokumentation Vorrang. 
+Ergänzend gelten die Siemens Nutzungsbedingungen (https://support.industry.siemens.com). 
+
+Securityhinweise 
+Siemens bietet Produkte und Lösungen mit Industrial Security-Funktionen an, die den sicheren 
+Betrieb von Anlagen, Systemen, Maschinen und Netzwerken unterstützen. 
+Um Anlagen, Systeme, Maschinen und Netzwerke gegen Cyber-Bedrohungen zu sichern, ist es 
+erforderlich, ein ganzheitliches Industrial Security-Konzept zu implementieren (und kontinuierlich 
+aufrechtzuerhalten), das dem aktuellen Stand der Technik entspricht. Die Produkte und Lösungen 
+von Siemens formen nur einen Bestandteil eines solchen Konzepts. 
+Der Kunde ist dafür verantwortlich, unbefugten Zugriff auf seine Anlagen, Systeme, Maschinen 
+und Netzwerke zu verhindern. Systeme, Maschinen und Komponenten sollten nur mit dem 
+Unternehmensnetzwerk oder dem Internet verbunden werden, wenn und soweit dies notwendig 
+ist und entsprechende Schutzmaßnahmen (z.B. Nutzung von Firewalls und Netzwerk-
+segmentierung) ergriffen wurden.  
+Zusätzlich sollten die Empfehlungen von Siemens zu entsprechenden Schutzmaßnahmen 
+beachtet werden. Weiterführende Informationen über Industrial Security finden Sie unter: 
+https://www.siemens.com/industrialsecurity.  
+Die Produkte und Lösungen von Siemens werden ständig weiterentwickelt, um sie noch sicherer 
+zu machen. Siemens empfiehlt ausdrücklich, Aktualisierungen durchzuführen, sobald die 
+entsprechenden Updates zur Verfügung stehen und immer nur die aktuellen Produktversionen zu 
+verwenden. Die Verwendung veralteter oder nicht mehr unterstützter Versionen kann das Risiko 
+von Cyber-Bedrohungen erhöhen.  
+Um stets über Produkt-Updates informiert zu sein, abonnieren Sie den Siemens Industrial 
+Security RSS Feed unter: http://www.siemens.com/industrialsecurity.  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   2 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+Inhaltsverzeichnis 
+ 
+
+Inhaltsverzeichnis 
+Rechtliche Hinweise .................................................................................................... 2 
+
+1 Einführung und Aufgabenstellung .................................................................. 4 
+
+2 Verwendete Komponenten ............................................................................... 6 
+
+2.1 Hardwareaufbau LOGO! 8 ................................................................... 7 
+2.2 Hardwareaufbau S7-1200 .................................................................... 9 
+
+3 Inbetriebnahme ................................................................................................ 10 
+
+4 Aufbau der Kommunikation ........................................................................... 11 
+
+4.1 Einstellungen im TIA Portal (STEP 7) ................................................ 11 
+4.1.1 Neue S7-Verbindung hinzufügen ....................................................... 11 
+4.1.2 Einstellung der S7-Verbindung für S7-1200 als Server ..................... 13 
+4.2 Einstellungen in LOGO!Soft Comfort ................................................. 15 
+4.2.1 IP-Einstellungen für LOGO!................................................................ 15 
+4.2.2 Einstellung der S7-Verbindung für LOGO! als Client ......................... 15 
+
+5 Beispielprogramm ........................................................................................... 17 
+
+5.1 LOGO! als Client der S7-Verbindung ................................................. 17 
+5.2 S7-1200 als Server der S7-Verbindung ............................................. 20 
+5.3 STEP 7 – Beispielprogramm mit ausgewählten Daten ...................... 21 
+
+6 LOGO! Server und S7 Client ........................................................................... 22 
+
+7 Anhang.............................................................................................................. 23 
+
+7.1 Service und Support ........................................................................... 23 
+7.2 Links und Literatur .............................................................................. 24 
+7.3 Änderungsdokumentation .................................................................. 24 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   3 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+1 Einführung und Aufgabenstellung 
+ 
+
+1 Einführung und Aufgabenstellung 
+Dieses Anwendungsbeispiel bietet Ihnen für LOGO! 8 "nachfolgend LOGO!", eine 
+fertig konfigurierte S7-Verbindung zur Kommunikation mit einer SIMATIC S7 
+Steuerung. Dabei nutzen Sie ein LOGO! Schaltprogramm verbunden mit einem 
+S7-Projekt, wobei Sie die Verbindung testen und frei erweitern können. 
+
+In diesem Anwendungsbeispiel wird stellvertretend eine S7-1212C eingesetzt und 
+beschrieben, wodurch Sie TIA Portal in der Basisversion verwenden können. 
+Entsprechende Informationen entnehmen Sie der Anleitung zum TIA Portal \6\. 
+
+ 
+
+Das vorliegende Beispiel zeigt funktionell die Realisierung mit LOGO!. 
+
+ Möglichen Anforderungen bezüglich der funktionalen Sicherheit (z. B. 
+NOT-Halt) sind nicht Bestandteil dieses Beispiels. 
+
+WARNUNG 
+Für die Einhaltung diesbezüglicher Richtlinien ist der Anwender 
+verantwortlich! 
+
+ 
+
+Die integrierten Funktionen in LOGO! bieten viele zusätzliche Möglichkeiten, um 
+Anwendungen in verschiedensten Bereichen schnell und einfach zu lösen. 
+
+ 
+
+Bei der LOGO! unterstützen vorgefertigte Funktionsblöcke die Projekterstellung, 
+z. B. Wochenschaltuhr, Impulsgenerator, Astrotimer, Jahresschaltuhr, Stoppuhr 
+und einfache Logikgatter. 
+
+ 
+
+Das LOGO! Textdisplay (TDE) und der integrierte Webserver von LOGO! bieten 
+zusätzliche Möglichkeiten zum Bedienen und Beobachten durch Funktionstasten 
+und Meldetexte. 
+
+ 
+Vorteile der LOGO! gegenüber einer klassischen Elektroinstallation 
+
+Der Einsatz von LOGO! bietet Ihnen folgende Vorteile: 
+
+• Erweiterbarkeit des Softwareprogramms um weitere Aufgaben.  
+Neben der grundsätzlichen Aufgabenstellung lassen sich situationsbedingt 
+weitere Teilaufgaben projektieren, die unabhängig arbeiten. Hierzu lässt sich 
+LOGO! durch unterschiedlichste Erweiterungsmodule ausbauen. 
+
+• Einfache, sternförmige Verdrahtung der Komponenten. 
+
+• Verwendung von einfachen Schaltern (Ausschalter) oder Tastern. 
+
+• Es werden weniger Komponenten als bei konventioneller Lösung benötigt. 
+
+• Kommunikationsmöglichkeiten über Modbus/TCP, S7-Verbindung und KNX. 
+
+Zielgruppe 
+
+Dieses Anwendungsbeispiel richtet sich an Fachkräfte für Elektroinstallationen 
+oder der Automatisierung. 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   4 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+1 Einführung und Aufgabenstellung 
+ 
+Aufgabenstellung 
+
+Die Ein- und Ausgänge eines LOGO! Grundgeräts sollen mit den Ein- und 
+Ausgängen einer SIMATIC S7 Steuerung über eine große Distanz hinweg 
+geschaltet werden. 
+
+Dabei werden die jeweiligen Ein- und Ausgänge nicht durch einzelne Leitungen 
+oder Drähte verbunden, sondern über eine Ethernet Leitung, wie Abbildung 1-1 
+zeigt. Die Verbindung läuft dabei physikalisch über Ethernet und wird als 
+S7-Verbindung projektiert. 
+
+ 
+
+Abbildung 1-1: Kommunikation zwischen S7 und LOGO! über eine Distanz 
+
+Digital Input
+
+Digital Output Ethernet
+
+ 
+ 
+
+Hinweis Sofern Sie eine Verbindung über das Internet herstellen möchten, existiert die 
+Möglichkeit einer sicheren VPN-Verbindung. 
+
+Die VPN-Verbindung ist jedoch nicht Teil dieses Anwendungsbeispiels und es 
+wird auf die entsprechende Fachliteratur, oder Informationen aus dem Internet 
+verwiesen. 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   5 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+2 Verwendete Komponenten 
+ 
+
+2 Verwendete Komponenten 
+Das Anwendungsbeispiel verwendet das LOGO! Grundgerät und eine preiswerte 
+industrielle Steuerung SIMATIC S7-1212C, gemäß der Tabelle 2-1. 
+
+ 
+
+Tabelle 2-1: Hardware- und Software- Komponenten für das Anwendungsbeispiel 
+
+Komponente Anzahl Artikelnummer Hinweis 
+
+LOGO!Soft Comfort 1 6ED1058-0BA08-0YA1 Upgrade auf V8.2 finden, 
+V8.2 DVD siehe Handbuch \3\ 
+
+LOGO! POWER  1 6EP3331-6SB00-0AY0 - 
+24 V / 1,3 A 
+
+LOGO! 12/24 RCE 1 6ED1052-1MD08-0BA0 4 Relaisausgänge 
+
+LOGO! TDE 1(1) 6ED1055-4MH08-0BA0 Optionale Komponente 
+
+S7-1212C 1(2) 6ES7 212-1AE40-0XB0 Firmware V4.2 
+Siehe Handbuch \5\ 
+
+SITOP im SIMATIC 1(3) 6EP1332-1SH71 Siehe Handbuch \7\ 
+S7-1200-Design 24  
+V, 2,5 A - PM1207 
+
+(1) LOGO! TDE ist eine optionale Komponente, siehe Kapitel 2.1. 
+
+(2) Allgemein ist eine S7-1200 oder S7-1500 einsetzbar. 
+
+(3) Die SITOP 24V steht exemplarisch für eine allgemein industrietaugliche Spannungsversorgung. 
+
+ 
+
+Hinweis Sofern Sie das Anwendungsbeispiel mit einer LOGO! 230RCE (für 230V) 
+verwenden möchten, finden Sie hierzu weitere Informationen unter \3\ oder dem 
+Beitrag "TDE-Zentralsteuerung für allgemeine Verbraucher": 
+
+- https://support.industry.siemens.com/cs/ww/de/view/109755864 
+
+ 
+
+Das Anwendungsbeispiel besteht aus dieser Anleitung, einem LOGO! V8.2 
+Schaltprogramm und einem Projekt für TIA Portal V16. 
+
+ 
+
+Tabelle 2-2: Komponenten für das Anwendungsbeispiel 
+
+Komponente Dateiname Hinweis 
+
+Dokumentation 109778776_LOGO! - 
+_-Client_to_S7_-Server_S7-Com_DOC_en.pdf 
+
+LOGO! 109778776_LOGO! Voraussetzung: 
+Schaltprogramm _-Client_to_S7_-Server_S7-Com_CODE.zip LOGO!Soft Comfort V8.2  
+und S7-Projekt und TIA Portal V16.0 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   6 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+2 Verwendete Komponenten 
+ 
+
+2.1 Hardwareaufbau LOGO! 8 
+
+Neben den Handbüchern finden Sie nachfolgend grundsätzliche Informationen zur 
+Inbetriebnahme der hier eingesetzten LOGO! 8 Hardware. 
+
+Die Abbildung 2-1 zeigt den Hardwareaufbau mit LOGO!. Die Zuordnung der 
+digitalen Ein- und Ausgangssignale für LOGO! finden Sie in Tabelle 2-3. 
+
+ 
+
+Abbildung 2-1: Hardwareaufbau für das Anwendungsbeispiel (TDE optional) 
+
+230 V DC 24 V
+L
+N
+
+DI1- DI6
+PE
+
+DI7→AI1
+DI8→AI2
+
+LOGO! TDE 
+L1 N + - L+M I1 2 3 4 5 6 7 I8 L+ M
+
+IP: 192.168.111.3 IP: 192.168.111.2
+
+Q1 Q2 Q3 Q4
+LOGO! Power LOGO! 8
+
+Ethernet
+
+ 
+
+In den Einstellungen von LOGO!Soft Comfort haben Sie die Möglichkeit, die 
+digitalen Eingänge [DI7] und [DI8] als analoge Eingänge [AI1] und [AI2] 
+umzuschalten. 
+
+ 
+
+Tabelle 2-3: Ein- und Ausgangssignale der LOGO! 
+
+Anschlüsse Beschreibung 
+
+Eingänge [DI1] bis [DI6] Digitale Taster (Schließer) 
+
+Eingang [DI7] (1) Als analoger Eingang AI1 definiert 
+
+Eingang [DI8] (1) Als analoger Eingang AI2 definiert 
+
+Ausgänge [Q1] bis [Q4] Digitalausgänge [1] bis [4] 
+
+(1) LOGO!SoftComfort V8  → [Datei]  
+
+→ [Einstellungen]  
+
+→ [I/O-Einstellungen]  
+
+→ [Onboard AI Einst.]  
+
+→ [2 AI aktivieren] 
+
+ 
+
+Hinweis Für weitere Informationen zur Montage und Verdrahtung verwenden Sie das 
+Handbuch (\3\), Kapitel: (LOGO! montieren und verdrahten). 
+
+Beachten Sie die Anschlusshinweise der Ihrem Gerät beigelegten 
+Produktinformation! 
+
+ 
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   7 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+2 Verwendete Komponenten 
+ 
+LOGO! TDE 
+
+Das externe Textdisplay LOGO! TDE für LOGO! stellt Ihnen eine preisgünstige und 
+zentrale Bedienschnittstelle für Ihre Anwendungen zur Verfügung. 
+
+Sie haben die Möglichkeit, Parameteranpassungen durchzuführen und das 
+LOGO! TDE zur Fehlersuche zu verwenden. 
+
+Die Projektierung des LOGO! TDE und des internen LOGO! Displays erfolgt über 
+denselben Funktionsblock. 
+
+Die Nutzung des TDE erlaubt die Anzeige aller Meldungen über den integrierten 
+Webserver und damit auch das Steuern von Anwendungen über ein Smartphone. 
+
+ 
+
+LOGO! TDE anschließen 
+
+Das LOGO! TDE muss mit einer Spannung von 12V DC oder 24V AC/V DC 
+betrieben werden und wird separat eingebaut. Siemens empfiehlt, das LOGO! TDE 
+durch eine Sicherung von 0,5 A an der Spannungsversorgung abzusichern. 
+
+Der Spannungsanschluss ist nichtpolar. Wenn Sie eine DC-Versorgung an das 
+LOGO! TDE anschließen, können Sie die positive Versorgungsleitung oder die 
+negative Versorgungsleitung gemäß Abbildung 2-2 (2) entweder an Pin 1 oder an 
+Pin 2 anschließen. Der Pin 3 muss mit Erde verbunden werden. 
+
+Die Kommunikation zur LOGO! erfolgt über die Ethernet-Schnittstelle (1). 
+
+ 
+
+Abbildung 2-2: Anschluss des LOGO! TDE 
+
+1 2
+
+ 
+ 
+
+Hinweis Die Verbindungseinstellungen zwischen LOGO! und LOGO! TDE entnehmen Sie 
+dem Handbuch (\3\), Kapitel: (LOGO! TDE-Einstellungsmenü). 
+
+Informationen zur Einstellung des LOGO! Webservers finden Sie unter: 
+
+• Webserver aktivieren 
+
+• Virtuelles Basismodul auf dem Webserver bedienen 
+
+ 
+
+ 
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   8 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+2 Verwendete Komponenten 
+ 
+
+2.2 Hardwareaufbau S7-1200 
+
+Die Abbildung 2-1 zeigt den Hardwareaufbau für die hier eingesetzte S7-1212C. 
+Für weitere Informationen zur Installation, sei auf die Handbücher [\5\ und \7\] 
+verwiesen. 
+
+ 
+
+Abbildung 2-3: Hardwareaufbau für das Anwendungsbeispiel 
+
+230 V DC 24 V
+L
+N
+PE
+
+DI1- DI8
+
+L1 N ++ -- L+M I1 2 3 4 5 6 7 I8
+
+IP: 192.168.111.112
+DQ1 –DQ5
+
+PM 1207 S7-1212C
+DQ1- DQ5
+
+Ethernet
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   9 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+3 Inbetriebnahme 
+ 
+
+3 Inbetriebnahme 
+
+Inbetriebnahme des Anwendungsbeispiels: 
+
+ 
+
+1. Entpacken Sie die mitgelieferte ZIP-Datei mit dem S7-Projekt und dem LOGO! 
+Schaltprogramm. 
+
+2. Projektieren und verbinden Sie den Hardwareaufbau gemäß den Vorgaben 
+des Anwendungsbeispiels und der jeweiligen Handbücher. 
+
+ 
+
+3. Starten Sie LOGO!Soft Comfort V8.2. 
+
+4. Öffnen Sie die mitgelieferten LOGO!-Beispielprogramme *.lsc. 
+
+5. Übertragen Sie das Programm auf die LOGO! Hardware. 
+
+ 
+
+6. Starten Sie TIA Portal V16. 
+
+7. Öffnen Sie das mitgelieferte S7-Projekt. 
+
+8. Laden Sie das S7 Projekt in Ihre Steuerung. 
+
+ 
+
+9. Überprüfen Sie die Funktionsweise der Kommunikation anhand der 
+Informationen aus dieser Dokumentation. 
+
+ 
+
+Hinweis Im Anwendungsbeispiel wurde für die LOGO! die IP-Adresse 192.168.111.3 
+voreingestellt.  
+
+Wie Sie die IP-Adresse einer LOGO! 8 einstellen, finden Sie im Handbuch (\3\), 
+Kapitel: (Konfigurieren von Netzwerkeinstellungen). 
+
+Die voreingestellte IP-Adresse der S7 ist: 192.168.111.112 
+
+LOGO! und S7, sowie Ihr PC müssen im selben Subnetz liegen: 255.255.255.0 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   10 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+
+4 Aufbau der Kommunikation 
+
+4.1 Einstellungen im TIA Portal (STEP 7) 
+
+4.1.1 Neue S7-Verbindung hinzufügen 
+
+Erstellen Sie im ersten Schritt (Abbildung 4-1) die Gerätekonfiguration und fügen 
+Sie Ihre entsprechende S7 aus dem Hardwarekatalog ein. 
+
+1. Mit einem Doppelklick auf die Ethernet-Schnittstelle (1) gelangen Sie zu den 
+entsprechenden Schnittstellen-Eigenschaften der CPU (Abbildung 4-2). 
+
+ 
+
+Abbildung 4-1: Erstellen der Gerätekonfiguration 
+
+1
+
+ 
+
+2. Wahlen Sie ein neues Subnetz für die Verbindung über die Ethernet-
+Schnittstelle. 
+
+3. Vergeben Sie eine IP-Adresse und Subnetzmaske für Ihre Steuerung (2). 
+
+ 
+
+Abbildung 4-2: Einstellen der IP-Adresse und Subnetzmaske 
+
+2
+
+3
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   11 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+
+4. Fügen Sie in der Netzansicht (Abbildung 4-3) eine neue Verbindung ein. 
+
+5. Wählen Sie dabei als Protokoll die "S7-Verbindung". 
+
+6. Über einen Rechtsklick auf die Baugruppe… 
+
+7. …fügen Sie über das Menü die neue Verbindung ein. 
+
+ 
+
+Abbildung 4-3: Neue Verbindung hinzufügen - Einstellungen 
+
+4
+
+5
+
+7
+
+ 
+
+8. Fügen Sie die Verbindung mit nachfolgenden Einstellungen hinzu. 
+Die Werte zeigen die Voreinstellungen (Abbildung 4-4). 
+
+ 
+
+Abbildung 4-4: Neue Verbindung hinzufügen - Abschluss 
+
+8
+
+ 
+
+Hinweis Sie sehen in der Vorauswahl, dass der Parameter "Aktive Verbindung aufbauen" 
+ausgegraut ist.  
+
+Dies liegt an der Vorauswahl des TSAP "03" für den Kommunikationspartner der 
+S7-1200 und kann in den Adressdetails nachträglich geändert werden, wie 
+nachfolgend beschrieben. 
+
+TSAP: Transport Service Access Point zur Übertragung von Adressen über I/O 
+
+ 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   12 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+4.1.2 Einstellung der S7-Verbindung für S7-1200 als Server 
+
+Unter "Allgemein" (Abbildung 4-5) gehen Sie wie folgt vor: 
+
+ 
+
+1. Benennen Sie den Verbindungspartner mit "LOGO!". 
+
+2. Tragen Sie die IP-Adresse des Verbindungspartners ein "192.168.111.3". 
+
+ 
+
+Abbildung 4-5: Einstellen der S7-Verbindung – Allgemein 
+
+ 
+
+3. Die lokale ID dient der Identifikation einer Verbindung. 
+Wählen, bzw. belassen Sie hier den Hexadezimalwert "100". 
+
+ 
+
+Abbildung 4-6: Einstellen der S7-Verbindung – Lokale ID 
+
+3
+
+ 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   13 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+
+4. Der "Aktive Verbindungsaufbau" ist für diese Kommunikation zu deaktivieren, 
+allerdings erhalten Sie zunächst die folgende Information, wodurch Sie 
+zunächst mit Schritt 5 fortfahren. 
+
+– Wenn der Partner-TSAP in den Adressdetails den Wert 3 hat, kann der 
+aktive Verbindungsaufbau nicht deaktiviert werden. 
+
+ 
+
+Abbildung 4-7: Einstellen der S7-Verbindung – Besondere Verbindungseigenschaften 
+
+4
+
+ 
+
+5. Deaktivieren Sie "SIMATIC-ACC". 
+
+6. Als Verbindungs-Ressource für die S7-1200 wählen Sie den hex. "10". 
+
+7. Für den Kommunikationspartner LOGO! tragen Sie die hex. "20" ein. 
+
+ 
+
+Abbildung 4-8: Einstellen der S7-Verbindung – Adressdetails 
+
+5
+
+ 
+
+Gehen Sie zurück zu den Parametern "Besondere Verbindungseigenschaften" und 
+entfernen Sie das Häkchen für den aktiven Verbindungsaufbau. 
+
+ 
+
+Die Konfiguration der Verbindung ist hiermit auf Seiten "TIA Portal STEP 7" 
+abgeschlossen. 
+
+ 
+
+  
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   14 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+
+4.2 Einstellungen in LOGO!Soft Comfort 
+
+4.2.1 IP-Einstellungen für LOGO! 
+
+1. Wählen Sie im Menü von LOGO!Soft Comfort V8.x "Datei" → "Einstellungen". 
+Klicken Sie auf "Allgemein" und setzen die IP-Adresse und Subnetzmaske für 
+das LOGO! Grundgerät. 
+
+ 
+
+Abbildung 4-9: Offline-Einstellungen – Allgemein 
+
+ 
+
+4.2.2 Einstellung der S7-Verbindung für LOGO! als Client 
+
+Wählen Sie im Menü von LSC "Extras" → "Ethernet-Verbindungen" und legen Sie 
+eine neue S7-Verbindung an, die LOGO! fungiert dabei als Client. 
+
+2. Mit einem Rechtsklick auf Ethernet-Verbindungen… 
+
+3. …wählen Sie für die LOGO! die Client-Verbindung aus. 
+
+4. Wählen Sie das S7-Protokoll für die Verbindung. 
+
+ 
+
+Abbildung 4-10: Auswahl der Ethernet-Verbindung – (S7-Verbindungsprotokoll) 
+
+ 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   15 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+4 Aufbau der Kommunikation 
+ 
+
+Unter den Eigenschaften der lokalen Verbindung in Abbildung 4-11 ist für den 
+Client (LOGO!) die TSAP auf "20" gesetzt. 
+
+ 
+
+5. Für den Server (S7-1200) wählen Sie als TSAP die "10" und die IP-Adresse 
+des Verbindungspartners, hier die IP 192.168.111.112. 
+
+ 
+
+In der Tabelle für die Datenübertragung legen Sie fest, welche Daten des 
+LOGO! Grundgeräts an die S7 übertragen werden sollen. 
+Die Beschreibung hierzu folgt im Kapitel 5.1, insbesondere (Abbildung 5-4). 
+
+ 
+
+Abbildung 4-11: Eigenschaften der lokalen Verbindung 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+ 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   16 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+5 Beispielprogramm 
+ 
+
+5 Beispielprogramm 
+
+5.1 LOGO! als Client der S7-Verbindung 
+
+Der Aufgabenstellung aus (Kapitel 1) zufolge, soll die S7 die digitalen Eingänge 
+der LOGO! [I1] bis [I6], sowie die analogen Eingänge [AI1] und [AI2] ansteuern. 
+Zusätzlich soll die S7 auf die digitalen Ausgänge [Q1] bis [Q4] zugreifen. 
+
+Die Abbildung 5-1 zeigt das LOGO! Schaltprogramm für das Anwendungsbeispiel 
+mit allen Ein- und Ausgängen des LOGO! Grundgeräts. 
+
+ 
+
+An (Position 1) werden die digitalen Eingänge der LOGO! gezeigt. 
+
+An (2) werden die analogen Eingänge gemäß gezeigt. Hierzu wurden die digitalen 
+Eingänge gemäß Tabelle 2-3 als analoge Eingänge parametriert. 
+
+An (3) werden die digitalen Ausgänge der LOGO! dargestellt. Sobald ein Ausgang 
+geschaltet wird, schaltet das LOGO! Farbdisplay von weis nach orange (4). 
+
+ 
+Abbildung 5-1: LOGO! Schaltprogramm – Übersicht 
+
+1 3 4
+
+2
+
+ 
+
+Hinweis Zur Veranschaulichung des LOGO! Schaltprogramms steht Ihnen in LSC die 
+Simulationsfunktion zur Verfügung, wodurch Sie die Möglichkeit haben 
+individuelle Anpassungen direkt zu testen. 
+
+Verfolgen Sie dabei den Verlauf der rot dargestellten aktiven Schaltsignale im 
+LOGO! Schaltprogramm. 
+
+Über den Online-Test wird Ihnen das aktuell auf der LOGO! laufende Programm 
+mit den jeweiligen Schaltzuständen angezeigt. 
+
+ 
+
+ 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   17 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+5 Beispielprogramm 
+ 
+
+Um die analogen Eingangswerte von LOGO! Abbildung 5-1 (2) in die S7-1200 
+übertragen zu können, ist es erforderlich diese in die „Parameter-VM-Zuordnung“ 
+aufzunehmen. 
+
+Im Schaltprogramm, siehe Abbildung 5-2, werden nach den analogen Eingängen 
+die Blöcke [Analogverstärker [B001)] und [Analogmerker (AM1)] verbunden. 
+
+Funktions-Blöcke, wie der Analogverstärker bieten innerhalb von LSC 
+verschiedene Parameter, die an unterschiedlicher Stelle in LSC in Form eines 
+Dropdown-Menüs angeboten werden. 
+
+1. Wählen Sie unter "Extras" die "Parameter-VM-Zuordnung“. 
+
+2. In der "Konfiguration des variablen Speichers" von LOGO! wählen Sie die 
+beiden Analogverstärker und deren Parameter "Ax, verstärkt" aus.  
+Der Analogwert besitzt einen Datenumfang von 2 Byte, womit der Datentyp 
+automatisch als Word (=2Byte) erkannt und die Adresse gesetzt wird. 
+
+ 
+Abbildung 5-2: LOGO! Schaltprogramm – analoge Eingänge der LOGO! 
+
+ 
+
+Die digitalen Ausgänge der LOGO! sollen von der S7 gesteuert werden.  
+Hierzu werden vor die digitalen Ausgänge [Netzwerkeingänge] eingefügt. Mit 
+einem Doppelklick auf den jeweiligen Block gelangen Sie in dessen Eigenschaften. 
+
+ 
+
+3. Wählen Sie jeweils die VB-Adresse 4 und tragen die jeweiligen Bits 0-3 ein. 
+
+ 
+Abbildung 5-3: LOGO! Schaltprogramm – diglitale Ausgänge der LOGO! 
+
+3
+
+ 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   18 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+5 Beispielprogramm 
+ 
+
+Im Anschluss definieren Sie die Clientverbindung der LOGO! zur S7. 
+
+Welche Daten sollen auf die S7 geschrieben und welche Daten sollen von der S7 
+gelesen werden.  
+
+Für das Anwendungsbeispiel tragen Sie die Werte gemäß der Abbildung 5-4 ein. 
+
+• Unter der Überschrift "Adresse (entfernt)" sehen Sie die Zieladresse, einen 
+Datenbaustein [DB1] in der S7 und unter Länge (Bytes), ob es sich um ein 
+Byte, oder ein Wort (=2 Bytes) handelt. 
+
+• Unter der Überschrift "Richtung" sehen Sie einen Pfeil "←" für "Daten aus S7 
+lesen" und "→" für "Daten auf die S7 schreiben. 
+
+• Die Adresse beinhaltet die folgenden Adresstypen: 
+(VB=Variablenbyte; MB=Merkerbyte; QB: Ausgangsbyte; IB Eingangsbyte) 
+
+ 
+Abbildung 5-4: Ethernet-Verbindung für LOGO! – Definition der Datenübertragung 
+
+ 
+
+ID 1 definiert [VB"4"]: Adresse für die LOGO!-Ausgänge [Q1 - Q4]. 
+
+• Aus dem Datenbaustein [DB1] der S7-1200 werden Daten im Umfang von 
+[1 Byte] aus dem DB1-[Byte"6"] gelesen und in das [Variablenbyte"4"] der 
+LOGO! geschrieben. 
+
+ 
+
+ID 2 definiert [IB"0"]: Adresse für die LOGO!-Eingänge [I1 - I8]. 
+
+• IB 0 für [I1 - I8] wird in den DB1-[Byte 0] der S7-1200 geschrieben. 
+
+ 
+
+ID 3 definiert [VB"0"]: Adresse für den Analogeingang [AI1] 
+
+• Aus dem [Variablenbyte"0"] der LOGO! werden die Daten (2 Bytes) des 
+Analogverstärkers [B001] in den DB1-[Byte"2"] geschrieben. 
+
+ 
+
+ID 4 definiert [VB"2"]: 
+
+• Aus dem [Variablenbyte"2"] der LOGO! werden die Daten (2 Bytes) des 
+Analogverstärkers [B002] in den [DB1-Byte"4"] geschrieben.  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   19 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+5 Beispielprogramm 
+ 
+
+5.2 S7-1200 als Server der S7-Verbindung 
+
+Wie bei LOGO! mit ihrem variablen Speicher, erfordert die Datenkommunikation 
+auf Seiten der S7 ebenfalls einen eigenen Speicherbereich für die Datenhaltung 
+und Datenverarbeitung. In STEP 7 werden die Daten von LOGO! als Variablen in 
+die Adressen eines Datenbausteins abgelegt. Die Variablen der Ein- und 
+Ausgänge für die S7 werden im Anwendungsbeispiel als "PLC-Variablen" abgelegt. 
+
+Die Kommunikation zwischen LOGO! und S7 bedingt dabei einen absoluten 
+Adresszugriff wie er in Abbildung 5-5 beschrieben steht. 
+
+1. Fügen Sie einen neuen Datenbaustein [DB1] als "Global-DB" in den 
+Projektordner "Programmbausteine" ein und benennen Sie diesen 
+"LOGO_Input_Output". 
+
+2. Klicken Sie (rechte Maustaste) auf den [DB1]. 
+
+3. Öffnen Sie dessen Eigenschaften. 
+
+4. Deaktivieren Sie den "Optimierten Bausteinzugriff". Somit ist gewährleistet, 
+dass die Adressen absolut adressiert und nicht durch das TIA Portal verwaltet 
+oder umgeschichtet werden. 
+
+Abbildung 5-5: STEP 7 Projekt – Datenbaustein ohne optimierten Zugriff einbinden 
+
+ 
+
+Im Datenbaustein sind die einzelnen Variablen entsprechend der 
+Datenübertragungstabelle Abbildung 5-6 anzulegen. Die Variablen für die digitalen 
+Ein- und Ausgänge der LOGO! sind als Boolsche Variablen hinterlegt. Analoge 
+Eingänge sind als Variablen vom Typ "Word" angelegt. Unter der Überschrift 
+"Offset" sehen Sie hier die absoluten Startadressen der Variablen im [DB1]. 
+
+ 
+Abbildung 5-6: STEP 7 Projekt – Variablen für LOGO! E/A im Datenbaustein 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   20 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+5 Beispielprogramm 
+ 
+
+5.3 STEP 7 – Beispielprogramm mit ausgewählten Daten 
+
+Für die jeweiligen Zugriffe auf LOGO! und S7 sind die entsprechenden Variablen 
+(Bit) bzw. (Word) im Datenbaustein bzw. der Variablentabelle zu setzen.  
+In der Variablentabelle sind die Ein- und Ausgänge der S7 dargestellt. 
+
+Im Beispielprogramm aus Abbildung 5-7 werden exemplarisch zwei Funktionen in 
+je einem der beiden Netzwerke ausgeführt. Die Zustände der Ein- und Ausgänge 
+aus dem LOGO! Schaltprogramm sind in die Abbildung eingebunden. 
+
+Netzwerk (1) 
+
+• Liegt am Eingang der S7 [E0.0] und am Eingang [I1] der LOGO! je ein 1-Signal 
+an, wird der Ausgang [Q1] der LOGO! gesetzt.  
+
+• Liegt am Eingang der S7 [E0.7] und am Eingang [I2] der LOGO! je ein 1-Signal 
+an, wird der Ausgang [Q1] der LOGO! zurückgesetzt. 
+
+Netzwerk (2) 
+
+• Der Ausgang der S7 [Q0.0] der S7-1200 wird angesteuert, wenn der Wert des 
+Analogeingangs [AI1] der LOGO! größer oder gleich 500 ist (AI1 >= 5V). 
+
+ 
+
+Abbildung 5-7: STEP 7 Projekt – Beispielprogramm 
+
+1
+
+2
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   21 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+6 LOGO! Server und S7 Client 
+ 
+
+6 LOGO! Server und S7 Client 
+
+Diese Kommunikation ist nicht Teil dieses Anwendungsbeispiels 
+
+Der Kommunikationsaufbau mit LOGO! als Server und einer SIMATIC S7 als Client 
+ist um Einiges komplexer und wird voraussichtlich, ausgehend vom Erstelldatum 
+dieses Dokuments, in einem künftigen Anwendungsbeispiel behandelt. Sie sollen 
+an dieser Stelle jedoch grundlegende Hinweise für diesen Weg erhalten. 
+
+LOGO! Schaltprogramm 
+
+Das LOGO! Schaltprogramm projektieren Sie als LOGO! Netzwerkprojekt. 
+
+Im Netzwerkprojekt binden Sie neben Ihrem Rechner das LOGO! Grundgerät und 
+ein S7-kompatibles Gerät mit den jeweiligen IP-Einstellungen ein. Legen Sie hier 
+graphisch eine S7-Verbindung mit LOGO! als Server an. 
+
+ 
+
+Digitaler Eingang von LOGO! 
+
+Im LOGO! Schaltprogramm projektieren Sie einen digitalen Eingang [I1] auf einen 
+Netzwerkausgang [NQ-Block] und schreiben in dessen Parameter "Lokaler VM" die 
+"VB-Adresse [0] auf Bit [0] und z. B. [I6] "VB-Adresse [0] auf Bit [5]".  
+Dieser boolsche Wert von [I1] wird auf der S7-Seite in einem Empfangsbereich 
+eines Datenbausteins erfasst, z. B. "DB1.DBX0.0" (mittels S7 GET-Befehl). 
+
+Der DB1 ist für LOGO! vorgegeben und besitzt den Ein- und Ausgangsbereich. 
+
+ 
+
+Digitaler Ausgang Eingang von LOGO! 
+
+Über einen Netzwerkeingang [NI1] lesen Sie vom Client die Daten aus einem 
+Sende Datenbaustein aus, z.B. "DB1.DBX2.0" (mittels S7 PUT-Befehl). 
+
+S7-Projekt 
+
+Im S7-Projekt binden Sie aus der Anweisungsliste die Bausteine der 
+S7-Kommunikation "GET" und "PUT" ein. 
+
+Die S7 ist hierbei für den aktiven Verbindungsaufbau verantwortlich. Hierzu muss 
+das entsprechende Häkchen unter der S7-Verindung > "Allgemein" > "Besondere 
+Verbindungseinstellungen" gesetzt werden, die IP-Einstellungen und Adressdetails 
+vorausgesetzt. 
+
+Weitere Informationen zur Verwendung dieser Bausteine finden Sie in den 
+Anwendungsbeispielen, Handbüchern und FAQs im Industry Online Support unter 
+den Stichworten "PUT, GET, S7-Kommunikation" 
+
+Es sei an dieser Stelle und bis auf Weiteres auch auf Beispiele mit S7-200 und 
+S7-300 und der älteren LOGO! 0BA7 Generation verwiesen, siehe Beitrag \9\. 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   22 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+7 Anhang 
+ 
+
+7 Anhang 
+
+7.1 Service und Support  
+
+Industry Online Support 
+
+Sie haben Fragen oder brauchen Unterstützung? 
+
+Über den Industry Online Support greifen Sie rund um die Uhr auf das gesamte 
+Service und Support Know-how sowie auf unsere Dienstleistungen zu. 
+
+Der Industry Online Support ist die zentrale Adresse für Informationen zu unseren 
+Produkten, Lösungen und Services.  
+
+Produktinformationen, Handbücher, Downloads, FAQs und Anwendungsbeispiele 
+– alle Informationen sind mit wenigen Mausklicks erreichbar: 
+https://support.industry.siemens.com 
+
+SITRAIN – Training for Industry 
+
+Mit unseren weltweit verfügbaren Trainings für unsere Produkte und Lösungen 
+unterstützen wir Sie mit innovativen Lernmethoden. 
+
+Mehr zu den angebotenen Trainings und Kursen sowie deren Standorte und 
+Termine erfahren Sie unter:  www.siemens.de/sitrain 
+
+Industry Online Support App 
+
+Mit der App "Siemens Industry Online Support" erhalten Sie auch unterwegs die 
+optimale Unterstützung. Die App ist für Apple iOS, Android und Windows Phone 
+verfügbar: https://support.industry.siemens.com/cs/ww/de/sc/2067 
+
+  
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   23 
+ 
+
+©  Siemens AG 2020 All rights reserved 
+
+
+
+7 Anhang 
+ 
+
+7.2 Links und Literatur  
+
+Tabelle 7-1: Links und Literatur 
+
+Nr. Thema 
+
+\1\ Siemens Industry Online Support 
+- https://support.industry.siemens.com 
+
+\2\ Dieser Beitrag 
+- https://support.industry.siemens.com/cs/ww/de/view/109778776 
+
+\3\ Handbuch LOGO! 8 
+- https://support.industry.siemens.com/cs/ww/de/view/109741041 
+
+\4\ Logikmodul LOGO! (Anwendungsbeispiele, Erweiterungsmodule) 
+- www.siemens.de/logo 
+
+\5\ SIMATIC S7 S7-1200 Automatisierungssystem 
+- https://support.industry.siemens.com/cs/ww/de/view/109759862 
+
+\6\ SIMATIC STEP 7 Basic/Professional V16 und SIMATIC WinCC V16 
+- https://support.industry.siemens.com/cs/ww/de/view/109773506 
+
+\7\ STROMVERSORGUNG S7-1200 PM1207 
+- https://support.industry.siemens.com/cs/ww/de/view/37316256 
+
+\8\ Programmierleitfaden für S7-1200/S7-1500 
+- https://support.industry.siemens.com/cs/ww/de/view/90885040 
+
+\9\ Wie wird eine S7-Verbindung (Server/Client) zwischen einer LOGO! 0BA7 und einer 
+S7-300 CPU hergestellt?  
+
+- https://support.industry.siemens.com/cs/ww/de/view/87604984 
+
+7.3 Änderungsdokumentation 
+
+Tabelle 7-2: Änderungsdokumentation 
+
+Version Datum Änderung 
+
+V1.0 07/2020 Erste Ausgabe 
+
+   
+
+ 
+
+ 
+
+LOGO! - S7-Verbindung mit LOGO! Client und S7-1200/1500 Server 
+Beitrags-ID: 109778776,    V1.0,    07/2020   24 
+ 
+
+©  Siemens AG 2020 All rights reserved
