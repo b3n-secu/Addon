@@ -1,5 +1,51 @@
 # Changelog
 
+## Version 1.7.9 (2026-01-23)
+
+### UI/UX Improvements - Robot Mascot
+
+- 🤖 **Animated Robot Mascot "HAMCA"** - Cute animated robot biting network cable
+  - **In Header**: Robot mascot left of title, brings personality to the interface
+  - **In Sidebar**: Large robot at top of button sidebar with "HAMCA" label
+  - **As Favicon**: Robot icon in browser tab for easy identification
+  - **Animated Features**:
+    - Gentle bouncing motion
+    - Blinking eyes (every 4 seconds)
+    - Cable-biting animation
+  - **Design**:
+    - Purple/violet colors matching the theme (#667eea, #764ba2)
+    - Network cable in "mouth" symbolizing network scanning
+    - Green status lights on body panel
+    - Antenna with gold tip
+    - Friendly, approachable appearance
+
+### Technical Changes
+
+- Added robot SVG with CSS animations
+  - `@keyframes robot-bounce`: Gentle vertical movement
+  - `@keyframes eye-blink`: Periodic eye blinking
+  - `@keyframes cable-bite`: Cable movement animation
+- Added `.robot-mascot` and `.robot-mascot-large` CSS classes
+- Embedded SVG favicon in data URI format
+- Created `generate_icon.py` for future PNG icon generation
+- Robot appears in 3 locations: header, sidebar, favicon
+
+### Benefits
+
+- 🎨 Unique brand identity with memorable mascot
+- ✨ More friendly and approachable interface
+- 🤖 Symbolizes automation and network analysis
+- 👁️ Easy tab identification with custom favicon
+- 💫 Subtle animations add life without distraction
+
+### Files Changed
+
+- `app/static/index.html`: Added robot mascot and animations
+- `modbus/app/static/index.html`: Same robot integration
+- `generate_icon.py`: Icon generation script (for future use)
+
+---
+
 ## Version 1.7.8 (2026-01-23)
 
 ### UI/UX Improvements
