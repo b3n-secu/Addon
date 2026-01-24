@@ -30,18 +30,82 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .header-left {
+            flex: 0 0 auto;
+        }
+
+        .header-center {
+            flex: 1 1 auto;
             text-align: center;
         }
 
+        .header-right {
+            flex: 0 0 auto;
+        }
+
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 2em;
+            margin-bottom: 5px;
         }
 
         .header p {
-            font-size: 1.1em;
+            font-size: 1em;
             opacity: 0.9;
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Network Info in Header */
+        .network-info-header {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.75em;
+            min-width: 200px;
+        }
+
+        .network-info-header .network-title {
+            font-weight: 700;
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+
+        .network-info-header .network-detail {
+            margin: 3px 0;
+            display: flex;
+            gap: 6px;
+            font-size: 0.95em;
+        }
+
+        .network-info-header .network-label {
+            font-weight: 600;
+            opacity: 0.9;
+            min-width: 50px;
+        }
+
+        .network-info-header .network-value {
+            font-family: 'Courier New', monospace;
+            opacity: 0.95;
+        }
+
+        .network-info-header .network-loading {
+            text-align: center;
+            padding: 8px;
+            opacity: 0.8;
         }
 
         .content {
@@ -292,60 +356,6 @@
             color: #667eea;
         }
 
-        /* Network Info Widget */
-        .network-info-widget {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            font-size: 0.85em;
-            max-width: 280px;
-            z-index: 1000;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .network-info-widget:hover {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .network-info-widget .network-title {
-            font-weight: 700;
-            font-size: 1.1em;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .network-info-widget .network-detail {
-            margin: 4px 0;
-            display: flex;
-            gap: 8px;
-            font-size: 0.9em;
-        }
-
-        .network-info-widget .network-label {
-            font-weight: 600;
-            opacity: 0.9;
-            min-width: 60px;
-        }
-
-        .network-info-widget .network-value {
-            font-family: 'Courier New', monospace;
-            opacity: 0.95;
-        }
-
-        .network-info-widget .network-loading {
-            text-align: center;
-            padding: 10px;
-            opacity: 0.8;
-        }
 
         /* New Layout Styles - Sidebar with Buttons */
         .main-layout {
@@ -500,6 +510,16 @@
             .inline-inputs {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .header {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .header-left, .header-right {
+                width: 100%;
+            }
+            .network-info-header {
+                min-width: auto;
+            }
         }
 
         @media (max-width: 768px) {
@@ -509,19 +529,37 @@
             .inline-inputs small {
                 display: block;
             }
+            .header h1 {
+                font-size: 1.5em;
+            }
+            .header p {
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Network Info Widget (bottom-left corner) -->
-    <div class="network-info-widget" id="networkInfoWidget">
-        <div class="network-loading">🔄 Netzwerk wird erkannt...</div>
-    </div>
-
     <div class="container">
         <div class="header">
-            <h1>🔧 Universal Modbus Configurator</h1>
-            <p>Einfache Konfiguration von Modbus-Geräten für Home Assistant</p>
+            <!-- Left: Network Info -->
+            <div class="header-left">
+                <div class="network-info-header" id="networkInfoWidget">
+                    <div class="network-loading">🔄 Lädt...</div>
+                </div>
+            </div>
+
+            <!-- Center: Title -->
+            <div class="header-center">
+                <h1>🔧 Universal Modbus Configurator</h1>
+                <p>Einfache Konfiguration von Modbus-Geräten für Home Assistant</p>
+            </div>
+
+            <!-- Right: Version -->
+            <div class="header-right">
+                <div class="version-badge">
+                    v1.7.8
+                </div>
+            </div>
         </div>
 
         <div class="content">
@@ -723,13 +761,13 @@
             if (info.error) {
                 widget.innerHTML = `
                     <div class="network-title">⚠️ Netzwerk</div>
-                    <div style="font-size: 0.9em; opacity: 0.8;">Erkennungsfehler</div>
+                    <div style="font-size: 0.9em; opacity: 0.8;">Fehler</div>
                 `;
                 return;
             }
 
             widget.innerHTML = `
-                <div class="network-title">🌐 Netzwerk-Info</div>
+                <div class="network-title">🌐 Netzwerk</div>
                 <div class="network-detail">
                     <span class="network-label">IP:</span>
                     <span class="network-value">${info.ip || 'N/A'}</span>
@@ -746,16 +784,10 @@
                     <span class="network-label">DNS:</span>
                     <span class="network-value">${info.dns || 'N/A'}</span>
                 </div>
-                ${info.scan_range ? `
-                <div class="network-detail" style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.3);">
-                    <span class="network-label">Scan:</span>
-                    <span class="network-value">${info.scan_range}</span>
-                </div>
-                ` : ''}
             `;
 
             // Add tooltip
-            widget.title = 'Automatisch erkannte Netzwerk-Konfiguration';
+            widget.title = 'Netzwerk-Konfiguration';
 
             // Update placeholder in network range input field
             const networkRangeInput = document.getElementById('networkRange');

@@ -1,5 +1,45 @@
 # Changelog
 
+## Version 1.7.8 (2026-01-23)
+
+### UI/UX Improvements
+
+- 🎨 **Header Redesign - Network Info & Version Display**
+  - **Network Info in Header (Left)**: Network information (IP, Maske, Gateway, DNS) now displayed in header
+    - Moved from bottom-left corner to header for better visibility
+    - More compact display format
+    - Always visible without needing to look down
+  - **Version Badge (Right)**: Version number now prominently displayed in header
+    - Clean badge design with rounded corners
+    - Easy to identify current addon version
+  - **Centered Title**: Main title and description centered in header
+  - **Improved Header Layout**: Three-section flex layout (left, center, right)
+
+### Technical Changes
+
+- Removed fixed position `.network-info-widget` from bottom-left
+- Added `.network-info-header` for in-header network display
+- Added `.version-badge` for version display
+- Added `.header-left`, `.header-center`, `.header-right` for flex layout
+- Updated `displayNetworkInfo()` function to work with new layout
+- Removed scan-range from network info display for compactness
+- Enhanced responsive design for mobile devices
+
+### Benefits
+
+- 🎯 Network info always visible in header
+- 👁️ Easy version identification
+- 📱 Better mobile responsiveness
+- ✨ Cleaner, more professional header design
+- 💨 More efficient use of screen space
+
+### Files Changed
+
+- `app/static/index.html`: Complete header redesign
+- `modbus/app/static/index.html`: Same header redesign
+
+---
+
 ## Version 1.7.7 (2026-01-23)
 
 ### Critical Bug Fixes
