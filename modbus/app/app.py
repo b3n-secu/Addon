@@ -197,7 +197,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.9.3'
+        'version': '1.9.4'
     })
 
 
@@ -1260,12 +1260,43 @@ def api_auto_scanner_configure():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+def detect_device_type_for_host(host, port, slave_id=1):
+    """Detect device type for a specific host using ModbusScanner"""
+    try:
+        scanner = ModbusScanner(host, port, timeout=3)
+        if scanner.connect():
+            device_type = scanner.detect_device_type(slave_id)
+            scanner.disconnect()
+
+            # Map device type to manufacturer/model
+            type_map = {
+                'LOGO_8': ('Siemens', 'LOGO! 8'),
+                'LOGO_0BA7': ('Siemens', 'LOGO! 0BA7'),
+                'S7': ('Siemens', 'S7 PLC'),
+            }
+
+            if device_type in type_map:
+                return {
+                    'device_type': device_type,
+                    'manufacturer': type_map[device_type][0],
+                    'model': type_map[device_type][1]
+                }
+    except Exception as e:
+        logger.debug(f"Device detection failed for {host}:{port}: {e}")
+
+    return {
+        'device_type': 'GENERIC',
+        'manufacturer': 'Generic',
+        'model': 'Modbus TCP'
+    }
+
+
 @app.route('/api/auto-scanner/start', methods=['POST'])
 def api_auto_scanner_start():
     """Start automatic scanning"""
     try:
         def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
-            """Unified scan function for auto-scanner"""
+            """Unified scan function for auto-scanner with device detection"""
             found_devices = []
 
             # Auto-detect network if not provided
@@ -1274,18 +1305,49 @@ def api_auto_scanner_start():
                 network_info = detector.get_network_info()
                 network = network_info.get('scan_range', '192.168.1.0/24')
 
+            logger.info(f"Auto-scan starting on {network} with ports {port_range}")
+
+            # Start progress tracking
+            scan_progress.start_scan(network, 'nmap' if use_nmap else 'python')
+
             if use_nmap and NMAP_AVAILABLE:
                 nmap_scanner = NmapModbusScanner()
+
+                def progress_callback(current_ip, scanned_count, found_device=None):
+                    scan_progress.update_progress(current_ip, scanned_count)
+                    if found_device:
+                        scan_progress.add_found_device(found_device)
+
                 found_devices = nmap_scanner.scan_network_nmap(
                     network=network,
                     port_range=port_range,
-                    timeout=300
+                    timeout=300,
+                    progress_callback=progress_callback
                 )
             else:
                 ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
                 found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
 
+            # Detect device types for all found devices
+            for device in found_devices:
+                host = device.get('ip')
+                port = device.get('port', 502)
+                slave_id = device.get('slave_id', 1)
+
+                # Try to detect device type
+                detection = detect_device_type_for_host(host, port, slave_id)
+                device['device_type'] = detection['device_type']
+                device['manufacturer'] = detection['manufacturer']
+                device['model'] = detection['model']
+
+                # Update name based on detected type
+                if detection['device_type'] != 'GENERIC':
+                    device['name'] = f"{detection['model']} at {host}"
+
+                logger.info(f"Detected: {host}:{port} -> {detection['model']}")
+
             # Auto-add devices if enabled
+            added_count = 0
             if auto_add:
                 for device in found_devices:
                     host = device.get('ip')
@@ -1300,11 +1362,17 @@ def api_auto_scanner_start():
                             'slave_id': device.get('slave_id', 1)
                         }
                         devices.append(new_device)
+                        added_count += 1
+                        logger.info(f"Auto-added: {new_device['name']}")
 
-                if found_devices:
+                if added_count > 0:
                     save_config()
 
-            return {'success': True, 'devices': found_devices}
+            # Finish progress tracking
+            scan_progress.finish_scan()
+
+            logger.info(f"Auto-scan complete: {len(found_devices)} found, {added_count} added")
+            return {'success': True, 'devices': found_devices, 'added_count': added_count}
 
         success = auto_scanner.start(scan_function, NMAP_AVAILABLE)
         return jsonify({
@@ -1331,19 +1399,57 @@ def api_auto_scanner_trigger():
     """Trigger a manual scan"""
     try:
         def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
+            """Manual scan with device detection"""
             found_devices = []
+
             if not network:
                 detector = NetworkDetector()
                 network_info = detector.get_network_info()
                 network = network_info.get('scan_range', '192.168.1.0/24')
 
+            logger.info(f"Manual scan starting on {network} with ports {port_range}")
+
+            # Start progress tracking
+            scan_progress.start_scan(network, 'nmap' if use_nmap else 'python')
+
             if use_nmap and NMAP_AVAILABLE:
                 nmap_scanner = NmapModbusScanner()
-                found_devices = nmap_scanner.scan_network_nmap(network=network, port_range=port_range, timeout=300)
+
+                def progress_callback(current_ip, scanned_count, found_device=None):
+                    scan_progress.update_progress(current_ip, scanned_count)
+                    if found_device:
+                        scan_progress.add_found_device(found_device)
+
+                found_devices = nmap_scanner.scan_network_nmap(
+                    network=network,
+                    port_range=port_range,
+                    timeout=300,
+                    progress_callback=progress_callback
+                )
             else:
                 ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
                 found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
 
+            # Detect device types for all found devices
+            for device in found_devices:
+                host = device.get('ip')
+                port = device.get('port', 502)
+                slave_id = device.get('slave_id', 1)
+
+                # Try to detect device type
+                detection = detect_device_type_for_host(host, port, slave_id)
+                device['device_type'] = detection['device_type']
+                device['manufacturer'] = detection['manufacturer']
+                device['model'] = detection['model']
+
+                # Update name based on detected type
+                if detection['device_type'] != 'GENERIC':
+                    device['name'] = f"{detection['model']} at {host}"
+
+                logger.info(f"Detected: {host}:{port} -> {detection['model']}")
+
+            # Auto-add devices if enabled
+            added_count = 0
             if auto_add:
                 for device in found_devices:
                     host = device.get('ip')
@@ -1357,10 +1463,16 @@ def api_auto_scanner_trigger():
                             'port': port,
                             'slave_id': device.get('slave_id', 1)
                         })
-                if found_devices:
+                        added_count += 1
+
+                if added_count > 0:
                     save_config()
 
-            return {'success': True, 'devices': found_devices}
+            # Finish progress tracking
+            scan_progress.finish_scan()
+
+            logger.info(f"Manual scan complete: {len(found_devices)} found, {added_count} added")
+            return {'success': True, 'devices': found_devices, 'added_count': added_count}
 
         result = auto_scanner.trigger_manual_scan(scan_function, NMAP_AVAILABLE)
         return jsonify(result)
