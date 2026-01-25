@@ -67,10 +67,10 @@ DEVICES_PATH = os.environ.get('DEVICES_PATH', '/data/devices.json')
 # Use different default paths depending on environment
 if os.path.exists('/config'):
     # Running in Home Assistant addon
-    DEFAULT_MODBUS_PATH = '/config/modbus_generated.yaml'
+    DEFAULT_MODBUS_PATH = '/config/modbus.yaml'
 else:
     # Running locally or in development - use absolute path in app directory
-    DEFAULT_MODBUS_PATH = os.path.abspath('./modbus_generated.yaml')
+    DEFAULT_MODBUS_PATH = os.path.abspath('./modbus.yaml')
 
 MODBUS_CONFIG_PATH = os.environ.get('MODBUS_CONFIG_PATH', DEFAULT_MODBUS_PATH)
 logger.info(f"Modbus config will be saved to: {MODBUS_CONFIG_PATH}")
@@ -197,7 +197,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.9.2'
+        'version': '1.9.3'
     })
 
 
@@ -1130,13 +1130,27 @@ def api_generate_config():
         # Get absolute path for display
         abs_path = os.path.abspath(output_path)
 
+        # Verify file was created
+        file_exists = os.path.exists(abs_path)
+        file_size = os.path.getsize(abs_path) if file_exists else 0
+
         logger.info(f"Generated configuration with {added_count} devices at {abs_path}")
+        logger.info(f"File exists: {file_exists}, Size: {file_size} bytes")
+
+        if not file_exists:
+            return jsonify({
+                'success': False,
+                'error': f'Konfiguration konnte nicht gespeichert werden nach {abs_path}. Bitte Berechtigungen prüfen.'
+            }), 500
+
         return jsonify({
             'success': True,
             'config': yaml_config,
             'path': abs_path,
             'absolute_path': abs_path,
-            'devices_count': added_count
+            'devices_count': added_count,
+            'file_size': file_size,
+            'message': f'Konfiguration erfolgreich gespeichert: {abs_path} ({file_size} Bytes)'
         })
 
     except Exception as e:
