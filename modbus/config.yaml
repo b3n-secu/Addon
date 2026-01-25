@@ -34,7 +34,7 @@ schema:
   scan_timeout: int?
   default_port_range: str?
 panel_icon: mdi:cable-data
-panel_title: HAMCA
+panel_title: BusBot
 panel_admin: true
 ingress: true
 ingress_port: 8099

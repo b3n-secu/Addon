@@ -4,9 +4,9 @@
 
 ### UI/UX Improvements - Robot Mascot
 
-- 🤖 **Animated Robot Mascot "HAMCA"** - Cute animated robot biting network cable
+- 🤖 **Animated Robot Mascot "BusBot"** - Cute animated robot biting network cable
   - **In Header**: Robot mascot left of title, brings personality to the interface
-  - **In Sidebar**: Large robot at top of button sidebar with "HAMCA" label
+  - **In Sidebar**: Large robot at top of button sidebar with "BusBot" label
   - **As Favicon**: Robot icon in browser tab for easy identification
   - **Animated Features**:
     - Gentle bouncing motion
