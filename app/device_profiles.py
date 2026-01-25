@@ -4,7 +4,7 @@ Device profiles for different manufacturers and models
 
 DEVICE_PROFILES = {
     "Siemens": {
-        "LOGO! 8 (0BA8)": {
+        "LOGO! 8": {
             "port": 510,
             "timeout": 5,
             "note": "LOGO! 8 with native Modbus TCP support. IMPORTANT: LOGO! v7/0BA7 does NOT support Modbus - see LOGO_COMPATIBILITY.md",
@@ -104,6 +104,46 @@ DEVICE_PROFILES = {
                     "device_class": "power",
                     "precision": 1,
                     "state_class": "measurement"
+                }
+            }
+        },
+        "LOGO! 0BA7": {
+            "port": 102,
+            "timeout": 5,
+            "note": "LOGO! 0BA7 uses S7comm protocol only (Port 102). No native Modbus TCP support.",
+            "registers": {
+                "digital_inputs": {
+                    "type": "binary_sensor",
+                    "start_address": 1,
+                    "count": 24,
+                    "input_type": "discrete_input",
+                    "scan_interval": 1,
+                    "note": "I1-I24 Digital Inputs"
+                },
+                "digital_outputs": {
+                    "type": "switch",
+                    "start_address": 8193,
+                    "count": 16,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "Q1-Q16 Digital Outputs"
+                },
+                "marker_bits": {
+                    "type": "switch",
+                    "start_address": 8255,
+                    "count": 24,
+                    "write_type": "coil",
+                    "scan_interval": 1,
+                    "note": "M1-M24 Marker Bits"
+                },
+                "analog_inputs": {
+                    "type": "sensor",
+                    "start_address": 1,
+                    "count": 8,
+                    "input_type": "input",
+                    "data_type": "uint16",
+                    "scan_interval": 5,
+                    "note": "AI1-AI8 Analog Inputs"
                 }
             }
         },

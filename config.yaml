@@ -1,5 +1,5 @@
-name: Universal Modbus Configurator
-version: "1.9.4"
+name: busbot
+version: "1.9.5"
 slug: universal_modbus_config
 description: Universeller Modbus Konfigurator mit professionellem Nmap-Scanner für Home Assistant - Unterstützt Siemens LOGO!, Schneider, ABB, Wago und weitere Hersteller
 arch:
@@ -23,7 +23,7 @@ options:
   devices: []
   modbus_config_path: "/config/modbus.yaml"
   scan_timeout: 300
-  default_port_range: "502,510,20000-20100"
+  default_port_range: "102,502,510,20000-20100"
 schema:
   devices:
     - manufacturer: str
@@ -36,7 +36,7 @@ schema:
   scan_timeout: int?
   default_port_range: str?
 panel_icon: mdi:cable-data
-panel_title: HAMCA
+panel_title: busbot
 panel_admin: true
 ingress: true
 ingress_port: 8099
