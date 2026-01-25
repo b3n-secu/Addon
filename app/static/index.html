@@ -716,12 +716,6 @@
                 <div class="input-inline-area">
                     <div class="input-area-title">📝 Eingabeparameter</div>
 
-                    <div style="background: #e7f3ff; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #667eea;">
-                        <small style="color: #004085;">
-                            <strong>ℹ️</strong> LOGO! v7/0BA7 nicht unterstützt (nur S7). LOGO! 8, Schneider, ABB, Wago werden unterstützt.
-                        </small>
-                    </div>
-
                     <!-- Inline Input Fields -->
                     <div class="inline-inputs">
                         <div class="form-group">
@@ -860,48 +854,33 @@
                 </div>
             </div>
 
-            <!-- Three Column Layout - Results Area -->
-            <div class="three-column-layout">
-                <!-- Column 1: Found Devices -->
-                <div class="column">
-                    <div class="column-title">🔍 Gefundene Geräte</div>
+            <!-- Hidden elements for JavaScript compatibility -->
+            <div id="discoveryResults" class="hidden" style="display: none;"><div id="discoveryContent"></div></div>
+            <div id="noAnalysisResults" style="display: none;"></div>
+
+            <!-- Two Column Layout - Compact Results Area next to buttons -->
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <!-- Column 1: Network Analysis / Found Devices -->
+                <div style="flex: 1; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); border: 2px solid #e91e63; max-height: 300px; overflow-y: auto;">
+                    <div style="font-weight: 600; color: #e91e63; margin-bottom: 10px; font-size: 0.95em;">📡 Netzwerkanalyse</div>
                     <div id="networkScanResults" class="hidden">
                         <div id="networkDeviceList"></div>
                     </div>
-                    <div id="noFoundDevices" style="padding: 20px; text-align: center; color: #666;">
-                        <p>🔎 Keine Geräte gefunden</p>
-                        <small>Starten Sie einen Netzwerk-Scan, um Geräte zu finden</small>
+                    <div id="noFoundDevices" style="padding: 15px; text-align: center; color: #888; font-size: 0.85em;">
+                        <p style="margin: 0;">🔎 Keine Geräte gefunden</p>
+                        <small>Auto-Scan starten</small>
                     </div>
                 </div>
 
                 <!-- Column 2: Configured Devices -->
-                <div class="column">
-                    <div class="column-title">⚙️ Konfigurierte Geräte</div>
-                    <ul id="deviceList" class="device-list">
-                        <li class="loading">
+                <div style="flex: 1; background: white; border-radius: 12px; padding: 15px; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15); border: 2px solid #ff9800; max-height: 300px; overflow-y: auto;">
+                    <div style="font-weight: 600; color: #ff9800; margin-bottom: 10px; font-size: 0.95em;">⚙️ Konfigurierte Geräte</div>
+                    <ul id="deviceList" class="device-list" style="margin: 0; padding: 0; list-style: none;">
+                        <li class="loading" style="text-align: center; padding: 15px; color: #888; font-size: 0.85em;">
                             <div class="spinner"></div>
-                            <p>Lade Geräte...</p>
+                            <p style="margin: 5px 0 0 0;">Lade...</p>
                         </li>
                     </ul>
-                </div>
-
-                <!-- Column 3: Register Analysis Results -->
-                <div class="column">
-                    <div class="column-title">📊 Register-Analyse</div>
-                    <div style="background: #d1ecf1; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 4px solid #0c5460;">
-                        <small style="color: #0c5460;">
-                            <strong>💡 Tipp:</strong> LOGO! Geräte nutzen Port <strong>510</strong>.
-                            LOGO! v7 (0BA7): 16 DI/DO max | LOGO! v8: 24 DI/20 DO max
-                            <br>Die Analyse dauert 30-60 Sekunden und testet verschiedene Register-Bereiche.
-                        </small>
-                    </div>
-                    <div id="discoveryResults" class="hidden">
-                        <div id="discoveryContent"></div>
-                    </div>
-                    <div id="noAnalysisResults" style="padding: 20px; text-align: center; color: #666;">
-                        <p>📈 Keine Analyse-Ergebnisse</p>
-                        <small>Starten Sie eine Register-Analyse für ein Gerät</small>
-                    </div>
                 </div>
             </div>
 
