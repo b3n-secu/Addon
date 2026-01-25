@@ -245,328 +245,6 @@ class ModbusScanner:
 
         return 'UNKNOWN'
 
-    def discover_register_map(self, slave=1):
-        """
-        Comprehensive register discovery to determine device capabilities.
-        Tests common Modbus register ranges and LOGO!-specific addresses.
-
-        Returns:
-            dict: Detailed report of supported register types and ranges
-        """
-        if not self.connect():
-            return {
-                'success': False,
-                'error': 'Could not connect to device'
-            }
-
-        discovery = {
-            'success': True,
-            'slave_id': slave,
-            'supported_functions': [],
-            'register_ranges': {
-                'discrete_inputs': [],
-                'coils': [],
-                'input_registers': [],
-                'holding_registers': []
-            },
-            'detected_device': 'UNKNOWN',
-            'recommendations': []
-        }
-
-        try:
-            # Test ranges to check
-            test_ranges = {
-                'discrete_inputs': [
-                    {'start': 0, 'count': 16, 'name': 'Standard (0-15)'},
-                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
-                    {'start': 1, 'count': 16, 'name': 'LOGO! 0BA7 Digital Inputs (I1-I16)'},
-                    {'start': 1, 'count': 24, 'name': 'LOGO! 8 Digital Inputs (I1-I24)'},
-                    {'start': 10000, 'count': 50, 'name': 'Modicon 1x Range (10001-10050)'}
-                ],
-                'coils': [
-                    {'start': 0, 'count': 16, 'name': 'Standard (0-15)'},
-                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
-                    {'start': 1, 'count': 16, 'name': 'LOGO! 0BA7 Direct Write (Q1-Q16)'},
-                    {'start': 1, 'count': 20, 'name': 'LOGO! 8 Direct Write (Q1-Q20)'},
-                    {'start': 8193, 'count': 16, 'name': 'LOGO! 0BA7 VM Outputs (8193-8208)'},
-                    {'start': 8193, 'count': 50, 'name': 'LOGO! VM Outputs Extended (8193-8242)'},
-                    {'start': 8255, 'count': 27, 'name': 'LOGO! 0BA7 Marker Bits (M1-M27)'}
-                ],
-                'input_registers': [
-                    {'start': 0, 'count': 10, 'name': 'Standard (0-9)'},
-                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
-                    {'start': 1, 'count': 8, 'name': 'LOGO! Analog Inputs (AI1-AI8)'},
-                    {'start': 30000, 'count': 50, 'name': 'Modicon 3x Range (30001-30050)'},
-                    {'start': 100, 'count': 10, 'name': 'Alternative Range (100-109)'}
-                ],
-                'holding_registers': [
-                    {'start': 0, 'count': 10, 'name': 'Standard (0-9)'},
-                    {'start': 0, 'count': 50, 'name': 'Standard Extended (0-49)'},
-                    {'start': 1, 'count': 50, 'name': 'LOGO! VM Memory (V0.0-V49.0)'},
-                    {'start': 528, 'count': 8, 'name': 'LOGO! 8 Analog Outputs (AQ1-AQ8)'},
-                    {'start': 40000, 'count': 50, 'name': 'Modicon 4x Range (40001-40050)'},
-                    {'start': 100, 'count': 10, 'name': 'Alternative Range (100-109)'}
-                ]
-            }
-
-            logger.info(f"Starting comprehensive register discovery on {self.host}:{self.port} slave {slave}")
-
-            # Test discrete inputs (Function Code 2)
-            for test_range in test_ranges['discrete_inputs']:
-                try:
-                    result = self.client.read_discrete_inputs(
-                        test_range['start'],
-                        test_range['count'],
-                        unit=slave
-                    )
-                    if not result.isError() and hasattr(result, 'bits'):
-                        # Count how many are responding (not all zeros or ones)
-                        active_count = sum(1 for bit in result.bits[:test_range['count']])
-                        discovery['register_ranges']['discrete_inputs'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': True,
-                            'active_registers': active_count,
-                            'note': f"{active_count}/{test_range['count']} inputs are HIGH"
-                        })
-                        logger.info(f"✓ Discrete Inputs: {test_range['name']} - {active_count} active")
-                    else:
-                        discovery['register_ranges']['discrete_inputs'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': False,
-                            'error': str(result) if hasattr(result, '__str__') else 'No response'
-                        })
-                        logger.debug(f"✗ Discrete Inputs: {test_range['name']} - Not supported")
-                except Exception as e:
-                    logger.debug(f"✗ Discrete Inputs: {test_range['name']} - Error: {e}")
-                    discovery['register_ranges']['discrete_inputs'].append({
-                        'range': test_range['name'],
-                        'start': test_range['start'],
-                        'count': test_range['count'],
-                        'supported': False,
-                        'error': str(e)
-                    })
-
-            # Test coils (Function Code 1)
-            for test_range in test_ranges['coils']:
-                try:
-                    result = self.client.read_coils(
-                        test_range['start'],
-                        test_range['count'],
-                        unit=slave
-                    )
-                    if not result.isError() and hasattr(result, 'bits'):
-                        active_count = sum(1 for bit in result.bits[:test_range['count']])
-                        discovery['register_ranges']['coils'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': True,
-                            'active_registers': active_count,
-                            'note': f"{active_count}/{test_range['count']} outputs are ON"
-                        })
-                        logger.info(f"✓ Coils: {test_range['name']} - {active_count} active")
-                    else:
-                        discovery['register_ranges']['coils'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': False,
-                            'error': str(result) if hasattr(result, '__str__') else 'No response'
-                        })
-                        logger.debug(f"✗ Coils: {test_range['name']} - Not supported")
-                except Exception as e:
-                    logger.debug(f"✗ Coils: {test_range['name']} - Error: {e}")
-                    discovery['register_ranges']['coils'].append({
-                        'range': test_range['name'],
-                        'start': test_range['start'],
-                        'count': test_range['count'],
-                        'supported': False,
-                        'error': str(e)
-                    })
-
-            # Test input registers (Function Code 4)
-            for test_range in test_ranges['input_registers']:
-                try:
-                    result = self.client.read_input_registers(
-                        test_range['start'],
-                        test_range['count'],
-                        unit=slave
-                    )
-                    if not result.isError() and hasattr(result, 'registers'):
-                        non_zero = sum(1 for val in result.registers if val != 0)
-                        # Show first 5 values as sample
-                        sample_values = result.registers[:min(5, len(result.registers))]
-                        discovery['register_ranges']['input_registers'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': True,
-                            'non_zero_registers': non_zero,
-                            'sample_values': sample_values,
-                            'note': f"{non_zero} non-zero values, Sample: {sample_values}"
-                        })
-                        logger.info(f"✓ Input Registers: {test_range['name']} - {non_zero} non-zero")
-                    else:
-                        discovery['register_ranges']['input_registers'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': False,
-                            'error': str(result) if hasattr(result, '__str__') else 'No response'
-                        })
-                        logger.debug(f"✗ Input Registers: {test_range['name']} - Not supported")
-                except Exception as e:
-                    logger.debug(f"✗ Input Registers: {test_range['name']} - Error: {e}")
-                    discovery['register_ranges']['input_registers'].append({
-                        'range': test_range['name'],
-                        'start': test_range['start'],
-                        'count': test_range['count'],
-                        'supported': False,
-                        'error': str(e)
-                    })
-
-            # Test holding registers (Function Code 3)
-            for test_range in test_ranges['holding_registers']:
-                try:
-                    result = self.client.read_holding_registers(
-                        test_range['start'],
-                        test_range['count'],
-                        unit=slave
-                    )
-                    if not result.isError() and hasattr(result, 'registers'):
-                        non_zero = sum(1 for val in result.registers if val != 0)
-                        sample_values = result.registers[:min(5, len(result.registers))]
-                        discovery['register_ranges']['holding_registers'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': True,
-                            'non_zero_registers': non_zero,
-                            'sample_values': sample_values,
-                            'note': f"{non_zero} non-zero values, Sample: {sample_values}"
-                        })
-                        logger.info(f"✓ Holding Registers: {test_range['name']} - {non_zero} non-zero")
-                    else:
-                        discovery['register_ranges']['holding_registers'].append({
-                            'range': test_range['name'],
-                            'start': test_range['start'],
-                            'count': test_range['count'],
-                            'supported': False,
-                            'error': str(result) if hasattr(result, '__str__') else 'No response'
-                        })
-                        logger.debug(f"✗ Holding Registers: {test_range['name']} - Not supported")
-                except Exception as e:
-                    logger.debug(f"✗ Holding Registers: {test_range['name']} - Error: {e}")
-                    discovery['register_ranges']['holding_registers'].append({
-                        'range': test_range['name'],
-                        'start': test_range['start'],
-                        'count': test_range['count'],
-                        'supported': False,
-                        'error': str(e)
-                    })
-
-            # Determine supported function codes
-            for reg_type, ranges in discovery['register_ranges'].items():
-                if any(r['supported'] for r in ranges):
-                    discovery['supported_functions'].append(reg_type)
-
-            # Device detection and recommendations
-            has_logo_di = any(
-                r['supported'] and 'LOGO!' in r['range']
-                for r in discovery['register_ranges']['discrete_inputs']
-            )
-            has_logo_coils = any(
-                r['supported'] and 'LOGO!' in r['range']
-                for r in discovery['register_ranges']['coils']
-            )
-            has_logo_ai = any(
-                r['supported'] and 'LOGO!' in r['range']
-                for r in discovery['register_ranges']['input_registers']
-            )
-            has_logo_markers = any(
-                r['supported'] and 'Marker' in r['range']
-                for r in discovery['register_ranges']['coils']
-            )
-            has_logo_0ba7_di = any(
-                r['supported'] and '0BA7' in r['range']
-                for r in discovery['register_ranges']['discrete_inputs']
-            )
-            has_logo_8_di = any(
-                r['supported'] and 'LOGO! 8' in r['range']
-                for r in discovery['register_ranges']['discrete_inputs']
-            )
-
-            # Check for LOGO! 0BA7 first (more specific)
-            if (has_logo_markers or has_logo_0ba7_di) and has_logo_coils:
-                discovery['detected_device'] = 'SIEMENS LOGO! 0BA7 (v7)'
-                discovery['recommendations'] = [
-                    'Device detected as Siemens LOGO! 0BA7 (Version 7)',
-                    'Use manufacturer: Siemens, model: LOGO! 0BA7',
-                    'Digital Inputs: Configure I1-I16 in device settings (max 16)',
-                    'Digital Outputs: Configure Q1-Q16 in device settings (max 16)',
-                    'Analog Inputs: Configure AI1-AI8 if used',
-                    'Port: 510 (LOGO! standard)',
-                    'Write to outputs: Address 1-N or 8193+',
-                    'Note: LOGO! 0BA7 has different addressing than LOGO! 8'
-                ]
-            # Check for LOGO! 8 (newer version)
-            elif has_logo_8_di and has_logo_coils and has_logo_ai:
-                discovery['detected_device'] = 'SIEMENS LOGO! 8'
-                discovery['recommendations'] = [
-                    'Device detected as Siemens LOGO! 8',
-                    'Use manufacturer: Siemens, model: LOGO! 8',
-                    'Digital Inputs: Configure I1-I24 in device settings',
-                    'Digital Outputs: Configure Q1-Q20 in device settings',
-                    'Analog Inputs: Configure AI1-AI8 if used',
-                    'Port: 510 (LOGO! standard)',
-                    'Write to outputs: Address 1-N',
-                    'Verify outputs: Address 8199+ (8198 + N)'
-                ]
-            # Generic LOGO! detection (fallback)
-            elif has_logo_di or has_logo_coils:
-                discovery['detected_device'] = 'SIEMENS LOGO! (Generic)'
-                discovery['recommendations'] = [
-                    'LOGO! device detected (version unclear)',
-                    'Use manufacturer: Siemens',
-                    'Check your LOGO! model number for exact specification',
-                    'LOGO! 0BA7 (v7): Max 16 DI/DO',
-                    'LOGO! 8 (v8): Max 24 DI, 20 DO',
-                    'Port: 510 (LOGO! standard)',
-                    'Configure I/O counts based on scan results above'
-                ]
-            elif any('Modicon' in r.get('range', '') and r.get('supported')
-                    for ranges in discovery['register_ranges'].values() for r in ranges):
-                discovery['detected_device'] = 'Generic Modbus (Modicon addressing)'
-                discovery['recommendations'] = [
-                    'Device uses Modicon address convention',
-                    'Discrete Inputs: 10001-1xxxx',
-                    'Coils (Outputs): 00001-0xxxx',
-                    'Input Registers: 30001-3xxxx',
-                    'Holding Registers: 40001-4xxxx'
-                ]
-            else:
-                discovery['detected_device'] = 'Generic Modbus Device'
-                discovery['recommendations'] = [
-                    'Standard Modbus device detected',
-                    'Use supported register ranges shown above',
-                    'Configure I/O counts based on actual device specifications'
-                ]
-
-            logger.info(f"Register discovery completed. Device: {discovery['detected_device']}")
-
-        except Exception as e:
-            logger.error(f"Error during register discovery: {e}", exc_info=True)
-            discovery['success'] = False
-            discovery['error'] = str(e)
-        finally:
-            self.disconnect()
-
-        return discovery
-
     def auto_scan_device(self, slave=1):
         """
         Automatically scan device and return all found data with device type
@@ -957,7 +635,7 @@ class NetworkScanner:
             return "192.168.1.0/24"
 
     @staticmethod
-    def scan_network(network=None, ports=[502, 510], timeout=1, auto_detect=True):
+    def scan_network(network=None, ports=[502, 510], timeout=1, auto_detect=True, progress_callback=None):
         """
         Scan network for Modbus devices with automatic device type detection
 
@@ -966,18 +644,26 @@ class NetworkScanner:
             ports: List of ports to scan (default: [502, 510])
             timeout: Connection timeout in seconds
             auto_detect: Automatically detect device type and scan registers
+            progress_callback: Optional callback function(current_ip, scanned_count, found_device)
         """
         if network is None:
             network = NetworkScanner.get_local_network()
 
         logger.info(f"Scanning network {network} for Modbus devices...")
         devices = []
+        scanned_count = 0
 
         try:
             net = ipaddress.IPv4Network(network, strict=False)
+            total_hosts = net.num_addresses - 2  # Exclude network and broadcast
 
             for ip in net.hosts():
                 ip_str = str(ip)
+                scanned_count += 1
+
+                # Call progress callback if provided
+                if progress_callback:
+                    progress_callback(ip_str, scanned_count, None)
 
                 for port in ports:
                     try:
@@ -1015,6 +701,10 @@ class NetworkScanner:
 
                                 devices.append(device_info)
                                 logger.info(f"Found {device_info.get('device_type', 'unknown')} device at {ip_str}:{port}")
+
+                                # Notify about found device
+                                if progress_callback:
+                                    progress_callback(ip_str, scanned_count, device_info)
                     except Exception as e:
                         logger.debug(f"Error scanning {ip_str}:{port}: {e}")
 

@@ -18,6 +18,7 @@ from manufacturer_database import (
     get_recommended_ports_for_scan, get_all_manufacturers, get_devices_for_manufacturer
 )
 from auto_scanner import auto_scanner
+from scan_progress import scan_progress
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -196,7 +197,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.9.0'
+        'version': '1.9.1'
     })
 
 
@@ -408,8 +409,18 @@ def api_scan_network():
             network = network_info.get('scan_range', '192.168.1.0/24')
             logger.info(f"Auto-detected network: {network}")
 
+        # Start progress tracking
+        scan_progress.start_scan(network, 'python')
+
         logger.info(f"Starting network scan on {network}...")
-        found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
+
+        # Progress callback for live updates
+        def progress_callback(current_ip, scanned_count, found_device=None):
+            scan_progress.update_progress(current_ip, scanned_count)
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
+        found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect, progress_callback=progress_callback)
 
         # Automatically add detected devices if requested
         added_count = 0
@@ -439,6 +450,9 @@ def api_scan_network():
             if added_count > 0:
                 save_config()
 
+        # Mark scan as complete
+        scan_progress.finish_scan()
+
         logger.info(f"Network scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
             'success': True,
@@ -449,8 +463,15 @@ def api_scan_network():
         })
 
     except Exception as e:
+        scan_progress.set_error(str(e))
         logger.error(f"Error scanning network: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-progress', methods=['GET'])
+def api_scan_progress():
+    """Get current scan progress"""
+    return jsonify(scan_progress.get_status())
 
 
 @app.route('/api/scan-network-nmap', methods=['POST'])
@@ -481,18 +502,27 @@ def api_scan_network_nmap():
             network = network_info.get('scan_range', '192.168.1.0/24')
             logger.info(f"Auto-detected network: {network}")
 
+        # Start progress tracking
+        scan_progress.start_scan(network, 'nmap')
+
         logger.info(f"Starting nmap network scan on {network}...")
         logger.info(f"Port range: {port_range}, timeout: {timeout}s")
 
         # Initialize nmap scanner
         nmap_scanner = NmapModbusScanner()
 
-        # Perform nmap scan
+        # Perform nmap scan with progress callback
+        def progress_callback(current_ip, scanned_count, found_device=None):
+            scan_progress.update_progress(current_ip, scanned_count)
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
         found_devices = nmap_scanner.scan_network_nmap(
             network=network,
             port_range=port_range,
             timeout=timeout,
-            use_modbus_discover=use_modbus_discover
+            use_modbus_discover=use_modbus_discover,
+            progress_callback=progress_callback
         )
 
         # Automatically add detected devices if requested
@@ -523,6 +553,9 @@ def api_scan_network_nmap():
             if added_count > 0:
                 save_config()
 
+        # Mark scan as complete
+        scan_progress.finish_scan()
+
         logger.info(f"Nmap scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
             'success': True,
@@ -534,6 +567,7 @@ def api_scan_network_nmap():
         })
 
     except Exception as e:
+        scan_progress.set_error(str(e))
         logger.error(f"Error during nmap scan: {e}", exc_info=True)
         return jsonify({'error': str(e), 'scan_method': 'nmap'}), 500
 

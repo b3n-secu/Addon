@@ -58,7 +58,8 @@ class NmapModbusScanner:
         network: Optional[str] = None,
         port_range: str = "502,510,20000-20100",
         timeout: int = 300,
-        use_modbus_discover: bool = True
+        use_modbus_discover: bool = True,
+        progress_callback=None
     ) -> List[Dict]:
         """
         Scan network using nmap for Modbus devices
@@ -68,6 +69,7 @@ class NmapModbusScanner:
             port_range: Port range to scan (e.g., '502,510,20000-20100')
             timeout: Scan timeout in seconds
             use_modbus_discover: Use nmap's modbus-discover NSE script
+            progress_callback: Optional callback function(current_ip, scanned_count, found_device)
 
         Returns:
             List of discovered devices with details
@@ -78,6 +80,7 @@ class NmapModbusScanner:
         logger.info(f"Starting nmap scan on {network}, ports: {port_range}")
 
         devices = []
+        scanned_count = 0
 
         try:
             # Build nmap arguments
@@ -92,11 +95,23 @@ class NmapModbusScanner:
 
             logger.info(f"Nmap command: nmap {nmap_args} {network}")
 
+            # Notify that scan is starting
+            if progress_callback:
+                progress_callback("Scanning...", 0, None)
+
             # Execute nmap scan
             self.nm.scan(hosts=network, arguments=nmap_args, timeout=timeout)
 
             # Parse results
-            for host in self.nm.all_hosts():
+            all_hosts = self.nm.all_hosts()
+            total_hosts = len(all_hosts)
+
+            for host in all_hosts:
+                scanned_count += 1
+
+                # Update progress
+                if progress_callback:
+                    progress_callback(host, scanned_count, None)
                 if self.nm[host].state() == 'up':
                     logger.info(f"Found host: {host}")
 
@@ -139,6 +154,10 @@ class NmapModbusScanner:
 
                                 devices.append(device)
                                 logger.info(f"Discovered Modbus device: {device['name']} at {host}:{port}")
+
+                                # Notify about found device
+                                if progress_callback:
+                                    progress_callback(host, scanned_count, device)
 
             logger.info(f"Nmap scan complete. Found {len(devices)} Modbus device(s).")
 
