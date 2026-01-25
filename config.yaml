@@ -23,7 +23,7 @@ options:
   devices: []
   modbus_config_path: "/config/modbus_generated.yaml"
   scan_timeout: 300
-  default_port_range: "502,510,20000-20100"
+  default_port_range: "102,502-510,20000-20100"
 schema:
   devices:
     - manufacturer: str
