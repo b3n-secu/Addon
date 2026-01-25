@@ -12,6 +12,12 @@ from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
 from network_detector import NetworkDetector
+from manufacturer_database import (
+    MANUFACTURER_PORTS, PROTOCOL_PORTS, SCAN_PORT_RANGES,
+    get_manufacturer_info, get_device_info, detect_manufacturer_by_port,
+    get_recommended_ports_for_scan, get_all_manufacturers, get_devices_for_manufacturer
+)
+from auto_scanner import auto_scanner
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -190,7 +196,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.8.2'
+        'version': '1.9.0'
     })
 
 
@@ -1160,6 +1166,284 @@ def api_check_devices_in_config():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# Auto-Scanner API Endpoints
+# ============================================================================
+
+@app.route('/api/auto-scanner/status', methods=['GET'])
+def api_auto_scanner_status():
+    """Get auto-scanner status"""
+    status = auto_scanner.get_status()
+    status['nmap_available'] = NMAP_AVAILABLE
+    return jsonify({'success': True, **status})
+
+
+@app.route('/api/auto-scanner/configure', methods=['POST'])
+def api_auto_scanner_configure():
+    """Configure auto-scanner settings"""
+    try:
+        data = request.json or {}
+        auto_scanner.configure(data)
+        return jsonify({
+            'success': True,
+            'message': 'Auto-scanner configured',
+            'config': auto_scanner.get_status()
+        })
+    except Exception as e:
+        logger.error(f"Error configuring auto-scanner: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auto-scanner/start', methods=['POST'])
+def api_auto_scanner_start():
+    """Start automatic scanning"""
+    try:
+        def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
+            """Unified scan function for auto-scanner"""
+            found_devices = []
+
+            # Auto-detect network if not provided
+            if not network:
+                detector = NetworkDetector()
+                network_info = detector.get_network_info()
+                network = network_info.get('scan_range', '192.168.1.0/24')
+
+            if use_nmap and NMAP_AVAILABLE:
+                nmap_scanner = NmapModbusScanner()
+                found_devices = nmap_scanner.scan_network_nmap(
+                    network=network,
+                    port_range=port_range,
+                    timeout=300
+                )
+            else:
+                ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
+                found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
+
+            # Auto-add devices if enabled
+            if auto_add:
+                for device in found_devices:
+                    host = device.get('ip')
+                    port = device.get('port', 502)
+                    if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                        new_device = {
+                            'name': device.get('name', f"Device at {host}:{port}"),
+                            'manufacturer': device.get('manufacturer', 'Generic'),
+                            'model': device.get('model', 'Modbus TCP'),
+                            'host': host,
+                            'port': port,
+                            'slave_id': device.get('slave_id', 1)
+                        }
+                        devices.append(new_device)
+
+                if found_devices:
+                    save_config()
+
+            return {'success': True, 'devices': found_devices}
+
+        success = auto_scanner.start(scan_function, NMAP_AVAILABLE)
+        return jsonify({
+            'success': success,
+            'message': 'Auto-scanner started' if success else 'Auto-scanner already running'
+        })
+    except Exception as e:
+        logger.error(f"Error starting auto-scanner: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auto-scanner/stop', methods=['POST'])
+def api_auto_scanner_stop():
+    """Stop automatic scanning"""
+    success = auto_scanner.stop()
+    return jsonify({
+        'success': success,
+        'message': 'Auto-scanner stopped' if success else 'Auto-scanner not running'
+    })
+
+
+@app.route('/api/auto-scanner/trigger', methods=['POST'])
+def api_auto_scanner_trigger():
+    """Trigger a manual scan"""
+    try:
+        def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
+            found_devices = []
+            if not network:
+                detector = NetworkDetector()
+                network_info = detector.get_network_info()
+                network = network_info.get('scan_range', '192.168.1.0/24')
+
+            if use_nmap and NMAP_AVAILABLE:
+                nmap_scanner = NmapModbusScanner()
+                found_devices = nmap_scanner.scan_network_nmap(network=network, port_range=port_range, timeout=300)
+            else:
+                ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
+                found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
+
+            if auto_add:
+                for device in found_devices:
+                    host = device.get('ip')
+                    port = device.get('port', 502)
+                    if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                        devices.append({
+                            'name': device.get('name', f"Device at {host}:{port}"),
+                            'manufacturer': device.get('manufacturer', 'Generic'),
+                            'model': device.get('model', 'Modbus TCP'),
+                            'host': host,
+                            'port': port,
+                            'slave_id': device.get('slave_id', 1)
+                        })
+                if found_devices:
+                    save_config()
+
+            return {'success': True, 'devices': found_devices}
+
+        result = auto_scanner.trigger_manual_scan(scan_function, NMAP_AVAILABLE)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error triggering manual scan: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# Manufacturer Database API Endpoints
+# ============================================================================
+
+@app.route('/api/manufacturer-database', methods=['GET'])
+def api_get_manufacturer_database():
+    """Get full manufacturer database"""
+    return jsonify({
+        'success': True,
+        'manufacturers': MANUFACTURER_PORTS,
+        'protocols': PROTOCOL_PORTS,
+        'scan_ranges': SCAN_PORT_RANGES
+    })
+
+
+@app.route('/api/manufacturer-database/manufacturers', methods=['GET'])
+def api_get_all_manufacturers():
+    """Get list of all manufacturers"""
+    return jsonify({
+        'success': True,
+        'manufacturers': get_all_manufacturers()
+    })
+
+
+@app.route('/api/manufacturer-database/manufacturer/<name>', methods=['GET'])
+def api_get_manufacturer(name):
+    """Get manufacturer information"""
+    info = get_manufacturer_info(name)
+    if info:
+        return jsonify({'success': True, 'manufacturer': info})
+    return jsonify({'success': False, 'error': 'Manufacturer not found'}), 404
+
+
+@app.route('/api/manufacturer-database/detect-by-port/<int:port>', methods=['GET'])
+def api_detect_by_port(port):
+    """Detect possible manufacturers by port"""
+    matches = detect_manufacturer_by_port(port)
+    return jsonify({
+        'success': True,
+        'port': port,
+        'possible_manufacturers': matches
+    })
+
+
+@app.route('/api/manufacturer-database/recommended-ports', methods=['GET'])
+def api_get_recommended_ports():
+    """Get recommended ports for scanning"""
+    return jsonify({
+        'success': True,
+        'ports': get_recommended_ports_for_scan(),
+        'scan_ranges': SCAN_PORT_RANGES
+    })
+
+
+# ============================================================================
+# Auto Config Generation API Endpoints
+# ============================================================================
+
+@app.route('/api/auto-generate-all', methods=['POST'])
+def api_auto_generate_all():
+    """
+    Automatically scan all devices and generate configurations
+    This combines: scan -> register analysis -> config generation
+    """
+    try:
+        data = request.json or {}
+        generate_modbus = data.get('generate_modbus', True)
+        generate_s7 = data.get('generate_s7', True)
+
+        results = {
+            'scanned_devices': [],
+            'register_analysis': [],
+            'generated_configs': [],
+            'errors': []
+        }
+
+        # Process each configured device
+        for device in devices:
+            device_result = {
+                'name': device.get('name'),
+                'host': device.get('host'),
+                'port': device.get('port', 502)
+            }
+
+            try:
+                # Test connection and analyze registers
+                scanner = ModbusScanner(device['host'], device.get('port', 502))
+                if scanner.connect():
+                    try:
+                        device_type = scanner.detect_device_type(device.get('slave_id', 1))
+                        device_result['device_type'] = device_type
+                        device_result['connection'] = 'success'
+                        results['scanned_devices'].append(device_result)
+                    finally:
+                        scanner.disconnect()
+                else:
+                    device_result['connection'] = 'failed'
+                    results['errors'].append(f"Could not connect to {device['host']}")
+
+            except Exception as e:
+                device_result['error'] = str(e)
+                results['errors'].append(f"Error scanning {device['host']}: {e}")
+
+        # Generate Modbus config if devices exist and option enabled
+        if generate_modbus and devices:
+            try:
+                config_generator.clear()
+                for device in devices:
+                    config_generator.add_device(device)
+                yaml_config = config_generator.generate_yaml()
+                with open(MODBUS_CONFIG_PATH, 'w') as f:
+                    f.write(yaml_config)
+                results['generated_configs'].append({
+                    'type': 'modbus',
+                    'path': MODBUS_CONFIG_PATH,
+                    'success': True
+                })
+            except Exception as e:
+                results['errors'].append(f"Error generating Modbus config: {e}")
+
+        # Generate S7 config for S7-compatible devices
+        if generate_s7 and S7_SCANNER_AVAILABLE:
+            s7_devices = [d for d in results['scanned_devices']
+                        if d.get('device_type') in ['LOGO_8', 'LOGO_0BA7', 'S7']]
+            if s7_devices:
+                results['generated_configs'].append({
+                    'type': 's7comm',
+                    'devices': len(s7_devices),
+                    'note': 'S7 devices found - use S7 integration for these'
+                })
+
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+
+    except Exception as e:
+        logger.error(f"Error in auto-generate-all: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':
