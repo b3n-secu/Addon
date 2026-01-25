@@ -12,6 +12,13 @@ from device_profiles import get_manufacturers, get_models, get_device_profile
 from modbus_scanner import ModbusScanner, NetworkScanner
 from config_generator import ModbusConfigGenerator
 from network_detector import NetworkDetector
+from manufacturer_database import (
+    MANUFACTURER_PORTS, PROTOCOL_PORTS, SCAN_PORT_RANGES,
+    get_manufacturer_info, get_device_info, detect_manufacturer_by_port,
+    get_recommended_ports_for_scan, get_all_manufacturers, get_devices_for_manufacturer
+)
+from auto_scanner import auto_scanner
+from scan_progress import scan_progress
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -190,7 +197,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.7.0'
+        'version': '1.9.1'
     })
 
 
@@ -395,8 +402,25 @@ def api_scan_network():
         auto_detect = data.get('auto_detect', True)  # Auto-detect device type
         auto_add = data.get('auto_add', True)  # Automatically add to device list
 
-        logger.info(f"Starting network scan on {network or 'auto-detected network'}...")
-        found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect)
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network: {network}")
+
+        # Start progress tracking
+        scan_progress.start_scan(network, 'python')
+
+        logger.info(f"Starting network scan on {network}...")
+
+        # Progress callback for live updates
+        def progress_callback(current_ip, scanned_count, found_device=None):
+            scan_progress.update_progress(current_ip, scanned_count)
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
+        found_devices = NetworkScanner.scan_network(network, ports, timeout=1, auto_detect=auto_detect, progress_callback=progress_callback)
 
         # Automatically add detected devices if requested
         added_count = 0
@@ -426,17 +450,28 @@ def api_scan_network():
             if added_count > 0:
                 save_config()
 
+        # Mark scan as complete
+        scan_progress.finish_scan()
+
         logger.info(f"Network scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
             'success': True,
             'devices': found_devices,
             'total': len(found_devices),
-            'added_count': added_count
+            'added_count': added_count,
+            'network': network
         })
 
     except Exception as e:
+        scan_progress.set_error(str(e))
         logger.error(f"Error scanning network: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/scan-progress', methods=['GET'])
+def api_scan_progress():
+    """Get current scan progress"""
+    return jsonify(scan_progress.get_status())
 
 
 @app.route('/api/scan-network-nmap', methods=['POST'])
@@ -460,18 +495,34 @@ def api_scan_network_nmap():
         use_modbus_discover = data.get('use_modbus_discover', True)  # Use nmap NSE script
         timeout = data.get('timeout', 300)  # Scan timeout in seconds
 
-        logger.info(f"Starting nmap network scan on {network or 'auto-detected network'}...")
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network: {network}")
+
+        # Start progress tracking
+        scan_progress.start_scan(network, 'nmap')
+
+        logger.info(f"Starting nmap network scan on {network}...")
         logger.info(f"Port range: {port_range}, timeout: {timeout}s")
 
         # Initialize nmap scanner
         nmap_scanner = NmapModbusScanner()
 
-        # Perform nmap scan
+        # Perform nmap scan with progress callback
+        def progress_callback(current_ip, scanned_count, found_device=None):
+            scan_progress.update_progress(current_ip, scanned_count)
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
         found_devices = nmap_scanner.scan_network_nmap(
             network=network,
             port_range=port_range,
             timeout=timeout,
-            use_modbus_discover=use_modbus_discover
+            use_modbus_discover=use_modbus_discover,
+            progress_callback=progress_callback
         )
 
         # Automatically add detected devices if requested
@@ -502,16 +553,21 @@ def api_scan_network_nmap():
             if added_count > 0:
                 save_config()
 
+        # Mark scan as complete
+        scan_progress.finish_scan()
+
         logger.info(f"Nmap scan complete: found {len(found_devices)} devices, added {added_count}")
         return jsonify({
             'success': True,
             'devices': found_devices,
             'total': len(found_devices),
             'added_count': added_count,
-            'scan_method': 'nmap'
+            'scan_method': 'nmap',
+            'network': network
         })
 
     except Exception as e:
+        scan_progress.set_error(str(e))
         logger.error(f"Error during nmap scan: {e}", exc_info=True)
         return jsonify({'error': str(e), 'scan_method': 'nmap'}), 500
 
@@ -825,6 +881,198 @@ def api_test_connection():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/discover-registers', methods=['POST'])
+def api_discover_registers():
+    """
+    Discover and analyze registers on a Modbus device
+    Returns device type and all readable registers in frontend-expected format
+    """
+    try:
+        data = request.json or {}
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'success': False, 'error': 'Host is required'}), 400
+
+        logger.info(f"Starting register discovery on {host}:{port} (slave {slave_id})")
+
+        scanner = ModbusScanner(host, port)
+
+        if not scanner.connect():
+            return jsonify({
+                'success': False,
+                'error': f'Verbindung zu {host}:{port} fehlgeschlagen'
+            }), 400
+
+        try:
+            # Detect device type
+            device_type = scanner.detect_device_type(slave_id)
+            detected_device = {
+                'LOGO_8': 'Siemens LOGO! 8',
+                'LOGO_0BA7': 'Siemens LOGO! 0BA7',
+                'GENERIC': 'Generic Modbus TCP'
+            }.get(device_type, 'Generic Modbus TCP')
+
+            # Test supported functions
+            supported_functions = []
+            register_ranges = {
+                'discrete_inputs': [],
+                'coils': [],
+                'input_registers': [],
+                'holding_registers': []
+            }
+            recommendations = []
+
+            # Define test ranges based on device type
+            if device_type == 'LOGO_8':
+                test_ranges = {
+                    'discrete_inputs': [(8192, 64, 'DI 1-64 (LOGO! 8)')],
+                    'coils': [(8256, 64, 'DO 1-64 (LOGO! 8)')],
+                    'input_registers': [(0, 50, 'AI 1-8 + AM (LOGO! 8)'), (528, 32, 'NAI/NAO (LOGO! 8)')],
+                    'holding_registers': [(0, 50, 'AQ + VM (LOGO! 8)'), (528, 32, 'NAQ (LOGO! 8)')]
+                }
+                recommendations.append('LOGO! 8 erkannt - Verwenden Sie Port 510 für Modbus TCP')
+                recommendations.append('Digital I/O: Register ab 8192 (DI) und 8256 (DO)')
+            elif device_type == 'LOGO_0BA7':
+                test_ranges = {
+                    'discrete_inputs': [(0, 24, 'I1-I24 (LOGO! 0BA7)')],
+                    'coils': [(0, 16, 'Q1-Q16 (LOGO! 0BA7)'), (16, 8, 'M1-M8 (LOGO! 0BA7)')],
+                    'input_registers': [(0, 8, 'AI1-AI8 (LOGO! 0BA7)')],
+                    'holding_registers': [(0, 8, 'AQ1-AQ2 + AM (LOGO! 0BA7)')]
+                }
+                recommendations.append('LOGO! 0BA7 erkannt - Nur über S7comm unterstützt')
+            else:
+                test_ranges = {
+                    'discrete_inputs': [(0, 100, 'Standard DI 0-99'), (1000, 100, 'Extended DI 1000-1099')],
+                    'coils': [(0, 100, 'Standard Coils 0-99'), (1000, 100, 'Extended Coils 1000-1099')],
+                    'input_registers': [(0, 100, 'Standard IR 0-99'), (1000, 100, 'Extended IR 1000-1099')],
+                    'holding_registers': [(0, 100, 'Standard HR 0-99'), (1000, 100, 'Extended HR 1000-1099')]
+                }
+                recommendations.append('Standard Modbus-Gerät - Prüfen Sie die Dokumentation für Register-Adressen')
+
+            # Test Discrete Inputs (Function Code 2)
+            for start, count, note in test_ranges['discrete_inputs']:
+                try:
+                    result = scanner.scan_discrete_inputs(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Discrete Inputs (FC2)' not in supported_functions:
+                        supported_functions.append('Read Discrete Inputs (FC2)')
+                    register_ranges['discrete_inputs'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['discrete_inputs'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Coils (Function Code 1)
+            for start, count, note in test_ranges['coils']:
+                try:
+                    result = scanner.scan_coils(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Coils (FC1)' not in supported_functions:
+                        supported_functions.append('Read Coils (FC1)')
+                    register_ranges['coils'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['coils'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Input Registers (Function Code 4)
+            for start, count, note in test_ranges['input_registers']:
+                try:
+                    result = scanner.scan_input_registers(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Input Registers (FC4)' not in supported_functions:
+                        supported_functions.append('Read Input Registers (FC4)')
+                    register_ranges['input_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['input_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Holding Registers (Function Code 3)
+            for start, count, note in test_ranges['holding_registers']:
+                try:
+                    result = scanner.scan_holding_registers(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Holding Registers (FC3)' not in supported_functions:
+                        supported_functions.append('Read Holding Registers (FC3)')
+                    register_ranges['holding_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['holding_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            logger.info(f"Register discovery complete: {detected_device}, functions: {supported_functions}")
+
+            return jsonify({
+                'success': True,
+                'host': host,
+                'port': port,
+                'slave_id': slave_id,
+                'detected_device': detected_device,
+                'supported_functions': supported_functions,
+                'register_ranges': register_ranges,
+                'recommendations': recommendations
+            })
+
+        finally:
+            scanner.disconnect()
+
+    except Exception as e:
+        logger.error(f"Error during register discovery: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @app.route('/api/generate', methods=['POST'])
 def api_generate_config():
     """Generate Modbus configuration"""
@@ -968,6 +1216,284 @@ def api_check_devices_in_config():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# ============================================================================
+# Auto-Scanner API Endpoints
+# ============================================================================
+
+@app.route('/api/auto-scanner/status', methods=['GET'])
+def api_auto_scanner_status():
+    """Get auto-scanner status"""
+    status = auto_scanner.get_status()
+    status['nmap_available'] = NMAP_AVAILABLE
+    return jsonify({'success': True, **status})
+
+
+@app.route('/api/auto-scanner/configure', methods=['POST'])
+def api_auto_scanner_configure():
+    """Configure auto-scanner settings"""
+    try:
+        data = request.json or {}
+        auto_scanner.configure(data)
+        return jsonify({
+            'success': True,
+            'message': 'Auto-scanner configured',
+            'config': auto_scanner.get_status()
+        })
+    except Exception as e:
+        logger.error(f"Error configuring auto-scanner: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auto-scanner/start', methods=['POST'])
+def api_auto_scanner_start():
+    """Start automatic scanning"""
+    try:
+        def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
+            """Unified scan function for auto-scanner"""
+            found_devices = []
+
+            # Auto-detect network if not provided
+            if not network:
+                detector = NetworkDetector()
+                network_info = detector.get_network_info()
+                network = network_info.get('scan_range', '192.168.1.0/24')
+
+            if use_nmap and NMAP_AVAILABLE:
+                nmap_scanner = NmapModbusScanner()
+                found_devices = nmap_scanner.scan_network_nmap(
+                    network=network,
+                    port_range=port_range,
+                    timeout=300
+                )
+            else:
+                ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
+                found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
+
+            # Auto-add devices if enabled
+            if auto_add:
+                for device in found_devices:
+                    host = device.get('ip')
+                    port = device.get('port', 502)
+                    if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                        new_device = {
+                            'name': device.get('name', f"Device at {host}:{port}"),
+                            'manufacturer': device.get('manufacturer', 'Generic'),
+                            'model': device.get('model', 'Modbus TCP'),
+                            'host': host,
+                            'port': port,
+                            'slave_id': device.get('slave_id', 1)
+                        }
+                        devices.append(new_device)
+
+                if found_devices:
+                    save_config()
+
+            return {'success': True, 'devices': found_devices}
+
+        success = auto_scanner.start(scan_function, NMAP_AVAILABLE)
+        return jsonify({
+            'success': success,
+            'message': 'Auto-scanner started' if success else 'Auto-scanner already running'
+        })
+    except Exception as e:
+        logger.error(f"Error starting auto-scanner: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auto-scanner/stop', methods=['POST'])
+def api_auto_scanner_stop():
+    """Stop automatic scanning"""
+    success = auto_scanner.stop()
+    return jsonify({
+        'success': success,
+        'message': 'Auto-scanner stopped' if success else 'Auto-scanner not running'
+    })
+
+
+@app.route('/api/auto-scanner/trigger', methods=['POST'])
+def api_auto_scanner_trigger():
+    """Trigger a manual scan"""
+    try:
+        def scan_function(network=None, port_range='502,510', use_nmap=False, auto_add=True):
+            found_devices = []
+            if not network:
+                detector = NetworkDetector()
+                network_info = detector.get_network_info()
+                network = network_info.get('scan_range', '192.168.1.0/24')
+
+            if use_nmap and NMAP_AVAILABLE:
+                nmap_scanner = NmapModbusScanner()
+                found_devices = nmap_scanner.scan_network_nmap(network=network, port_range=port_range, timeout=300)
+            else:
+                ports = [int(p) for p in port_range.split(',') if p.isdigit()][:5]
+                found_devices = NetworkScanner.scan_network(network, ports, timeout=1)
+
+            if auto_add:
+                for device in found_devices:
+                    host = device.get('ip')
+                    port = device.get('port', 502)
+                    if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                        devices.append({
+                            'name': device.get('name', f"Device at {host}:{port}"),
+                            'manufacturer': device.get('manufacturer', 'Generic'),
+                            'model': device.get('model', 'Modbus TCP'),
+                            'host': host,
+                            'port': port,
+                            'slave_id': device.get('slave_id', 1)
+                        })
+                if found_devices:
+                    save_config()
+
+            return {'success': True, 'devices': found_devices}
+
+        result = auto_scanner.trigger_manual_scan(scan_function, NMAP_AVAILABLE)
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error triggering manual scan: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ============================================================================
+# Manufacturer Database API Endpoints
+# ============================================================================
+
+@app.route('/api/manufacturer-database', methods=['GET'])
+def api_get_manufacturer_database():
+    """Get full manufacturer database"""
+    return jsonify({
+        'success': True,
+        'manufacturers': MANUFACTURER_PORTS,
+        'protocols': PROTOCOL_PORTS,
+        'scan_ranges': SCAN_PORT_RANGES
+    })
+
+
+@app.route('/api/manufacturer-database/manufacturers', methods=['GET'])
+def api_get_all_manufacturers():
+    """Get list of all manufacturers"""
+    return jsonify({
+        'success': True,
+        'manufacturers': get_all_manufacturers()
+    })
+
+
+@app.route('/api/manufacturer-database/manufacturer/<name>', methods=['GET'])
+def api_get_manufacturer(name):
+    """Get manufacturer information"""
+    info = get_manufacturer_info(name)
+    if info:
+        return jsonify({'success': True, 'manufacturer': info})
+    return jsonify({'success': False, 'error': 'Manufacturer not found'}), 404
+
+
+@app.route('/api/manufacturer-database/detect-by-port/<int:port>', methods=['GET'])
+def api_detect_by_port(port):
+    """Detect possible manufacturers by port"""
+    matches = detect_manufacturer_by_port(port)
+    return jsonify({
+        'success': True,
+        'port': port,
+        'possible_manufacturers': matches
+    })
+
+
+@app.route('/api/manufacturer-database/recommended-ports', methods=['GET'])
+def api_get_recommended_ports():
+    """Get recommended ports for scanning"""
+    return jsonify({
+        'success': True,
+        'ports': get_recommended_ports_for_scan(),
+        'scan_ranges': SCAN_PORT_RANGES
+    })
+
+
+# ============================================================================
+# Auto Config Generation API Endpoints
+# ============================================================================
+
+@app.route('/api/auto-generate-all', methods=['POST'])
+def api_auto_generate_all():
+    """
+    Automatically scan all devices and generate configurations
+    This combines: scan -> register analysis -> config generation
+    """
+    try:
+        data = request.json or {}
+        generate_modbus = data.get('generate_modbus', True)
+        generate_s7 = data.get('generate_s7', True)
+
+        results = {
+            'scanned_devices': [],
+            'register_analysis': [],
+            'generated_configs': [],
+            'errors': []
+        }
+
+        # Process each configured device
+        for device in devices:
+            device_result = {
+                'name': device.get('name'),
+                'host': device.get('host'),
+                'port': device.get('port', 502)
+            }
+
+            try:
+                # Test connection and analyze registers
+                scanner = ModbusScanner(device['host'], device.get('port', 502))
+                if scanner.connect():
+                    try:
+                        device_type = scanner.detect_device_type(device.get('slave_id', 1))
+                        device_result['device_type'] = device_type
+                        device_result['connection'] = 'success'
+                        results['scanned_devices'].append(device_result)
+                    finally:
+                        scanner.disconnect()
+                else:
+                    device_result['connection'] = 'failed'
+                    results['errors'].append(f"Could not connect to {device['host']}")
+
+            except Exception as e:
+                device_result['error'] = str(e)
+                results['errors'].append(f"Error scanning {device['host']}: {e}")
+
+        # Generate Modbus config if devices exist and option enabled
+        if generate_modbus and devices:
+            try:
+                config_generator.clear()
+                for device in devices:
+                    config_generator.add_device(device)
+                yaml_config = config_generator.generate_yaml()
+                with open(MODBUS_CONFIG_PATH, 'w') as f:
+                    f.write(yaml_config)
+                results['generated_configs'].append({
+                    'type': 'modbus',
+                    'path': MODBUS_CONFIG_PATH,
+                    'success': True
+                })
+            except Exception as e:
+                results['errors'].append(f"Error generating Modbus config: {e}")
+
+        # Generate S7 config for S7-compatible devices
+        if generate_s7 and S7_SCANNER_AVAILABLE:
+            s7_devices = [d for d in results['scanned_devices']
+                        if d.get('device_type') in ['LOGO_8', 'LOGO_0BA7', 'S7']]
+            if s7_devices:
+                results['generated_configs'].append({
+                    'type': 's7comm',
+                    'devices': len(s7_devices),
+                    'note': 'S7 devices found - use S7 integration for these'
+                })
+
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+
+    except Exception as e:
+        logger.error(f"Error in auto-generate-all: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 if __name__ == '__main__':

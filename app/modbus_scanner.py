@@ -635,7 +635,7 @@ class NetworkScanner:
             return "192.168.1.0/24"
 
     @staticmethod
-    def scan_network(network=None, ports=[502, 510], timeout=1, auto_detect=True):
+    def scan_network(network=None, ports=[502, 510], timeout=1, auto_detect=True, progress_callback=None):
         """
         Scan network for Modbus devices with automatic device type detection
 
@@ -644,18 +644,26 @@ class NetworkScanner:
             ports: List of ports to scan (default: [502, 510])
             timeout: Connection timeout in seconds
             auto_detect: Automatically detect device type and scan registers
+            progress_callback: Optional callback function(current_ip, scanned_count, found_device)
         """
         if network is None:
             network = NetworkScanner.get_local_network()
 
         logger.info(f"Scanning network {network} for Modbus devices...")
         devices = []
+        scanned_count = 0
 
         try:
             net = ipaddress.IPv4Network(network, strict=False)
+            total_hosts = net.num_addresses - 2  # Exclude network and broadcast
 
             for ip in net.hosts():
                 ip_str = str(ip)
+                scanned_count += 1
+
+                # Call progress callback if provided
+                if progress_callback:
+                    progress_callback(ip_str, scanned_count, None)
 
                 for port in ports:
                     try:
@@ -693,6 +701,10 @@ class NetworkScanner:
 
                                 devices.append(device_info)
                                 logger.info(f"Found {device_info.get('device_type', 'unknown')} device at {ip_str}:{port}")
+
+                                # Notify about found device
+                                if progress_callback:
+                                    progress_callback(ip_str, scanned_count, device_info)
                     except Exception as e:
                         logger.debug(f"Error scanning {ip_str}:{port}: {e}")
 

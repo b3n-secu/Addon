@@ -643,7 +643,7 @@
             <!-- Right: Version -->
             <div class="header-right">
                 <div class="version-badge">
-                    v1.7.9
+                    v1.9.1
                 </div>
             </div>
         </div>
@@ -716,6 +716,9 @@
                     <button class="button button-secondary" onclick="viewConfig()">
                         👁️ Config anzeigen
                     </button>
+                    <button class="button" onclick="toggleAutoScanPanel()" style="background: #6f42c1; color: white;" id="autoScanToggle">
+                        🔄 Auto-Scan
+                    </button>
                 </div>
 
                 <!-- Input Area (Right) -->
@@ -770,15 +773,98 @@
                 </div>
             </div>
 
-            <!-- Scan Progress Indicator -->
-            <div id="scanProgress" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 2px solid #667eea;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div class="spinner"></div>
+            <!-- Auto-Scan Configuration Panel -->
+            <div id="autoScanPanel" class="hidden" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">🔄 Auto-Scan Konfiguration</h3>
+                    <div id="autoScanStatus" style="padding: 5px 12px; border-radius: 20px; font-size: 0.85em; background: rgba(255,255,255,0.2);">
+                        ⏹️ Gestoppt
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px;">
                     <div>
-                        <strong>Scan läuft...</strong>
-                        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9em;" id="scanProgressText">
-                            Nmap scannt das Netzwerk. Dies kann mehrere Minuten dauern.
+                        <label style="font-size: 0.85em; opacity: 0.9;">Scan-Intervall (Sekunden)</label>
+                        <input type="number" id="autoScanInterval" value="300" min="60" max="3600"
+                               style="width: 100%; padding: 8px; border: none; border-radius: 6px; margin-top: 5px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85em; opacity: 0.9;">Scan-Methode</label>
+                        <select id="autoScanMethod" style="width: 100%; padding: 8px; border: none; border-radius: 6px; margin-top: 5px;">
+                            <option value="auto">Automatisch (Nmap bevorzugt)</option>
+                            <option value="nmap">Nur Nmap</option>
+                            <option value="python">Nur Python</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">
+                        <input type="checkbox" id="autoScanAddDevices" checked>
+                        <span style="font-size: 0.9em;">Geräte auto-hinzufügen</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">
+                        <input type="checkbox" id="autoScanRegister" checked>
+                        <span style="font-size: 0.9em;">Register auto-scannen</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px;">
+                        <input type="checkbox" id="autoScanGenConfig">
+                        <span style="font-size: 0.9em;">Config auto-generieren</span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="startAutoScan()" class="button" style="background: #28a745; border: none; flex: 1;">
+                        ▶️ Auto-Scan starten
+                    </button>
+                    <button onclick="stopAutoScan()" class="button" style="background: #dc3545; border: none; flex: 1;">
+                        ⏹️ Stoppen
+                    </button>
+                    <button onclick="triggerManualScan()" class="button" style="background: rgba(255,255,255,0.2); border: none; flex: 1;">
+                        🔍 Jetzt scannen
+                    </button>
+                </div>
+
+                <div id="lastScanInfo" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; font-size: 0.85em; display: none;">
+                    <strong>Letzter Scan:</strong> <span id="lastScanTime">-</span> |
+                    <strong>Gefunden:</strong> <span id="lastScanCount">0</span> Geräte
+                </div>
+            </div>
+
+            <!-- Scan Progress Indicator with Progress Bar -->
+            <div id="scanProgress" class="hidden" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; color: white;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                    <div class="spinner" style="border-top-color: white;"></div>
+                    <div style="flex: 1;">
+                        <strong style="font-size: 1.1em;">Netzwerk-Scan läuft...</strong>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 0.9em;" id="scanProgressText">
+                            Initialisiere Scan...
                         </p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.5em; font-weight: bold;" id="scanProgressPercent">0%</div>
+                        <div style="font-size: 0.8em; opacity: 0.8;" id="scanProgressFound">0 gefunden</div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div style="background: rgba(255,255,255,0.2); border-radius: 10px; height: 20px; overflow: hidden; margin-bottom: 10px;">
+                    <div id="scanProgressBar" style="background: linear-gradient(90deg, #28a745, #20c997); height: 100%; width: 0%; transition: width 0.3s ease; border-radius: 10px;"></div>
+                </div>
+
+                <!-- Current IP and Stats -->
+                <div style="display: flex; justify-content: space-between; font-size: 0.85em; opacity: 0.9;">
+                    <div>
+                        <span style="opacity: 0.7;">Aktuelle IP:</span>
+                        <span id="scanCurrentIP" style="font-family: monospace; font-weight: bold;">-</span>
+                    </div>
+                    <div>
+                        <span style="opacity: 0.7;">Gescannt:</span>
+                        <span id="scanScannedCount">0</span> / <span id="scanTotalCount">254</span>
+                    </div>
+                    <div>
+                        <span style="opacity: 0.7;">Verbleibend:</span>
+                        <span id="scanETA">--:--</span>
                     </div>
                 </div>
             </div>
@@ -942,6 +1028,7 @@
         async function scanNetworkAuto() {
             const resultsDiv = document.getElementById('networkScanResults');
             const deviceListDiv = document.getElementById('networkDeviceList');
+            const progressDiv = document.getElementById('scanProgress');
             let networkRange = document.getElementById('networkRange').value;
             const autoAdd = document.getElementById('autoAddDevices').checked;
 
@@ -951,11 +1038,20 @@
                 showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
             }
 
-            resultsDiv.classList.remove('hidden');
-            document.getElementById('noFoundDevices').style.display = 'none';
-            deviceListDiv.innerHTML = '<div class="loading"><div class="spinner"></div><p>Scanne Netzwerk und erkenne Geräte automatisch...</p></div>';
+            // Show progress indicator
+            progressDiv.classList.remove('hidden');
+            resultsDiv.classList.add('hidden');
 
-            showAlert('Automatischer Netzwerk-Scan gestartet... Dies kann einige Minuten dauern.', 'info');
+            // Reset progress display
+            document.getElementById('scanProgressBar').style.width = '0%';
+            document.getElementById('scanProgressPercent').textContent = '0%';
+            document.getElementById('scanCurrentIP').textContent = '-';
+            document.getElementById('scanProgressFound').textContent = '0 gefunden';
+
+            // Start progress polling
+            startProgressPolling();
+
+            showAlert('Quick-Scan gestartet... Dies kann einige Minuten dauern.', 'info');
 
             try {
                 const requestBody = {
@@ -990,6 +1086,12 @@
 
                 const result = await response.json();
 
+                // Stop polling and hide progress
+                stopProgressPolling();
+                progressDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+                document.getElementById('noFoundDevices').style.display = 'none';
+
                 if (result.success && result.devices && result.devices.length > 0) {
                     let message = `✓ Scan abgeschlossen! ${result.total} Gerät(e) gefunden.`;
                     if (autoAdd && result.added_count > 0) {
@@ -1010,6 +1112,10 @@
                     console.error('Unexpected result:', result);
                 }
             } catch (error) {
+                stopProgressPolling();
+                progressDiv.classList.add('hidden');
+                resultsDiv.classList.remove('hidden');
+                document.getElementById('noFoundDevices').style.display = 'none';
                 deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
                 console.error('Network scan error:', error);
                 showAlert('Fehler beim Netzwerk-Scan: ' + error.message, 'error');
@@ -1395,6 +1501,60 @@
             }
         }
 
+        // Progress polling interval reference
+        let progressPollingInterval = null;
+
+        function startProgressPolling() {
+            // Clear any existing polling
+            if (progressPollingInterval) {
+                clearInterval(progressPollingInterval);
+            }
+
+            // Poll every 500ms
+            progressPollingInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/scan-progress`);
+                    const status = await response.json();
+
+                    if (status.active) {
+                        // Update progress bar
+                        document.getElementById('scanProgressBar').style.width = status.progress_percent + '%';
+                        document.getElementById('scanProgressPercent').textContent = status.progress_percent + '%';
+
+                        // Update current IP
+                        document.getElementById('scanCurrentIP').textContent = status.current_ip || '-';
+
+                        // Update counts
+                        document.getElementById('scanScannedCount').textContent = status.scanned_hosts || 0;
+                        document.getElementById('scanTotalCount').textContent = status.total_hosts || 254;
+                        document.getElementById('scanProgressFound').textContent = status.found_devices + ' gefunden';
+
+                        // Update ETA
+                        if (status.eta_seconds > 0) {
+                            const mins = Math.floor(status.eta_seconds / 60);
+                            const secs = status.eta_seconds % 60;
+                            document.getElementById('scanETA').textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+                        } else {
+                            document.getElementById('scanETA').textContent = '--:--';
+                        }
+
+                        // Update status text
+                        document.getElementById('scanProgressText').textContent =
+                            `${status.scan_type === 'nmap' ? 'Nmap' : 'Python'}-Scan auf ${status.network || 'Netzwerk'}...`;
+                    }
+                } catch (e) {
+                    console.error('Progress polling error:', e);
+                }
+            }, 500);
+        }
+
+        function stopProgressPolling() {
+            if (progressPollingInterval) {
+                clearInterval(progressPollingInterval);
+                progressPollingInterval = null;
+            }
+        }
+
         async function scanNetworkNmap() {
             // Check if nmap is available
             if (!nmapAvailable) {
@@ -1416,9 +1576,18 @@
                 showAlert(`Verwende automatisch erkannte Netzwerk-Range: ${networkRange}`, 'info');
             }
 
-            // Show progress indicator
+            // Show progress indicator and start polling
             progressDiv.classList.remove('hidden');
             resultsDiv.classList.add('hidden');
+
+            // Reset progress display
+            document.getElementById('scanProgressBar').style.width = '0%';
+            document.getElementById('scanProgressPercent').textContent = '0%';
+            document.getElementById('scanCurrentIP').textContent = '-';
+            document.getElementById('scanProgressFound').textContent = '0 gefunden';
+
+            // Start progress polling
+            startProgressPolling();
 
             showAlert('Nmap-Scan gestartet... Dies kann mehrere Minuten dauern je nach Netzwerkgröße.', 'info');
 
@@ -1442,7 +1611,8 @@
 
                 const result = await response.json();
 
-                // Hide progress indicator
+                // Stop polling and hide progress indicator
+                stopProgressPolling();
                 progressDiv.classList.add('hidden');
 
                 if (result.success && result.devices.length > 0) {
@@ -1468,6 +1638,7 @@
                     showAlert('✗ Fehler beim Nmap-Scan: ' + result.error, 'error');
                 }
             } catch (error) {
+                stopProgressPolling();
                 progressDiv.classList.add('hidden');
                 resultsDiv.classList.remove('hidden');
                 deviceListDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Scannen</div>';
@@ -1673,6 +1844,140 @@
 
             contentDiv.innerHTML = html;
         }
+
+        // ============================================================================
+        // Auto-Scanner Functions
+        // ============================================================================
+
+        function toggleAutoScanPanel() {
+            const panel = document.getElementById('autoScanPanel');
+            panel.classList.toggle('hidden');
+            loadAutoScanStatus();
+        }
+
+        async function loadAutoScanStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auto-scanner/status`);
+                const data = await response.json();
+
+                if (data.success) {
+                    updateAutoScanUI(data);
+                }
+            } catch (error) {
+                console.error('Error loading auto-scan status:', error);
+            }
+        }
+
+        function updateAutoScanUI(status) {
+            const statusDiv = document.getElementById('autoScanStatus');
+            const lastScanInfo = document.getElementById('lastScanInfo');
+
+            if (status.enabled) {
+                statusDiv.innerHTML = '▶️ Aktiv';
+                statusDiv.style.background = 'rgba(40, 167, 69, 0.5)';
+            } else {
+                statusDiv.innerHTML = '⏹️ Gestoppt';
+                statusDiv.style.background = 'rgba(255,255,255,0.2)';
+            }
+
+            // Update interval
+            document.getElementById('autoScanInterval').value = status.interval || 300;
+
+            // Update checkboxes
+            document.getElementById('autoScanAddDevices').checked = status.auto_add_devices !== false;
+            document.getElementById('autoScanRegister').checked = status.auto_register_scan !== false;
+            document.getElementById('autoScanGenConfig').checked = status.auto_generate_config === true;
+
+            // Show last scan info
+            if (status.last_scan_time) {
+                lastScanInfo.style.display = 'block';
+                document.getElementById('lastScanTime').textContent = new Date(status.last_scan_time).toLocaleString('de-DE');
+                document.getElementById('lastScanCount').textContent = status.last_scan_results?.devices_found || 0;
+            }
+        }
+
+        async function startAutoScan() {
+            try {
+                // First configure the scanner
+                const config = {
+                    interval: parseInt(document.getElementById('autoScanInterval').value) || 300,
+                    use_nmap: document.getElementById('autoScanMethod').value !== 'python',
+                    auto_add_devices: document.getElementById('autoScanAddDevices').checked,
+                    auto_register_scan: document.getElementById('autoScanRegister').checked,
+                    auto_generate_config: document.getElementById('autoScanGenConfig').checked,
+                    network: document.getElementById('networkRange').value || null,
+                    port_range: document.getElementById('portRange').value || '502,510'
+                };
+
+                await fetch(`${API_BASE}/api/auto-scanner/configure`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                // Then start the scanner
+                const response = await fetch(`${API_BASE}/api/auto-scanner/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Auto-Scan gestartet!', 'success');
+                    loadAutoScanStatus();
+                } else {
+                    showAlert(result.message || 'Fehler beim Starten', 'warning');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+
+        async function stopAutoScan() {
+            try {
+                const response = await fetch(`${API_BASE}/api/auto-scanner/stop`, {
+                    method: 'POST'
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('Auto-Scan gestoppt', 'info');
+                    loadAutoScanStatus();
+                } else {
+                    showAlert(result.message || 'Fehler beim Stoppen', 'warning');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+
+        async function triggerManualScan() {
+            try {
+                showAlert('Manueller Scan gestartet...', 'info');
+
+                const response = await fetch(`${API_BASE}/api/auto-scanner/trigger`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    const count = result.results?.devices_found || 0;
+                    showAlert(`Scan abgeschlossen: ${count} Geräte gefunden`, 'success');
+                    loadAutoScanStatus();
+                    loadDevices(); // Refresh device list
+                } else {
+                    showAlert(result.error || 'Scan fehlgeschlagen', 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
+        }
+
+        // Load auto-scan status on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAutoScanStatus();
+        });
     </script>
 </body>
 </html>
