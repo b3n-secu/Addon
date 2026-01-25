@@ -190,7 +190,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.7.0'
+        'version': '1.8.2'
     })
 
 
@@ -839,6 +839,198 @@ def api_test_connection():
     except Exception as e:
         logger.error(f"Error testing connection: {e}")
         return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/discover-registers', methods=['POST'])
+def api_discover_registers():
+    """
+    Discover and analyze registers on a Modbus device
+    Returns device type and all readable registers in frontend-expected format
+    """
+    try:
+        data = request.json or {}
+        host = data.get('host')
+        port = data.get('port', 502)
+        slave_id = data.get('slave_id', 1)
+
+        if not host:
+            return jsonify({'success': False, 'error': 'Host is required'}), 400
+
+        logger.info(f"Starting register discovery on {host}:{port} (slave {slave_id})")
+
+        scanner = ModbusScanner(host, port)
+
+        if not scanner.connect():
+            return jsonify({
+                'success': False,
+                'error': f'Verbindung zu {host}:{port} fehlgeschlagen'
+            }), 400
+
+        try:
+            # Detect device type
+            device_type = scanner.detect_device_type(slave_id)
+            detected_device = {
+                'LOGO_8': 'Siemens LOGO! 8',
+                'LOGO_0BA7': 'Siemens LOGO! 0BA7',
+                'GENERIC': 'Generic Modbus TCP'
+            }.get(device_type, 'Generic Modbus TCP')
+
+            # Test supported functions
+            supported_functions = []
+            register_ranges = {
+                'discrete_inputs': [],
+                'coils': [],
+                'input_registers': [],
+                'holding_registers': []
+            }
+            recommendations = []
+
+            # Define test ranges based on device type
+            if device_type == 'LOGO_8':
+                test_ranges = {
+                    'discrete_inputs': [(8192, 64, 'DI 1-64 (LOGO! 8)')],
+                    'coils': [(8256, 64, 'DO 1-64 (LOGO! 8)')],
+                    'input_registers': [(0, 50, 'AI 1-8 + AM (LOGO! 8)'), (528, 32, 'NAI/NAO (LOGO! 8)')],
+                    'holding_registers': [(0, 50, 'AQ + VM (LOGO! 8)'), (528, 32, 'NAQ (LOGO! 8)')]
+                }
+                recommendations.append('LOGO! 8 erkannt - Verwenden Sie Port 510 für Modbus TCP')
+                recommendations.append('Digital I/O: Register ab 8192 (DI) und 8256 (DO)')
+            elif device_type == 'LOGO_0BA7':
+                test_ranges = {
+                    'discrete_inputs': [(0, 24, 'I1-I24 (LOGO! 0BA7)')],
+                    'coils': [(0, 16, 'Q1-Q16 (LOGO! 0BA7)'), (16, 8, 'M1-M8 (LOGO! 0BA7)')],
+                    'input_registers': [(0, 8, 'AI1-AI8 (LOGO! 0BA7)')],
+                    'holding_registers': [(0, 8, 'AQ1-AQ2 + AM (LOGO! 0BA7)')]
+                }
+                recommendations.append('LOGO! 0BA7 erkannt - Nur über S7comm unterstützt')
+            else:
+                test_ranges = {
+                    'discrete_inputs': [(0, 100, 'Standard DI 0-99'), (1000, 100, 'Extended DI 1000-1099')],
+                    'coils': [(0, 100, 'Standard Coils 0-99'), (1000, 100, 'Extended Coils 1000-1099')],
+                    'input_registers': [(0, 100, 'Standard IR 0-99'), (1000, 100, 'Extended IR 1000-1099')],
+                    'holding_registers': [(0, 100, 'Standard HR 0-99'), (1000, 100, 'Extended HR 1000-1099')]
+                }
+                recommendations.append('Standard Modbus-Gerät - Prüfen Sie die Dokumentation für Register-Adressen')
+
+            # Test Discrete Inputs (Function Code 2)
+            for start, count, note in test_ranges['discrete_inputs']:
+                try:
+                    result = scanner.scan_discrete_inputs(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Discrete Inputs (FC2)' not in supported_functions:
+                        supported_functions.append('Read Discrete Inputs (FC2)')
+                    register_ranges['discrete_inputs'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['discrete_inputs'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Coils (Function Code 1)
+            for start, count, note in test_ranges['coils']:
+                try:
+                    result = scanner.scan_coils(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Coils (FC1)' not in supported_functions:
+                        supported_functions.append('Read Coils (FC1)')
+                    register_ranges['coils'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['coils'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Input Registers (Function Code 4)
+            for start, count, note in test_ranges['input_registers']:
+                try:
+                    result = scanner.scan_input_registers(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Input Registers (FC4)' not in supported_functions:
+                        supported_functions.append('Read Input Registers (FC4)')
+                    register_ranges['input_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['input_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            # Test Holding Registers (Function Code 3)
+            for start, count, note in test_ranges['holding_registers']:
+                try:
+                    result = scanner.scan_holding_registers(start, min(count, 100), slave_id)
+                    supported = result is not None and len(result) > 0
+                    if supported and 'Read Holding Registers (FC3)' not in supported_functions:
+                        supported_functions.append('Read Holding Registers (FC3)')
+                    register_ranges['holding_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': supported,
+                        'note': note if supported else 'Nicht lesbar',
+                        'error': None
+                    })
+                except Exception as e:
+                    register_ranges['holding_registers'].append({
+                        'range': f'{start}-{start+count-1}',
+                        'start': start,
+                        'count': count,
+                        'supported': False,
+                        'note': note,
+                        'error': str(e)
+                    })
+
+            logger.info(f"Register discovery complete: {detected_device}, functions: {supported_functions}")
+
+            return jsonify({
+                'success': True,
+                'host': host,
+                'port': port,
+                'slave_id': slave_id,
+                'detected_device': detected_device,
+                'supported_functions': supported_functions,
+                'register_ranges': register_ranges,
+                'recommendations': recommendations
+            })
+
+        finally:
+            scanner.disconnect()
+
+    except Exception as e:
+        logger.error(f"Error during register discovery: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @app.route('/api/generate', methods=['POST'])
