@@ -6,7 +6,7 @@ Professionelles Home Assistant Add-on für Modbus-Gerätekonfiguration mit autom
 
 ## Über dieses Add-on
 
-Der Universal Modbus Configurator (HAMCA) vereinfacht die Konfiguration von Modbus-Geräten in Home Assistant erheblich. Mit automatischer Geräteerkennung via Nmap und intuitiver Web-Oberfläche können Sie Modbus-Geräte binnen Minuten einrichten.
+Der Universal Modbus Configurator (BusBot) vereinfacht die Konfiguration von Modbus-Geräten in Home Assistant erheblich. Mit automatischer Geräteerkennung via Nmap und intuitiver Web-Oberfläche können Sie Modbus-Geräte binnen Minuten einrichten.
 
 ## Features
 
