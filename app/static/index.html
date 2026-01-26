@@ -857,23 +857,42 @@
             <div id="discoveryResults" class="hidden" style="display: none;"><div id="discoveryContent"></div></div>
             <div id="noAnalysisResults" style="display: none;"></div>
 
-            <!-- Two Column Layout - Compact Results Area -->
+            <!-- Three Column Layout - Network Discovery -->
             <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <!-- Column 1: Network Analysis / Found Devices -->
-                <div style="flex: 1; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(102, 126, 234, 0.1); border: 2px solid #e91e63; max-height: 180px; overflow-y: auto;">
-                    <div style="font-weight: 600; color: #e91e63; margin-bottom: 8px; font-size: 0.85em;">📡 Netzwerkanalyse</div>
-                    <div id="networkScanResults" class="hidden">
-                        <div id="networkDeviceList"></div>
+                <!-- Column 1: All Found Network Devices -->
+                <div style="flex: 1; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border: 2px solid #607d8b; max-height: 280px; overflow-y: auto;">
+                    <div style="font-weight: 600; color: #607d8b; margin-bottom: 8px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center;">
+                        <span>🌐 Alle Netzwerkgeräte</span>
+                        <span id="allDevicesCount" style="background: #607d8b; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">0</span>
                     </div>
-                    <div id="noFoundDevices" style="padding: 10px; text-align: center; color: #888; font-size: 0.8em;">
-                        <p style="margin: 0;">🔎 Keine Geräte</p>
-                        <small>Auto-Scan starten</small>
+                    <div id="allNetworkDevicesList">
+                        <div id="noAllDevices" style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
+                            <p style="margin: 0;">🔍 Keine Geräte gefunden</p>
+                            <small>Scan starten um Geräte zu finden</small>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Column 2: Configured Devices -->
-                <div style="flex: 1; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(102, 126, 234, 0.1); border: 2px solid #ff9800; max-height: 180px; overflow-y: auto;">
-                    <div style="font-weight: 600; color: #ff9800; margin-bottom: 8px; font-size: 0.85em;">⚙️ Konfigurierte Geräte</div>
+                <!-- Column 2: Bus-Compatible Devices (Orange) -->
+                <div style="flex: 1; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(255,152,0,0.2); border: 2px solid #ff9800; max-height: 280px; overflow-y: auto;">
+                    <div style="font-weight: 600; color: #ff9800; margin-bottom: 8px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center;">
+                        <span>🔌 Bus-Geräte</span>
+                        <span id="busDevicesCount" style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">0</span>
+                    </div>
+                    <div id="busDevicesList">
+                        <div id="noBusDevices" style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
+                            <p style="margin: 0;">📡 Keine Bus-Geräte</p>
+                            <small>Modbus/S7 Geräte werden hier angezeigt</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Column 3: Configured Devices with Ports -->
+                <div style="flex: 1; background: white; border-radius: 8px; padding: 10px; box-shadow: 0 1px 4px rgba(76,175,80,0.2); border: 2px solid #4caf50; max-height: 280px; overflow-y: auto;">
+                    <div style="font-weight: 600; color: #4caf50; margin-bottom: 8px; font-size: 0.85em; display: flex; justify-content: space-between; align-items: center;">
+                        <span>⚙️ Konfiguriert</span>
+                        <span id="configuredDevicesCount" style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.75em;">0</span>
+                    </div>
                     <ul id="deviceList" class="device-list" style="margin: 0; padding: 0; list-style: none;">
                         <li class="loading" style="text-align: center; padding: 10px; color: #888; font-size: 0.8em;">
                             <div class="spinner"></div>
@@ -882,6 +901,10 @@
                     </ul>
                 </div>
             </div>
+
+            <!-- Hidden compatibility divs -->
+            <div id="networkScanResults" class="hidden"><div id="networkDeviceList"></div></div>
+            <div id="noFoundDevices" style="display: none;"></div>
 
         </div>
     </div>
@@ -1119,15 +1142,19 @@
 
                 const devices = await devicesResponse.json();
 
+                // Update counter
+                const counterEl = document.getElementById('configuredDevicesCount');
+                if (counterEl) counterEl.textContent = devices.length;
+
                 if (devices.length === 0) {
-                    deviceList.innerHTML = '<li style="text-align: center; padding: 20px; color: #666;">Keine Geräte konfiguriert</li>';
+                    deviceList.innerHTML = '<li style="text-align: center; padding: 15px; color: #666; font-size: 0.8em;">Keine Geräte konfiguriert</li>';
                     return;
                 }
 
                 deviceList.innerHTML = '';
                 devices.forEach((device, index) => {
                     const li = document.createElement('li');
-                    li.className = 'device-item';
+                    li.style.cssText = 'padding: 8px; margin-bottom: 6px; border-radius: 6px; background: rgba(76,175,80,0.1); border-left: 3px solid #4caf50; font-size: 0.8em;';
 
                     // Determine status indicator
                     let statusIndicator = '';
@@ -1143,103 +1170,22 @@
                         statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
                     }
 
-                    // Build I/O configuration display
-                    const ioConfig = device.io_config || {};
-                    const baseModules = ioConfig.base_modules || 1;
-                    const expansionModules = ioConfig.expansion_modules || 0;
-                    const digitalInputs = ioConfig.digital_inputs || 24;
-                    const digitalOutputs = ioConfig.digital_outputs || 20;
-                    const analogInputs = ioConfig.analog_inputs || 8;
-                    const analogOutputs = ioConfig.analog_outputs || 0;
-                    const networkInputs = ioConfig.network_inputs || 0;
-                    const networkOutputs = ioConfig.network_outputs || 0;
-
+                    // Compact device display for new layout
                     li.innerHTML = `
-                        <div class="device-info">
-                            <div class="device-name">
-                                ${statusIndicator}
-                                <span id="device-name-display-${index}">${device.name}</span>
-                                <button class="button" onclick="editDeviceName(${index})" id="edit-name-btn-${index}" style="padding: 4px 8px; font-size: 0.8em; margin-left: 10px;" title="Name bearbeiten">✏️</button>
-                            </div>
-                            <div class="device-name-edit hidden" id="device-name-edit-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
-                                <label style="font-size: 0.9em; margin-bottom: 5px; display: block;">Gerätename:</label>
-                                <input type="text" id="device-name-input-${index}" value="${device.name}" style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                                <button class="button button-success" onclick="saveDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">💾 Speichern</button>
-                                <button class="button button-secondary" onclick="cancelEditDeviceName(${index})" style="padding: 6px 12px; font-size: 0.9em;">Abbrechen</button>
-                            </div>
-                            <div class="device-details">
-                                ${device.manufacturer} ${device.model} | ${device.host}:${device.port}
-                                ${device.slave_id ? ` | Slave: ${device.slave_id}` : ''}
-                            </div>
-                            <div class="device-io-config" id="device-io-display-${index}" style="margin-top: 10px; padding: 10px; background: #fff; border-radius: 4px;">
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; font-size: 0.9em;">
-                                    <div><strong>Basis:</strong> ${baseModules}</div>
-                                    <div><strong>Erweiterung:</strong> ${expansionModules}</div>
-                                    <div><strong>DI:</strong> ${digitalInputs}</div>
-                                    <div><strong>DO:</strong> ${digitalOutputs}</div>
-                                    <div><strong>AI:</strong> ${analogInputs}</div>
-                                    <div><strong>AO:</strong> ${analogOutputs}</div>
-                                    ${networkInputs > 0 ? `<div><strong>NI:</strong> ${networkInputs}</div>` : ''}
-                                    ${networkOutputs > 0 ? `<div><strong>NQ:</strong> ${networkOutputs}</div>` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #2e7d32; display: flex; align-items: center; gap: 6px;">
+                                    ${statusIndicator}
+                                    <span>${device.name}</span>
+                                </div>
+                                <div style="color: #666; font-size: 0.85em; margin-top: 2px;">
+                                    ${device.host}:${device.port} | ${device.model}
                                 </div>
                             </div>
-                            <div class="device-io-edit hidden" id="device-io-edit-${index}" style="margin-top: 10px; padding: 15px; background: #fff; border-radius: 4px;">
-                                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 10px;">
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Basisgeräte:</label>
-                                        <input type="number" id="base-modules-${index}" value="${baseModules}" min="1" max="10" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Erweiterungsmodule:</label>
-                                        <input type="number" id="expansion-modules-${index}" value="${expansionModules}" min="0" max="10" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Eingänge (I):</label>
-                                        <input type="number" id="digital-inputs-${index}" value="${digitalInputs}" min="0" max="256" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Digitale Ausgänge (Q):</label>
-                                        <input type="number" id="digital-outputs-${index}" value="${digitalOutputs}" min="0" max="256" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Eingänge (AI):</label>
-                                        <input type="number" id="analog-inputs-${index}" value="${analogInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Analoge Ausgänge (AQ):</label>
-                                        <input type="number" id="analog-outputs-${index}" value="${analogOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
-                                    </div>
-                                    ${(device.model === 'LOGO! 8' || device.model === 'LOGO! 8 (0BA8)') ? `
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Inputs (NI) - LOGO! 8 (0BA8):</label>
-                                        <input type="number" id="network-inputs-${index}" value="${networkInputs}" min="0" max="64" style="width: 100%; padding: 8px;">
-                                        <small style="color: #666; display: block; margin-top: 3px;">NI1-NI64 für LOGO-LOGO Kommunikation</small>
-                                    </div>
-                                    <div>
-                                        <label style="font-size: 0.9em; margin-bottom: 5px;">Network Outputs (NQ) - LOGO! 8 (0BA8):</label>
-                                        <input type="number" id="network-outputs-${index}" value="${networkOutputs}" min="0" max="64" style="width: 100%; padding: 8px;">
-                                        <small style="color: #666; display: block; margin-top: 3px;">NQ1-NQ64 für LOGO-LOGO Kommunikation</small>
-                                    </div>
-                                    ` : ''}
-                                </div>
-                                <div style="margin-top: 15px; padding: 12px; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #007bff;">
-                                    <label style="display: flex; align-items: center; cursor: pointer;">
-                                        <input type="checkbox" id="enable-sync-${index}" ${device.io_config?.enable_sync ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
-                                        <span style="font-size: 0.95em; font-weight: 500;">🔄 Sync-Flag aktivieren</span>
-                                    </label>
-                                    <small style="color: #666; display: block; margin-top: 5px; margin-left: 26px;">
-                                        Verhindert Desynchronisation zwischen Home Assistant und PLC (empfohlen für kritische Ausgänge)
-                                    </small>
-                                </div>
-                                <div style="margin-top: 10px;">
-                                    <button class="button button-success" onclick="saveDeviceIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">💾 Speichern</button>
-                                    <button class="button button-secondary" onclick="cancelEditIOConfig(${index})" style="padding: 8px 16px; font-size: 0.9em;">Abbrechen</button>
-                                </div>
+                            <div style="display: flex; gap: 4px;">
+                                <button onclick="showDeviceDetails(${index})" style="background: #4caf50; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75em;" title="Details">📋</button>
+                                <button onclick="deleteDevice(${index})" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.75em;" title="Löschen">🗑️</button>
                             </div>
-                        </div>
-                        <div class="device-actions" style="display: flex; flex-direction: column; gap: 4px;">
-                            <button class="button button-primary" onclick="editDeviceIOConfig(${index})" id="edit-btn-${index}" style="padding: 6px 10px; font-size: 0.85em;" title="Konfigurieren">⚙️</button>
-                            <button class="button button-danger" onclick="deleteDevice(${index})" style="padding: 6px 10px; font-size: 0.85em;" title="Löschen">🗑️</button>
                         </div>
                     `;
                     deviceList.appendChild(li);
@@ -1247,6 +1193,38 @@
             } catch (error) {
                 deviceList.innerHTML = '<li style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Laden der Geräte</li>';
                 showAlert('Fehler beim Laden der Geräte: ' + error.message, 'error');
+            }
+        }
+
+        async function showDeviceDetails(index) {
+            try {
+                const response = await fetch(`${API_BASE}/api/devices`);
+                const devices = await response.json();
+                const device = devices[index];
+
+                if (!device) {
+                    showAlert('Gerät nicht gefunden', 'error');
+                    return;
+                }
+
+                const ioConfig = device.io_config || {};
+                const details = `
+Gerät: ${device.name}
+Hersteller: ${device.manufacturer}
+Modell: ${device.model}
+Host: ${device.host}:${device.port}
+Slave ID: ${device.slave_id || 1}
+
+I/O Konfiguration:
+- Digital Inputs: ${ioConfig.digital_inputs || 24}
+- Digital Outputs: ${ioConfig.digital_outputs || 20}
+- Analog Inputs: ${ioConfig.analog_inputs || 8}
+- Analog Outputs: ${ioConfig.analog_outputs || 0}
+                `.trim();
+
+                alert(details);
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
             }
         }
 
@@ -1616,61 +1594,117 @@
         }
 
         function displayNetworkDevicesAuto(devices, isNmapScan = false) {
-            const deviceListDiv = document.getElementById('networkDeviceList');
-            deviceListDiv.innerHTML = '';
+            // Store globally for reference
+            window.lastScannedDevices = devices;
+
+            const allDevicesList = document.getElementById('allNetworkDevicesList');
+            const busDevicesList = document.getElementById('busDevicesList');
+
+            // Clear lists
+            allDevicesList.innerHTML = '';
+            busDevicesList.innerHTML = '';
+
+            // Separate devices into categories
+            const busDevices = [];
+            const allDevicesData = [];
 
             devices.forEach(device => {
-                const deviceCard = document.createElement('div');
-                deviceCard.className = 'device-item';
+                const isBusDevice = device.device_type && device.device_type !== 'GENERIC' && device.device_type !== 'unknown';
+                const hasBusPort = [102, 502, 510].includes(device.port) || (device.port >= 20000 && device.port <= 20100);
 
-                // Icon based on device type
-                let icon = '🌐';
-                if (device.device_type === 'LOGO_8') {
-                    icon = '🟦';  // Blue square for LOGO! 8
-                } else if (device.device_type === 'LOGO_0BA7') {
-                    icon = '🟩';  // Green square for LOGO! 0BA7
-                } else if (device.device_type && device.device_type.includes('SIEMENS')) {
-                    icon = '🔵';  // Blue circle for Siemens
-                } else if (device.device_type && device.device_type.includes('SCHNEIDER')) {
-                    icon = '🟢';  // Green circle for Schneider
-                } else if (device.device_type && device.device_type.includes('WAGO')) {
-                    icon = '🟡';  // Yellow circle for Wago
+                allDevicesData.push({...device, isBusDevice: isBusDevice || hasBusPort});
+
+                if (isBusDevice || hasBusPort) {
+                    busDevices.push(device);
                 }
-
-                // Device type label
-                let typeLabel = 'Generic Modbus TCP';
-                if (device.device_type === 'LOGO_8') {
-                    typeLabel = 'Siemens LOGO! 8';
-                } else if (device.device_type === 'LOGO_0BA7') {
-                    typeLabel = 'Siemens LOGO! 0BA7';
-                } else if (device.manufacturer && device.model) {
-                    typeLabel = `${device.manufacturer} ${device.model}`;
-                }
-
-                // Additional info for nmap scans
-                let additionalInfo = '';
-                if (isNmapScan) {
-                    additionalInfo = `<br><small style="color: #888;">`;
-                    if (device.service) additionalInfo += `Service: ${device.service} | `;
-                    if (device.product) additionalInfo += `Product: ${device.product} | `;
-                    additionalInfo += `Scan: Nmap</small>`;
-                }
-
-                deviceCard.innerHTML = `
-                    <div class="device-info">
-                        <div class="device-name">${icon} ${device.name || device.ip}</div>
-                        <div class="device-details">
-                            <strong>${typeLabel}</strong><br>
-                            IP: ${device.ip}:${device.port} | Status: ${device.status === 'online' ? '✓ Online' : '✗ Offline'}
-                            ${additionalInfo}
-                        </div>
-                    </div>
-                    <div class="device-actions">
-                        <span style="color: #28a745; font-weight: 600;">✓ Automatisch erkannt</span>
-                    </div>
-                `;
-                deviceListDiv.appendChild(deviceCard);
             });
+
+            // Update counters
+            document.getElementById('allDevicesCount').textContent = allDevicesData.length;
+            document.getElementById('busDevicesCount').textContent = busDevices.length;
+
+            // Display all network devices
+            if (allDevicesData.length === 0) {
+                allDevicesList.innerHTML = `
+                    <div style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
+                        <p style="margin: 0;">🔍 Keine Geräte gefunden</p>
+                    </div>`;
+            } else {
+                document.getElementById('noAllDevices')?.remove();
+                allDevicesData.forEach(device => {
+                    const deviceCard = document.createElement('div');
+                    const bgColor = device.isBusDevice ? 'rgba(255,152,0,0.15)' : 'rgba(96,125,139,0.08)';
+                    const borderColor = device.isBusDevice ? '#ff9800' : '#ccc';
+
+                    deviceCard.style.cssText = `padding: 8px; margin-bottom: 6px; border-radius: 6px; background: ${bgColor}; border-left: 3px solid ${borderColor}; font-size: 0.8em;`;
+
+                    deviceCard.innerHTML = `
+                        <div style="font-weight: 600; color: #333;">${device.ip}</div>
+                        <div style="color: #666; font-size: 0.9em;">
+                            Port: ${device.port} ${device.isBusDevice ? '🔌' : ''}
+                        </div>
+                    `;
+                    allDevicesList.appendChild(deviceCard);
+                });
+            }
+
+            // Display bus devices with port info
+            if (busDevices.length === 0) {
+                busDevicesList.innerHTML = `
+                    <div id="noBusDevices" style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
+                        <p style="margin: 0;">📡 Keine Bus-Geräte</p>
+                    </div>`;
+            } else {
+                document.getElementById('noBusDevices')?.remove();
+                busDevices.forEach(device => {
+                    const deviceCard = document.createElement('div');
+                    deviceCard.style.cssText = `padding: 10px; margin-bottom: 8px; border-radius: 6px; background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,193,7,0.1)); border: 1px solid #ff9800; font-size: 0.8em;`;
+
+                    // Icon based on device type
+                    let icon = '🔌';
+                    let typeName = 'Modbus TCP';
+                    if (device.device_type === 'LOGO_8') {
+                        icon = '🟦';
+                        typeName = 'LOGO! 8';
+                    } else if (device.device_type === 'LOGO_0BA7') {
+                        icon = '🟩';
+                        typeName = 'LOGO! 0BA7';
+                    } else if (device.device_type === 'S7') {
+                        icon = '🔵';
+                        typeName = 'S7 PLC';
+                    }
+
+                    // Determine supported protocols based on port
+                    let protocols = [];
+                    if (device.port === 102) protocols.push('S7comm');
+                    if (device.port === 502 || device.port === 510) protocols.push('Modbus TCP');
+                    if (device.port >= 20000) protocols.push('Modbus (Custom)');
+
+                    deviceCard.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600; color: #e65100;">${icon} ${device.name || device.ip}</div>
+                                <div style="color: #666; margin-top: 2px;">${device.manufacturer || ''} ${typeName}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.85em;">
+                                    :${device.port}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 6px; display: flex; gap: 4px; flex-wrap: wrap;">
+                            ${protocols.map(p => `<span style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 3px; font-size: 0.75em;">${p}</span>`).join('')}
+                        </div>
+                    `;
+                    busDevicesList.appendChild(deviceCard);
+                });
+            }
+
+            // Also update legacy divs for compatibility
+            const legacyDeviceList = document.getElementById('networkDeviceList');
+            if (legacyDeviceList) {
+                legacyDeviceList.innerHTML = '';
+            }
         }
 
         async function discoverRegisters() {
