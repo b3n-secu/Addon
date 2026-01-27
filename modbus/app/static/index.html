@@ -643,7 +643,7 @@
             <!-- Right: Version -->
             <div class="header-right">
                 <div class="version-badge">
-                    v1.9.5
+                    v1.9.6
                 </div>
             </div>
         </div>
@@ -660,55 +660,54 @@
                     <div style="text-align: center;">
                         <div class="robot-mascot robot-mascot-large">
                             <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                                <!-- Robot Body -->
                                 <rect x="25" y="35" width="50" height="45" rx="5" fill="#667eea" stroke="#fff" stroke-width="2"/>
-
-                                <!-- Robot Head -->
                                 <rect x="30" y="15" width="40" height="25" rx="3" fill="#764ba2" stroke="#fff" stroke-width="2"/>
-
-                                <!-- Antenna -->
                                 <line x1="50" y1="15" x2="50" y2="8" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
                                 <circle cx="50" cy="6" r="3" fill="#ffd700"/>
-
-                                <!-- Eyes -->
                                 <circle class="robot-eye" cx="40" cy="25" r="4" fill="#fff"/>
                                 <circle class="robot-eye" cx="60" cy="25" r="4" fill="#fff"/>
                                 <circle cx="40" cy="25" r="2" fill="#333"/>
                                 <circle cx="60" cy="25" r="2" fill="#333"/>
-
-                                <!-- Network Cable in mouth -->
                                 <g class="robot-cable">
                                     <path d="M 50 38 Q 60 40 70 38" stroke="#ffd700" stroke-width="3" fill="none" stroke-linecap="round"/>
-                                    <path d="M 70 38 L 75 37 L 75 39 Z" fill="#ffd700"/>
-                                    <!-- Cable plug -->
                                     <rect x="73" y="36" width="4" height="4" fill="#666"/>
                                 </g>
-
-                                <!-- Arms -->
                                 <rect x="15" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
                                 <rect x="73" y="45" width="12" height="6" rx="2" fill="#667eea" stroke="#fff" stroke-width="1.5"/>
-
-                                <!-- Legs -->
                                 <rect x="32" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
                                 <rect x="58" y="78" width="10" height="15" rx="2" fill="#764ba2" stroke="#fff" stroke-width="1.5"/>
-
-                                <!-- Panel lights -->
                                 <circle cx="40" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
                                 <circle cx="50" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
                                 <circle cx="60" cy="55" r="2.5" fill="#00ff00" opacity="0.8"/>
                             </svg>
                         </div>
-
                         <div style="font-size: 0.75em; color: #667eea; font-weight: 600; margin-top: -5px;">BusBot</div>
-
                     </div>
 
+                    <!-- Scan Buttons -->
+                    <button class="button button-primary" onclick="scanNetworkNmap()" id="btnScanNmap">
+                        🔍 Netzwerk scannen
+                    </button>
+                    <button class="button" onclick="scanNetworkAuto()" style="background: #17a2b8; color: white;">
+                        ⚡ Quick-Scan
+                    </button>
+                    <button class="button" onclick="discoverRegisters()" style="background: #fd7e14; color: white;">
+                        📊 Register-Analyse
+                    </button>
+
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 8px 0;">
+
+                    <!-- Config Buttons -->
                     <button class="button button-success" onclick="generateConfig()">
                         📄 Config generieren
                     </button>
                     <button class="button button-secondary" onclick="viewConfig()">
                         👁️ Config anzeigen
                     </button>
+
+                    <hr style="border: none; border-top: 1px solid #ddd; margin: 8px 0;">
+
+                    <!-- Auto-Scan -->
                     <button class="button" onclick="toggleAutoScanPanel()" style="background: #6f42c1; color: white;" id="autoScanToggle">
                         🔄 Auto-Scan
                     </button>
@@ -1133,7 +1132,12 @@
 
         async function loadDevices() {
             const deviceList = document.getElementById('deviceList');
-            deviceList.innerHTML = '<li class="loading"><div class="spinner"></div><p>Lade Geräte...</p></li>';
+            if (!deviceList) {
+                console.error('deviceList element not found');
+                return;
+            }
+
+            deviceList.innerHTML = '<li class="loading" style="text-align: center; padding: 10px; color: #888; font-size: 0.8em;"><div class="spinner"></div><p style="margin: 5px 0 0 0;">Lade...</p></li>';
 
             try {
                 // Load devices and config status in parallel
@@ -1142,7 +1146,26 @@
                     checkDevicesInConfig()
                 ]);
 
-                const devices = await devicesResponse.json();
+                // Check response status
+                if (!devicesResponse.ok) {
+                    throw new Error(`HTTP ${devicesResponse.status}`);
+                }
+
+                let devices;
+                try {
+                    devices = await devicesResponse.json();
+                } catch (parseError) {
+                    console.error('JSON parse error:', parseError);
+                    throw new Error('Ungültige Server-Antwort');
+                }
+
+                // Validate devices is an array
+                if (!Array.isArray(devices)) {
+                    console.error('Devices is not an array:', devices);
+                    devices = [];
+                }
+
+                console.log('loadDevices: loaded', devices.length, 'devices');
 
                 // Update counter
                 const counterEl = document.getElementById('configuredDevicesCount');
@@ -1172,16 +1195,22 @@
                         statusIndicator = '<span class="status-indicator unknown" title="Status unbekannt"></span>';
                     }
 
+                    // Ensure device properties exist
+                    const deviceName = device.name || `Device ${index + 1}`;
+                    const deviceHost = device.host || 'Unknown';
+                    const devicePort = device.port || 502;
+                    const deviceModel = device.model || 'Modbus TCP';
+
                     // Compact device display for new layout
                     li.innerHTML = `
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600; color: #2e7d32; display: flex; align-items: center; gap: 6px;">
                                     ${statusIndicator}
-                                    <span>${device.name}</span>
+                                    <span>${deviceName}</span>
                                 </div>
                                 <div style="color: #666; font-size: 0.85em; margin-top: 2px;">
-                                    ${device.host}:${device.port} | ${device.model}
+                                    ${deviceHost}:${devicePort} | ${deviceModel}
                                 </div>
                             </div>
                             <div style="display: flex; gap: 4px;">
@@ -1192,8 +1221,11 @@
                     `;
                     deviceList.appendChild(li);
                 });
+
+                console.log('loadDevices: displayed', devices.length, 'devices');
             } catch (error) {
-                deviceList.innerHTML = '<li style="text-align: center; padding: 20px; color: #dc3545;">Fehler beim Laden der Geräte</li>';
+                console.error('loadDevices error:', error);
+                deviceList.innerHTML = '<li style="text-align: center; padding: 15px; color: #dc3545; font-size: 0.8em;">Fehler beim Laden</li>';
                 showAlert('Fehler beim Laden der Geräte: ' + error.message, 'error');
             }
         }
@@ -1597,10 +1629,18 @@ I/O Konfiguration:
 
         function displayNetworkDevicesAuto(devices, isNmapScan = false) {
             // Store globally for reference
-            window.lastScannedDevices = devices;
+            window.lastScannedDevices = devices || [];
+            devices = devices || [];
+
+            console.log('displayNetworkDevicesAuto called with', devices.length, 'devices');
 
             const allDevicesList = document.getElementById('allNetworkDevicesList');
             const busDevicesList = document.getElementById('busDevicesList');
+
+            if (!allDevicesList || !busDevicesList) {
+                console.error('Device list elements not found');
+                return;
+            }
 
             // Clear lists
             allDevicesList.innerHTML = '';
@@ -1611,28 +1651,39 @@ I/O Konfiguration:
             const allDevicesData = [];
 
             devices.forEach(device => {
-                const isBusDevice = device.device_type && device.device_type !== 'GENERIC' && device.device_type !== 'unknown';
-                const hasBusPort = [102, 502, 510].includes(device.port) || (device.port >= 20000 && device.port <= 20100);
+                // Ensure device has required properties
+                const ip = device.ip || device.host || 'Unknown';
+                const port = device.port || 502;
+                const deviceType = device.device_type || 'GENERIC';
+                const isBusDevice = deviceType && deviceType !== 'GENERIC' && deviceType !== 'unknown';
+                const hasBusPort = [102, 502, 510].includes(port) || (port >= 20000 && port <= 20100);
 
-                allDevicesData.push({...device, isBusDevice: isBusDevice || hasBusPort});
+                allDevicesData.push({
+                    ...device,
+                    ip: ip,
+                    port: port,
+                    isBusDevice: isBusDevice || hasBusPort
+                });
 
                 if (isBusDevice || hasBusPort) {
-                    busDevices.push(device);
+                    busDevices.push({...device, ip: ip, port: port});
                 }
             });
 
             // Update counters
-            document.getElementById('allDevicesCount').textContent = allDevicesData.length;
-            document.getElementById('busDevicesCount').textContent = busDevices.length;
+            const allCountEl = document.getElementById('allDevicesCount');
+            const busCountEl = document.getElementById('busDevicesCount');
+            if (allCountEl) allCountEl.textContent = allDevicesData.length;
+            if (busCountEl) busCountEl.textContent = busDevices.length;
 
             // Display all network devices
             if (allDevicesData.length === 0) {
                 allDevicesList.innerHTML = `
                     <div style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
                         <p style="margin: 0;">🔍 Keine Geräte gefunden</p>
+                        <small>Scan starten um Geräte zu finden</small>
                     </div>`;
             } else {
-                document.getElementById('noAllDevices')?.remove();
                 allDevicesData.forEach(device => {
                     const deviceCard = document.createElement('div');
                     const bgColor = device.isBusDevice ? 'rgba(255,152,0,0.15)' : 'rgba(96,125,139,0.08)';
@@ -1653,11 +1704,11 @@ I/O Konfiguration:
             // Display bus devices with port info
             if (busDevices.length === 0) {
                 busDevicesList.innerHTML = `
-                    <div id="noBusDevices" style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
+                    <div style="padding: 15px; text-align: center; color: #888; font-size: 0.8em;">
                         <p style="margin: 0;">📡 Keine Bus-Geräte</p>
+                        <small>Modbus/S7 Geräte werden hier angezeigt</small>
                     </div>`;
             } else {
-                document.getElementById('noBusDevices')?.remove();
                 busDevices.forEach(device => {
                     const deviceCard = document.createElement('div');
                     deviceCard.style.cssText = `padding: 10px; margin-bottom: 8px; border-radius: 6px; background: linear-gradient(135deg, rgba(255,152,0,0.2), rgba(255,193,7,0.1)); border: 1px solid #ff9800; font-size: 0.8em;`;
@@ -1665,13 +1716,14 @@ I/O Konfiguration:
                     // Icon based on device type
                     let icon = '🔌';
                     let typeName = 'Modbus TCP';
-                    if (device.device_type === 'LOGO_8') {
+                    const deviceType = device.device_type || 'GENERIC';
+                    if (deviceType === 'LOGO_8') {
                         icon = '🟦';
                         typeName = 'LOGO! 8';
-                    } else if (device.device_type === 'LOGO_0BA7') {
+                    } else if (deviceType === 'LOGO_0BA7') {
                         icon = '🟩';
                         typeName = 'LOGO! 0BA7';
-                    } else if (device.device_type === 'S7') {
+                    } else if (deviceType === 'S7') {
                         icon = '🔵';
                         typeName = 'S7 PLC';
                     }
@@ -1707,6 +1759,8 @@ I/O Konfiguration:
             if (legacyDeviceList) {
                 legacyDeviceList.innerHTML = '';
             }
+
+            console.log('displayNetworkDevicesAuto complete:', allDevicesData.length, 'all devices,', busDevices.length, 'bus devices');
         }
 
         async function discoverRegisters() {
@@ -1957,8 +2011,20 @@ I/O Konfiguration:
         }
 
         async function triggerManualScan() {
+            const progressDiv = document.getElementById('scanProgress');
+
             try {
                 showAlert('Manueller Scan gestartet...', 'info');
+
+                // Show progress indicator
+                progressDiv.classList.remove('hidden');
+                document.getElementById('scanProgressBar').style.width = '0%';
+                document.getElementById('scanProgressPercent').textContent = '0%';
+                document.getElementById('scanCurrentIP').textContent = '-';
+                document.getElementById('scanProgressFound').textContent = '0 gefunden';
+
+                // Start progress polling
+                startProgressPolling();
 
                 const response = await fetch(`${API_BASE}/api/auto-scanner/trigger`, {
                     method: 'POST',
@@ -1966,15 +2032,29 @@ I/O Konfiguration:
                 });
 
                 const result = await response.json();
+
+                // Stop polling and hide progress
+                stopProgressPolling();
+                progressDiv.classList.add('hidden');
+
                 if (result.success) {
-                    const count = result.results?.devices_found || 0;
+                    const devices = result.results?.devices || [];
+                    const count = result.results?.devices_found || devices.length;
                     showAlert(`Scan abgeschlossen: ${count} Geräte gefunden`, 'success');
+
+                    // Update three-column layout with scan results
+                    if (devices.length > 0) {
+                        displayNetworkDevicesAuto(devices);
+                    }
+
                     loadAutoScanStatus();
-                    loadDevices(); // Refresh device list
+                    loadDevices(); // Refresh configured device list
                 } else {
                     showAlert(result.error || 'Scan fehlgeschlagen', 'error');
                 }
             } catch (error) {
+                stopProgressPolling();
+                progressDiv.classList.add('hidden');
                 showAlert('Fehler: ' + error.message, 'error');
             }
         }

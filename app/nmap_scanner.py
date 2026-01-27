@@ -144,10 +144,10 @@ class NmapModbusScanner:
                                     device['model'] = self._parse_model(modbus_info)
                                 else:
                                     # Fallback: try to detect via port number
-                                    if port in [502 - 510]:
+                                    if port in [102, 502, 510] or (port >= 20000 and port <= 20100):
                                         device['device_type'] = 'MODBUS_TCP'
                                         device['manufacturer'] = 'Generic'
-                                        device['model'] = 'Modbus TCP'
+                                        device['model'] = 'Modbus TCP' if port != 102 else 'S7comm'
 
                                 # Auto-generate device name
                                 device['name'] = self._generate_device_name(device)
