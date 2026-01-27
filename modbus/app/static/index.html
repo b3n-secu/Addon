@@ -390,6 +390,20 @@
         }
 
         /* Config Section */
+        /* Config and Note Grid Layout */
+        .config-note-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 900px) {
+            .config-note-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
         .config-section {
             background: #1e2a4a;
             border-radius: 10px;
@@ -414,23 +428,78 @@
             gap: 8px;
         }
 
+        .config-title.orange {
+            color: #ff9800;
+        }
+
+        /* Config Form */
+        .config-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .config-form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .config-form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .config-form-group label {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+
+        .config-form-group input,
+        .config-form-group select {
+            background: #2a3a5a;
+            border: 1px solid #3a4a6a;
+            border-radius: 5px;
+            padding: 10px 12px;
+            color: white;
+            font-size: 0.95em;
+        }
+
+        .config-form-group input:focus,
+        .config-form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .config-form-group input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .note-section {
+            background: #1e2a4a;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
         .note-field {
             background: #0d1421;
             border: 1px solid #2a3a5a;
             border-radius: 8px;
             padding: 15px;
             font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            min-height: 150px;
-            margin-bottom: 15px;
+            font-size: 0.85em;
+            min-height: 200px;
             color: #4caf50;
             white-space: pre-wrap;
+            overflow-y: auto;
+            max-height: 300px;
         }
 
         .config-buttons {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
+            margin-top: 15px;
         }
 
         /* Alert Area */
@@ -724,34 +793,81 @@
             </div>
         </div>
 
-        <!-- Configuration Section -->
-        <div class="config-section">
-            <div class="config-header">
-                <span class="config-title">📋 Konfiguration & Notizfeld</span>
-                <span style="font-size: 0.85em; opacity: 0.7;">Wählen Sie ein Bus-Gerät zur Konfiguration</span>
+        <!-- Configuration and Note Grid -->
+        <div class="config-note-grid">
+            <!-- Configuration Section (editable) -->
+            <div class="config-section">
+                <div class="config-header">
+                    <span class="config-title orange">⚙️ Konfiguration</span>
+                </div>
+
+                <div class="config-form">
+                    <div class="config-form-group">
+                        <label>Gerätename</label>
+                        <input type="text" id="cfgName" placeholder="z.B. Wago_PLC_1">
+                    </div>
+                    <div class="config-form-group">
+                        <label>Protokoll</label>
+                        <select id="cfgProtocol">
+                            <option value="modbus_tcp">Modbus TCP</option>
+                            <option value="s7comm">S7comm</option>
+                            <option value="profinet">ProfiNet</option>
+                        </select>
+                    </div>
+                    <div class="config-form-group">
+                        <label>IP-Adresse</label>
+                        <input type="text" id="cfgIP" placeholder="192.168.1.100">
+                    </div>
+                    <div class="config-form-group">
+                        <label>Port</label>
+                        <input type="number" id="cfgPort" value="502">
+                    </div>
+                    <div class="config-form-group">
+                        <label>Slave ID</label>
+                        <input type="number" id="cfgSlaveId" value="1" min="1" max="247">
+                    </div>
+                    <div class="config-form-group">
+                        <label>Hersteller</label>
+                        <input type="text" id="cfgManufacturer" placeholder="z.B. Wago">
+                    </div>
+                    <div class="config-form-group full-width">
+                        <label>Register-Bereich (Start, Anzahl)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="number" id="cfgRegStart" placeholder="Start: 0" style="flex: 1;">
+                            <input type="number" id="cfgRegCount" placeholder="Anzahl: 10" style="flex: 1;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-buttons">
+                    <button class="btn btn-success" onclick="saveDeviceConfig()">
+                        💾 Speichern
+                    </button>
+                    <button class="btn btn-primary" onclick="generateModbusConfig()" id="btnModbus">
+                        📄 YAML generieren
+                    </button>
+                    <button class="btn btn-secondary" onclick="viewConfig()">
+                        👁️ Config anzeigen
+                    </button>
+                </div>
             </div>
 
-            <div class="note-field" id="noteField">Kein Gerät ausgewählt.
+            <!-- Note Section (read-only info) -->
+            <div class="note-section">
+                <div class="config-header">
+                    <span class="config-title">📋 Geräte-Info</span>
+                </div>
 
-Wählen Sie ein Bus-Gerät aus der Liste oben, um Details anzuzeigen.
+                <div class="note-field" id="noteField">Kein Gerät ausgewählt.
 
-Nach dem Scan werden hier folgende Informationen angezeigt:
-- IP-Adresse
-- Protokoll (Modbus TCP, S7comm, ProfiNet)
-- MAC-Adresse
-- Hersteller
-- Erkannte Inputs/Outputs</div>
+Wählen Sie ein Bus-Gerät aus der Liste oben,
+um Details anzuzeigen.
 
-            <div class="config-buttons">
-                <button class="btn btn-success" onclick="generateModbusConfig()" id="btnModbus" disabled>
-                    📄 Modbus YAML generieren
-                </button>
-                <button class="btn btn-primary" onclick="generateS7Config()" id="btnS7" disabled>
-                    📄 S7comm Config
-                </button>
-                <button class="btn btn-secondary" onclick="viewConfig()">
-                    👁️ Config anzeigen
-                </button>
+Nach der Analyse werden hier angezeigt:
+• Geräteinformationen
+• Erkannter Gerätetyp
+• Unterstützte Funktionen
+• Register-Bereiche</div>
             </div>
         </div>
 
@@ -1020,12 +1136,6 @@ Nach dem Scan werden hier folgende Informationen angezeigt:
             const list = document.getElementById('busDeviceList');
             document.getElementById('busCount').textContent = busDevices.length;
 
-            // Enable/disable config buttons based on bus devices
-            const hasModbus = busDevices.some(d => d.protocol && d.protocol.includes('Modbus'));
-            const hasS7 = busDevices.some(d => d.protocol === 'S7comm');
-            document.getElementById('btnModbus').disabled = !hasModbus;
-            document.getElementById('btnS7').disabled = !hasS7;
-
             if (busDevices.length === 0) {
                 list.innerHTML = `
                     <div class="empty-state">
@@ -1067,15 +1177,45 @@ Nach dem Scan werden hier folgende Informationen angezeigt:
         // Select bus device for configuration
         function selectBusDevice(index) {
             selectedDevice = busDevices[index];
+            fillConfigForm(selectedDevice);
             updateNoteField();
+            showAlert(`Gerät ${selectedDevice.ip}:${selectedDevice.port} ausgewählt`, 'info');
         }
 
-        // Configure device
+        // Fill configuration form with device data
+        function fillConfigForm(device) {
+            if (!device) return;
+
+            // Generate default name
+            const vendorPart = device.vendor ? device.vendor.split(' ')[0] : 'Device';
+            const ipPart = device.ip.split('.').pop();
+            document.getElementById('cfgName').value = `${vendorPart}_${ipPart}`;
+
+            // Set protocol
+            const protocolSelect = document.getElementById('cfgProtocol');
+            if (device.protocol === 'S7comm') {
+                protocolSelect.value = 's7comm';
+            } else if (device.protocol && device.protocol.includes('Modbus')) {
+                protocolSelect.value = 'modbus_tcp';
+            } else {
+                protocolSelect.value = 'modbus_tcp';
+            }
+
+            document.getElementById('cfgIP').value = device.ip;
+            document.getElementById('cfgPort').value = device.port || 502;
+            document.getElementById('cfgSlaveId').value = device.slave_id || 1;
+            document.getElementById('cfgManufacturer').value = device.vendor || '';
+            document.getElementById('cfgRegStart').value = '';
+            document.getElementById('cfgRegCount').value = '';
+        }
+
+        // Configure device (analyze registers)
         async function configureDevice(index) {
             const device = busDevices[index];
             selectedDevice = device;
+            fillConfigForm(device);
 
-            showAlert(`Konfiguriere ${device.ip}:${device.port}...`, 'info');
+            showAlert(`Analysiere ${device.ip}:${device.port}...`, 'info');
 
             // Try to discover registers
             try {
@@ -1094,12 +1234,57 @@ Nach dem Scan werden hier folgende Informationen angezeigt:
                 if (result.success) {
                     selectedDevice.registers = result;
                     showAlert('Register-Analyse abgeschlossen', 'success');
+                } else {
+                    showAlert('Register-Analyse: ' + (result.error || 'Keine Register gefunden'), 'warning');
                 }
             } catch (error) {
                 console.error('Register discovery error:', error);
+                showAlert('Fehler bei Register-Analyse', 'error');
             }
 
             updateNoteField();
+        }
+
+        // Save device configuration
+        async function saveDeviceConfig() {
+            const name = document.getElementById('cfgName').value;
+            const ip = document.getElementById('cfgIP').value;
+            const port = document.getElementById('cfgPort').value;
+            const slaveId = document.getElementById('cfgSlaveId').value;
+            const manufacturer = document.getElementById('cfgManufacturer').value;
+            const protocol = document.getElementById('cfgProtocol').value;
+
+            if (!name || !ip) {
+                showAlert('Gerätename und IP-Adresse sind erforderlich', 'error');
+                return;
+            }
+
+            showAlert(`Speichere ${name}...`, 'info');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/devices`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name,
+                        manufacturer: manufacturer || 'Generic',
+                        model: protocol === 's7comm' ? 'S7comm' : 'Modbus TCP',
+                        host: ip,
+                        port: parseInt(port) || 502,
+                        slave_id: parseInt(slaveId) || 1
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert(`Gerät "${name}" gespeichert`, 'success');
+                } else {
+                    showAlert('Fehler: ' + (result.error || 'Speichern fehlgeschlagen'), 'error');
+                }
+            } catch (error) {
+                showAlert('Fehler: ' + error.message, 'error');
+            }
         }
 
         // Update note field with device info
@@ -1165,33 +1350,44 @@ ${reg.supported_functions ? reg.supported_functions.join('\n') : 'Keine erkannt'
             noteField.textContent = content;
         }
 
-        // Generate Modbus config
+        // Generate Modbus config from form
         async function generateModbusConfig() {
-            showAlert('Generiere Modbus-Konfiguration...', 'info');
+            const name = document.getElementById('cfgName').value;
+            const ip = document.getElementById('cfgIP').value;
+            const port = document.getElementById('cfgPort').value;
+            const slaveId = document.getElementById('cfgSlaveId').value;
+            const manufacturer = document.getElementById('cfgManufacturer').value;
+            const regStart = document.getElementById('cfgRegStart').value;
+            const regCount = document.getElementById('cfgRegCount').value;
 
-            // First add bus devices to device list
-            for (const device of busDevices) {
-                if (device.protocol && device.protocol.includes('Modbus')) {
-                    try {
-                        await fetch(`${API_BASE}/api/devices`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                name: `${device.vendor || 'Device'}_${device.ip.split('.').pop()}`,
-                                manufacturer: device.vendor || 'Generic',
-                                model: 'Modbus TCP',
-                                host: device.ip,
-                                port: device.port,
-                                slave_id: 1
-                            })
-                        });
-                    } catch (e) {
-                        console.error('Error adding device:', e);
-                    }
-                }
+            if (!ip) {
+                showAlert('IP-Adresse ist erforderlich', 'error');
+                return;
             }
 
-            // Then generate config
+            showAlert('Generiere Modbus-Konfiguration...', 'info');
+
+            // First save the current config to device list
+            try {
+                await fetch(`${API_BASE}/api/devices`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: name || `Device_${ip.split('.').pop()}`,
+                        manufacturer: manufacturer || 'Generic',
+                        model: 'Modbus TCP',
+                        host: ip,
+                        port: parseInt(port) || 502,
+                        slave_id: parseInt(slaveId) || 1,
+                        register_start: regStart ? parseInt(regStart) : undefined,
+                        register_count: regCount ? parseInt(regCount) : undefined
+                    })
+                });
+            } catch (e) {
+                console.error('Error adding device:', e);
+            }
+
+            // Then generate YAML config
             try {
                 const response = await fetch(`${API_BASE}/api/generate`, {
                     method: 'POST',
@@ -1202,7 +1398,7 @@ ${reg.supported_functions ? reg.supported_functions.join('\n') : 'Keine erkannt'
                 const result = await response.json();
 
                 if (result.success) {
-                    showAlert(`Modbus-Konfiguration generiert: ${result.path}`, 'success');
+                    showAlert(`YAML generiert: ${result.path}`, 'success');
                 } else {
                     showAlert('Fehler: ' + result.error, 'error');
                 }
@@ -1211,8 +1407,13 @@ ${reg.supported_functions ? reg.supported_functions.join('\n') : 'Keine erkannt'
             }
         }
 
-        // Generate S7 config (placeholder)
+        // Generate S7 config
         function generateS7Config() {
+            const protocol = document.getElementById('cfgProtocol').value;
+            if (protocol !== 's7comm') {
+                showAlert('Bitte S7comm als Protokoll wählen', 'warning');
+                return;
+            }
             showAlert('S7comm-Konfiguration wird noch implementiert...', 'info');
         }
 
