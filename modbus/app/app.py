@@ -198,7 +198,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '2.0.0'
+        'version': '2.0.1'
     })
 
 
