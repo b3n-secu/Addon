@@ -19,6 +19,7 @@ from manufacturer_database import (
 )
 from auto_scanner import auto_scanner
 from scan_progress import scan_progress
+from ping_scanner import PingScanner, get_vendor_from_mac, quick_ping_scan
 
 # Configure logging FIRST - ensure logs go to stderr, not stdout (prevents mixing with HTTP responses)
 logging.basicConfig(
@@ -197,7 +198,7 @@ def api_status():
     return jsonify({
         'success': True,
         'nmap_available': NMAP_AVAILABLE,
-        'version': '1.9.6'
+        'version': '2.0.0'
     })
 
 
@@ -472,6 +473,335 @@ def api_scan_network():
 def api_scan_progress():
     """Get current scan progress"""
     return jsonify(scan_progress.get_status())
+
+
+# ============================================================================
+# Two-Phase Scan API Endpoints (New Workflow)
+# ============================================================================
+
+# Global storage for scan results between phases
+_network_devices = []  # Phase 1 results (ping scan)
+_bus_devices = []      # Phase 2 results (port scan)
+
+
+@app.route('/api/scan/phase1-ping', methods=['POST'])
+def api_scan_phase1_ping():
+    """
+    Phase 1: Quick ping scan to discover all network devices
+    Returns devices with IP, MAC address, and vendor information
+    """
+    global _network_devices
+
+    try:
+        data = request.json or {}
+        network = data.get('network')
+
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+            logger.info(f"Auto-detected network for ping scan: {network}")
+
+        # Start progress tracking for phase 1
+        scan_progress.start_scan(network, 'ping')
+        scan_progress.set_phase('phase1_ping')
+
+        logger.info(f"Starting Phase 1: Ping scan on {network}")
+
+        # Progress callback
+        def progress_callback(current_ip, scanned, total, found_device):
+            scan_progress.update_progress(current_ip, scanned)
+            scan_progress._total_hosts = total
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
+        # Perform ping scan
+        scanner = PingScanner(timeout=0.5, max_workers=100)
+        _network_devices = scanner.scan_network(network, progress_callback)
+
+        scan_progress.set_phase('phase1_complete')
+        scan_progress.finish_scan()
+
+        logger.info(f"Phase 1 complete: {len(_network_devices)} devices found")
+
+        return jsonify({
+            'success': True,
+            'phase': 'phase1_ping',
+            'devices': _network_devices,
+            'total': len(_network_devices),
+            'network': network
+        })
+
+    except Exception as e:
+        scan_progress.set_error(str(e))
+        logger.error(f"Phase 1 ping scan error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/scan/phase2-ports', methods=['POST'])
+def api_scan_phase2_ports():
+    """
+    Phase 2: Port scan on discovered devices for industrial protocols
+    Scans ports: 102 (S7comm), 502, 510 (Modbus), 20000-20100 (custom Modbus)
+    """
+    global _bus_devices
+
+    try:
+        data = request.json or {}
+        target_ips = data.get('ips', [])  # Optional: specific IPs to scan
+        port_range = data.get('port_range', '102,502,510,20000-20100')
+
+        # If no specific IPs provided, use Phase 1 results
+        if not target_ips and _network_devices:
+            target_ips = [d['ip'] for d in _network_devices]
+
+        if not target_ips:
+            return jsonify({
+                'success': False,
+                'error': 'Keine Geräte zum Scannen. Bitte zuerst Phase 1 (Ping-Scan) ausführen.'
+            }), 400
+
+        # Start progress tracking for phase 2
+        scan_progress.start_scan(f"{len(target_ips)} hosts", 'ports')
+        scan_progress.set_phase('phase2_ports')
+        scan_progress._total_hosts = len(target_ips)
+
+        logger.info(f"Starting Phase 2: Port scan on {len(target_ips)} hosts, ports: {port_range}")
+
+        _bus_devices = []
+        scanned_count = 0
+
+        # Parse port range
+        ports_to_scan = []
+        for part in port_range.split(','):
+            if '-' in part:
+                start, end = part.split('-')
+                ports_to_scan.extend(range(int(start), int(end) + 1))
+            else:
+                ports_to_scan.append(int(part))
+
+        # Scan each host for open ports
+        import socket
+        for ip in target_ips:
+            scanned_count += 1
+            scan_progress.update_progress(ip, scanned_count)
+
+            # Find corresponding network device for MAC info
+            net_device = next((d for d in _network_devices if d['ip'] == ip), None)
+            mac = net_device.get('mac', 'Unknown') if net_device else 'Unknown'
+            vendor = net_device.get('vendor', 'Unknown') if net_device else 'Unknown'
+
+            for port in ports_to_scan:
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1)
+                    result = sock.connect_ex((ip, port))
+                    sock.close()
+
+                    if result == 0:
+                        # Determine protocol based on port
+                        if port == 102:
+                            protocol = 'S7comm'
+                        elif port in [502, 510]:
+                            protocol = 'Modbus TCP'
+                        elif 20000 <= port <= 20100:
+                            protocol = 'Modbus (Custom)'
+                        else:
+                            protocol = 'TCP'
+
+                        bus_device = {
+                            'ip': ip,
+                            'port': port,
+                            'protocol': protocol,
+                            'mac': mac,
+                            'vendor': vendor,
+                            'status': 'open'
+                        }
+                        _bus_devices.append(bus_device)
+                        scan_progress.add_found_device(bus_device)
+                        logger.info(f"Found open port: {ip}:{port} ({protocol})")
+
+                except Exception as e:
+                    logger.debug(f"Error scanning {ip}:{port}: {e}")
+
+        scan_progress.set_phase('phase2_complete')
+        scan_progress.finish_scan()
+
+        logger.info(f"Phase 2 complete: {len(_bus_devices)} bus devices found")
+
+        return jsonify({
+            'success': True,
+            'phase': 'phase2_ports',
+            'devices': _bus_devices,
+            'total': len(_bus_devices)
+        })
+
+    except Exception as e:
+        scan_progress.set_error(str(e))
+        logger.error(f"Phase 2 port scan error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/scan/full', methods=['POST'])
+def api_scan_full():
+    """
+    Full two-phase scan:
+    1. Ping scan to find all devices
+    2. Port scan to find industrial protocols
+    """
+    global _network_devices, _bus_devices
+
+    try:
+        data = request.json or {}
+        network = data.get('network')
+        port_range = data.get('port_range', '102,502,510,20000-20100')
+        auto_add = data.get('auto_add', False)
+
+        # Auto-detect network if not provided
+        if not network:
+            detector = NetworkDetector()
+            network_info = detector.get_network_info()
+            network = network_info.get('scan_range', '192.168.1.0/24')
+
+        logger.info(f"Starting full two-phase scan on {network}")
+
+        # Phase 1: Ping scan
+        scan_progress.start_scan(network, 'ping')
+        scan_progress.set_phase('phase1_ping')
+
+        def ping_progress(current_ip, scanned, total, found_device):
+            scan_progress.update_progress(current_ip, scanned)
+            scan_progress._total_hosts = total
+            if found_device:
+                scan_progress.add_found_device(found_device)
+
+        scanner = PingScanner(timeout=0.5, max_workers=100)
+        _network_devices = scanner.scan_network(network, ping_progress)
+
+        logger.info(f"Phase 1 complete: {len(_network_devices)} devices")
+
+        # Phase 2: Port scan
+        scan_progress.set_phase('phase2_ports')
+        scan_progress._found_devices = []  # Reset for phase 2
+        target_ips = [d['ip'] for d in _network_devices]
+
+        _bus_devices = []
+        scanned_count = 0
+
+        # Parse port range
+        ports_to_scan = []
+        for part in port_range.split(','):
+            if '-' in part:
+                start, end = part.split('-')
+                ports_to_scan.extend(range(int(start), int(end) + 1))
+            else:
+                ports_to_scan.append(int(part))
+
+        scan_progress._total_hosts = len(target_ips)
+
+        import socket
+        for ip in target_ips:
+            scanned_count += 1
+            scan_progress.update_progress(ip, scanned_count)
+
+            net_device = next((d for d in _network_devices if d['ip'] == ip), None)
+            mac = net_device.get('mac', 'Unknown') if net_device else 'Unknown'
+            vendor = net_device.get('vendor', 'Unknown') if net_device else 'Unknown'
+
+            for port in ports_to_scan:
+                try:
+                    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    sock.settimeout(1)
+                    result = sock.connect_ex((ip, port))
+                    sock.close()
+
+                    if result == 0:
+                        if port == 102:
+                            protocol = 'S7comm'
+                        elif port in [502, 510]:
+                            protocol = 'Modbus TCP'
+                        elif 20000 <= port <= 20100:
+                            protocol = 'Modbus (Custom)'
+                        else:
+                            protocol = 'TCP'
+
+                        bus_device = {
+                            'ip': ip,
+                            'port': port,
+                            'protocol': protocol,
+                            'mac': mac,
+                            'vendor': vendor,
+                            'status': 'open'
+                        }
+                        _bus_devices.append(bus_device)
+                        scan_progress.add_found_device(bus_device)
+
+                except Exception:
+                    pass
+
+        # Auto-add to device list if requested
+        added_count = 0
+        if auto_add:
+            for bus_dev in _bus_devices:
+                host = bus_dev['ip']
+                port = bus_dev['port']
+                if not any(d.get('host') == host and d.get('port') == port for d in devices):
+                    new_device = {
+                        'name': f"{bus_dev['vendor']}_{host.split('.')[-1]}",
+                        'manufacturer': bus_dev['vendor'],
+                        'model': bus_dev['protocol'],
+                        'host': host,
+                        'port': port,
+                        'mac': bus_dev['mac'],
+                        'protocol': bus_dev['protocol'],
+                        'slave_id': 1
+                    }
+                    devices.append(new_device)
+                    added_count += 1
+
+            if added_count > 0:
+                save_config()
+
+        scan_progress.set_phase('complete')
+        scan_progress.finish_scan()
+
+        logger.info(f"Full scan complete: {len(_network_devices)} network, {len(_bus_devices)} bus devices")
+
+        return jsonify({
+            'success': True,
+            'network_devices': _network_devices,
+            'bus_devices': _bus_devices,
+            'network_total': len(_network_devices),
+            'bus_total': len(_bus_devices),
+            'added_count': added_count,
+            'network': network
+        })
+
+    except Exception as e:
+        scan_progress.set_error(str(e))
+        logger.error(f"Full scan error: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/scan/network-devices', methods=['GET'])
+def api_get_network_devices():
+    """Get current network devices from last ping scan"""
+    return jsonify({
+        'success': True,
+        'devices': _network_devices,
+        'total': len(_network_devices)
+    })
+
+
+@app.route('/api/scan/bus-devices', methods=['GET'])
+def api_get_bus_devices():
+    """Get current bus devices from last port scan"""
+    return jsonify({
+        'success': True,
+        'devices': _bus_devices,
+        'total': len(_bus_devices)
+    })
 
 
 @app.route('/api/scan-network-nmap', methods=['POST'])
