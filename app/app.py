@@ -266,18 +266,32 @@ def api_add_device():
         device = request.json
 
         # Validate required fields
-        required = ['manufacturer', 'model', 'name', 'host']
+        required = ['name', 'host']
         for field in required:
             if field not in device:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
 
-        # Get profile and set default port
-        profile = get_device_profile(device['manufacturer'], device['model'])
-        if not profile:
-            return jsonify({'error': 'Invalid manufacturer or model'}), 400
+        # Set defaults for optional fields
+        if 'manufacturer' not in device or not device['manufacturer']:
+            device['manufacturer'] = 'Generic'
+        if 'model' not in device or not device['model']:
+            device['model'] = 'Modbus TCP'
 
+        # Try to get profile, but allow custom devices without profile
+        profile = get_device_profile(device['manufacturer'], device['model'])
+
+        # Set default port based on profile or model type
         if 'port' not in device:
-            device['port'] = profile.get('port', 502)
+            if profile:
+                device['port'] = profile.get('port', 502)
+            elif 's7' in device['model'].lower():
+                device['port'] = 102
+            else:
+                device['port'] = 502
+
+        # Set default slave_id if not present
+        if 'slave_id' not in device:
+            device['slave_id'] = 1
 
         devices.append(device)
         save_config()
